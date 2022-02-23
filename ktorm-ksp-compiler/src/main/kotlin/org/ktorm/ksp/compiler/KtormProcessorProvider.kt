@@ -6,7 +6,10 @@ import Id
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
 import com.google.devtools.ksp.isAnnotationPresent
-import com.google.devtools.ksp.processing.*
+import com.google.devtools.ksp.processing.Resolver
+import com.google.devtools.ksp.processing.SymbolProcessor
+import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
+import com.google.devtools.ksp.processing.SymbolProcessorProvider
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSVisitorVoid
@@ -22,17 +25,20 @@ import org.ktorm.ksp.annotation.Table
 public class KtormProcessorProvider : SymbolProcessorProvider {
     override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {
         environment.logger.info("create ktorm symbolProcessor")
-        return KtormProcessor(environment.codeGenerator, environment.logger)
+        return KtormProcessor(environment)
     }
 }
 
 public class KtormProcessor(
-    private val codeGenerator: CodeGenerator,
-    private val logger: KSPLogger,
+    private val environment: SymbolProcessorEnvironment
 ) : SymbolProcessor {
 
+    private val logger = environment.logger
+
     override fun process(resolver: Resolver): List<KSAnnotated> {
-        logger.info("start ktorm processor")
+        logger.info("start ktorm ksp processor")
+        val configuration = parseOptions()
+        logger.info("configuration: $configuration")
         val symbols = resolver.getSymbolsWithAnnotation(Table::class.qualifiedName!!)
         logger.info("symbols:${symbols.toList()}")
         val tableDefinitions = mutableListOf<TableDefinition>()
@@ -40,8 +46,16 @@ public class KtormProcessor(
         symbols
             .filter { it is KSClassDeclaration && it.validate() }
             .forEach { it.accept(EntityVisitor(tableDefinitions), Unit) }
-        KtormCodeGenerator().generate(tableDefinitions, codeGenerator, logger)
+        KtormCodeGenerator().generate(tableDefinitions, environment.codeGenerator, configuration, logger)
         return ret
+    }
+
+    private fun parseOptions(): KtormKspConfiguration {
+        val options = environment.options
+        val allowReflectionCreateEntity = options["allowReflectionCreateEntity"]?.toBoolean() ?: true
+        return KtormKspConfiguration(
+            allowReflectionCreateEntity
+        )
     }
 
 

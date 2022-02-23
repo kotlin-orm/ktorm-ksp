@@ -15,19 +15,20 @@ public class KtormCodeGenerator {
     public fun generate(
         tables: List<TableDefinition>,
         codeGenerator: CodeGenerator,
+        configuration: KtormKspConfiguration,
         logger: KSPLogger,
     ) {
         logger.info("generate tables:${tables.map { it.entityClassName.simpleName }}}")
         for (table in tables) {
-            val file = generateTable(table)
+            val file = generateTable(table, configuration)
             file.writeTo(codeGenerator, Dependencies(true, table.entityFile))
         }
     }
 
-    public fun generateTable(table: TableDefinition): FileSpec {
+    public fun generateTable(table: TableDefinition, configuration: KtormKspConfiguration): FileSpec {
         val generator = when (table.entityClassDeclaration.classKind) {
-            ClassKind.INTERFACE -> TableGenerator(table)
-            ClassKind.CLASS -> BaseTableGenerator(table)
+            ClassKind.INTERFACE -> TableGenerator(table, configuration)
+            ClassKind.CLASS -> BaseTableGenerator(table, configuration)
             else -> throw IllegalArgumentException("Unsupported entity type: ${table.entityClassDeclaration.qualifiedName?.asString()}")
         }
         return generator.generate()

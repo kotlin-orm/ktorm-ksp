@@ -7,7 +7,10 @@ import org.ktorm.schema.BaseTable
 import org.ktorm.schema.Column
 import org.ktorm.schema.Table
 
-public abstract class AbstractTableGenerator(public val table: TableDefinition) {
+public abstract class AbstractTableGenerator(
+    public val table: TableDefinition,
+    public val configuration: KtormKspConfiguration
+) {
 
     protected val bindToFun: MemberName = MemberName("", "bindTo")
     protected val primaryKeyFun: MemberName = MemberName("", "primaryKey")
@@ -58,7 +61,8 @@ public abstract class AbstractTableGenerator(public val table: TableDefinition) 
 /**
  * generate typeSpec for [Table]
  */
-public open class TableGenerator(table: TableDefinition) : AbstractTableGenerator(table) {
+public open class TableGenerator(table: TableDefinition, configuration: KtormKspConfiguration) :
+    AbstractTableGenerator(table, configuration) {
     override val superType: ClassName = Table::class.asTypeName()
 
     override fun generateType(): TypeSpec.Builder {
@@ -95,7 +99,8 @@ public open class TableGenerator(table: TableDefinition) : AbstractTableGenerato
 /**
  * generate typeSpec for [BaseTable]
  */
-public open class BaseTableGenerator(table: TableDefinition) : AbstractTableGenerator(table) {
+public open class BaseTableGenerator(table: TableDefinition, configuration: KtormKspConfiguration) :
+    AbstractTableGenerator(table, configuration) {
     override val superType: ClassName = BaseTable::class.asTypeName()
 
     public companion object {
@@ -158,7 +163,7 @@ public open class BaseTableGenerator(table: TableDefinition) : AbstractTableGene
                             throw IllegalArgumentException("unknown constructor parameter for ${table.entityClassName.canonicalName} : ${unknownParameters.map { it.name?.asString() }}")
                         }
                         addStatement("val instance: %T", table.entityClassName)
-                        if (constructor.parameters.any { it.hasDefault }) {
+                        if (configuration.allowReflectionCreateEntity && constructor.parameters.any { it.hasDefault }) {
                             addStatement("val constructor = %T::class.%M!!", table.entityClassName, primaryConstructor)
                             addStatement("val parameterMap = %M<%T,%T?>()", mutableMapOfFun, kParameter, any)
                             beginControlFlow("for (parameter in constructor.parameters)")
