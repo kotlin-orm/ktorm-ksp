@@ -5,9 +5,8 @@ import kotlin.reflect.KClass
 
 @Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.SOURCE)
-public annotation class KtormColumn(
+public annotation class Column(
     val columnName: String = "",
-    val isPrimaryKey: Boolean = false,
     val superTableClass: KClass<*> = Table::class,
     val ignore:Boolean =false
 )

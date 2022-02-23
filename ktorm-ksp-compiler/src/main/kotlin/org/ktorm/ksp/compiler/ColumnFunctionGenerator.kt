@@ -7,7 +7,7 @@ import java.sql.Timestamp
 import java.time.*
 import java.util.*
 
-public open class KtormColumnFunctions {
+public open class ColumnFunctionGenerator {
 
     private val defaultFunctions = mapOf<TypeName, MemberName>(
         Int::class.asTypeName() to MemberName("org.ktorm.schema", "int", true),
@@ -31,7 +31,7 @@ public open class KtormColumnFunctions {
         UUID::class.asTypeName() to MemberName("org.ktorm.schema", "uuid", true),
     )
 
-    public open fun getColumnCode(
+    public open fun genrate(
         propertyName: MemberName,
         propertyTypeName: TypeName,
     ): CodeBlock {
