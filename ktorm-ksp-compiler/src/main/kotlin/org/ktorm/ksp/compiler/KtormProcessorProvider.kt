@@ -79,18 +79,19 @@ public class KtormProcessor(
                 .getAllProperties()
                 .mapNotNull {
                     val propertyKSType = it.type.resolve()
-                    if (it.isAnnotationPresent(Transient::class)) {
+                    val propertyName = it.simpleName.asString()
+                    if (it.isAnnotationPresent(Transient::class) || propertyName in table.transientColumns) {
                         return@mapNotNull null
                     }
                     val columnAnnotation = it.getAnnotationsByType(Column::class).firstOrNull()
                     val isId = it.getAnnotationsByType(Id::class).any()
-                    val columnName = columnAnnotation?.columnName ?: it.simpleName.asString()
+                    val columnName = columnAnnotation?.columnName ?: propertyName
                     ColumnDefinition(
                         columnName,
                         isId,
                         it,
                         propertyKSType.toTypeName(),
-                        MemberName(tableClassName, it.simpleName.asString()),
+                        MemberName(tableClassName, propertyName),
                     )
                 }
                 .toList()

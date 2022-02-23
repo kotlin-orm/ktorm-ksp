@@ -8,4 +8,5 @@ public annotation class Table(
     val alias: String = "",
     val catalog: String = "",
     val schema: String = "",
+    val transientColumns: Array<String> = []
 )
