@@ -3,7 +3,10 @@
 package org.ktorm.ksp.compiler
 
 import PrimaryKey
-import com.google.devtools.ksp.*
+import com.google.devtools.ksp.KspExperimental
+import com.google.devtools.ksp.containingFile
+import com.google.devtools.ksp.getAnnotationsByType
+import com.google.devtools.ksp.isAnnotationPresent
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
@@ -51,7 +54,7 @@ public class KtormProcessor(
         val configBuilder = CodeGenerateConfig.Builder()
         val configAnnotated = configClasses.firstOrNull()
         if (configAnnotated != null) {
-            configAnnotated.accept(ConverterProviderVisitor(configBuilder, resolver), Unit)
+            configAnnotated.accept(ConverterProviderVisitor(configBuilder), Unit)
             configBuilder.configDependencyFile = configAnnotated.containingFile
         }
         val config = configBuilder.build()
@@ -67,18 +70,14 @@ public class KtormProcessor(
 
         // start generate
         KtormCodeGenerator().generate(
-            tableDefinitions, environment.codeGenerator, config, ColumnInitializerGenerator(config), logger
+            tableDefinitions, environment.codeGenerator, config, ColumnInitializerGenerator(config,logger), logger
         )
         return configRet + tableRet
     }
 
     public inner class ConverterProviderVisitor(
         private val configBuilder: CodeGenerateConfig.Builder,
-        private val resolver: Resolver
     ) : KSVisitorVoid() {
-
-        private val singleTypeConverterType =
-            resolver.getClassDeclarationByName(SingleTypeConverter::class.qualifiedName!!)!!
 
         override fun visitClassDeclaration(classDeclaration: KSClassDeclaration, data: Unit) {
             val kspConfig = classDeclaration.getAnnotationsByType(KtormKspConfig::class).first()
@@ -171,17 +170,18 @@ public class KtormProcessor(
                     val ksColumnAnnotation =
                         ksProperty.annotations.firstOrNull { anno -> anno.annotationType.resolve().declaration.qualifiedName?.asString() == columnQualifiedName }
                     val converter =
-                        ksColumnAnnotation?.arguments?.firstOrNull { anno -> anno.name?.asString() == Column::columnName.name }?.value as KSClassDeclaration?
+                        ksColumnAnnotation?.arguments?.firstOrNull { anno -> anno.name?.asString() == Column::converter.name }?.value as KSType?
                     var converterDefinition: ConverterDefinition? = null
                     if (converter != null && converter.toClassName() != Nothing::class.asClassName()) {
-                        if (converter.classKind != ClassKind.OBJECT) {
+                        val converterDeclaration = converter.declaration as KSClassDeclaration
+                        if (converterDeclaration.classKind != ClassKind.OBJECT) {
                             error("Wrong converter type:${converter.toClassName()}, converter must be object instance.")
                         }
-                        converterDefinition = ConverterDefinition(converter.toClassName(), converter)
+                        converterDefinition = ConverterDefinition(converter.toClassName(), converterDeclaration)
                     }
                     val isPrimaryKey = ksProperty.getAnnotationsByType(PrimaryKey::class).any()
                     // todo: custom name style
-                    val columnName = columnAnnotation?.columnName ?: propertyName
+                    val columnName = columnAnnotation?.columnName?.ifEmpty {  propertyName } ?: propertyName
                     ColumnDefinition(
                         columnName,
                         isPrimaryKey,

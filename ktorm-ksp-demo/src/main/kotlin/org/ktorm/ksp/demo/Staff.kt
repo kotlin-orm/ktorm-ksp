@@ -7,6 +7,7 @@ import org.ktorm.schema.BaseTable
 import org.ktorm.schema.Column
 import org.ktorm.schema.SqlType
 import org.ktorm.schema.varchar
+import java.math.BigDecimal
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.sql.Types
@@ -23,6 +24,7 @@ public interface Staff : Entity<Staff> {
 
 }
 
+
 @Table(
     tableClassName = "EmployeeTable",
     ignoreColumns = ["updateTime"]
@@ -34,17 +36,25 @@ public data class Employee(
     public val age: Int,
     public val birthday: LocalDate = LocalDate.now(),
     public val gender: Gender,
+    @org.ktorm.ksp.api.Column(converter = JsonConverter::class)
+    public val salary: Salary
 ) {
     @Ignore
     public var createTime: LocalDate = LocalDate.now()
     public var updateTime: LocalDate = LocalDate.now()
 }
 
+public data class Salary(
+    val money: BigDecimal,
+    val currency: String
+)
+
 @Table
 public class Job {
     @PrimaryKey
     public var id: Int? = null
     public var name: String? = null
+
     @Ignore
     public var createTime: LocalDate = LocalDate.now()
 }
@@ -54,30 +64,39 @@ public enum class Gender {
     FEMALE
 }
 
-
-@KtormKspConfig(
-    enumConverter = IntEnumConverter::class,
-    singleTypeConverters = [StringConverter::class],
-    allowReflectionCreateEntity = false
-)
-public class KtormConfig
-
-public interface CustomSingleTypeConverter: SingleTypeConverter<String> {
+public interface CustomSingleTypeConverter : SingleTypeConverter<String> {
 }
 
-public object StringConverter:CustomSingleTypeConverter {
+
+public object JsonConverter : MultiTypeConverter {
+    override fun <T : Any> convert(table: BaseTable<*>, columnName: String, propertyType: KClass<T>): Column<T> {
+        return table.registerColumn(columnName, JsonSqlType(propertyType.java))
+    }
+}
+
+public class JsonSqlType<T : Any>(private val clazz: Class<T>) : SqlType<T>(Types.VARCHAR, "varchar") {
+    override fun doGetResult(rs: ResultSet, index: Int): T? {
+        return null
+    }
+
+    override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: T) {
+    }
+
+}
+
+public object StringConverter : CustomSingleTypeConverter {
     override fun convert(table: BaseTable<*>, columnName: String, propertyType: KClass<String>): Column<String> {
         return table.varchar(columnName)
     }
 }
 
-public object IntEnumConverter: EnumConverter {
+public object IntEnumConverter : EnumConverter {
     public override fun <E : Enum<E>> convert(
         table: BaseTable<*>,
         columnName: String,
         propertyType: KClass<E>
     ): Column<E> {
-        return table.registerColumn(columnName,IntEnumSqlType(propertyType.java))
+        return table.registerColumn(columnName, IntEnumSqlType(propertyType.java))
     }
 }
 

@@ -1,5 +1,6 @@
 package org.ktorm.ksp.compiler.generator
 
+import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
@@ -15,7 +16,8 @@ import java.time.*
 import java.util.*
 
 public open class ColumnInitializerGenerator(
-    config: CodeGenerateConfig
+    config: CodeGenerateConfig,
+    private val logger: KSPLogger
 ) {
 
     private val enumConverterDefinition: ConverterDefinition? = config.enumConverter
@@ -46,6 +48,7 @@ public open class ColumnInitializerGenerator(
 
     @OptIn(KotlinPoetKspPreview::class)
     public open fun generate(column: ColumnDefinition, dependencyFiles: MutableSet<KSFile>): CodeBlock {
+        logger.info("generate column:${column.property.simpleName}")
         val isEnum = (column.propertyDeclaration.type.resolve().declaration as KSClassDeclaration).classKind == ClassKind.ENUM_CLASS
         val converterDefinition = when {
             column.converterDefinition != null -> column.converterDefinition
