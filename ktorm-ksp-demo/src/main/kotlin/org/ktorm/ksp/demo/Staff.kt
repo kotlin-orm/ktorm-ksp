@@ -23,7 +23,9 @@ public interface Staff : Entity<Staff> {
 
 }
 
-@Table
+@Table(
+    ignoreColumns = ["updateTime"]
+)
 public data class Employee(
     @PrimaryKey
     public val id: Int,
@@ -34,6 +36,7 @@ public data class Employee(
 ) {
     @Ignore
     public var createTime: LocalDate = LocalDate.now()
+    public var updateTime: LocalDate = LocalDate.now()
 }
 
 @Table

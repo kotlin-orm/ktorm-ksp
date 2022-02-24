@@ -14,10 +14,7 @@ import com.squareup.kotlinpoet.MemberName
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toClassName
-import org.ktorm.ksp.api.Column
-import org.ktorm.ksp.api.KtormKspConfig
-import org.ktorm.ksp.api.SingleTypeConverter
-import org.ktorm.ksp.api.Table
+import org.ktorm.ksp.api.*
 import org.ktorm.ksp.compiler.definition.CodeGenerateConfig
 import org.ktorm.ksp.compiler.definition.ColumnDefinition
 import org.ktorm.ksp.compiler.definition.ConverterDefinition
@@ -114,7 +111,8 @@ public class KtormProcessor(
                             error("Wrong KtormKspConfig parameter:${KtormKspConfig::singleTypeConverters.name}, converter must be object instance.")
                         }
                     }.associate {
-                        val supportType = (it.declaration as KSClassDeclaration).findSingleTypeConverterSupportType()!!.toClassName()
+                        val supportType =
+                            (it.declaration as KSClassDeclaration).findSingleTypeConverterSupportType()!!.toClassName()
                         val converterDefinition =
                             ConverterDefinition(it.toClassName(), it.declaration as KSClassDeclaration)
                         supportType to converterDefinition
@@ -143,7 +141,6 @@ public class KtormProcessor(
     }
 
 
-
     public inner class EntityVisitor(
         private val tableDefinitions: MutableList<TableDefinition>,
     ) : KSVisitorVoid() {
@@ -163,36 +160,37 @@ public class KtormProcessor(
             }
 
             val tableName = table.tableName.ifEmpty { entityClassName.simpleName }
-            val columnDefs = classDeclaration.getAllProperties().mapNotNull { ksProperty ->
-                val propertyKSType = ksProperty.type.resolve()
-                val propertyName = ksProperty.simpleName.asString()
-                if (ksProperty.isAnnotationPresent(Transient::class) || propertyName in table.ignoreColumns) {
-                    return@mapNotNull null
-                }
-                val columnAnnotation = ksProperty.getAnnotationsByType(Column::class).firstOrNull()
-                val ksColumnAnnotation =
-                    ksProperty.annotations.firstOrNull { anno -> anno.annotationType.resolve().declaration.qualifiedName?.asString() == columnQualifiedName }
-                val converter =
-                    ksColumnAnnotation?.arguments?.firstOrNull { anno -> anno.name?.asString() == Column::columnName.name }?.value as KSClassDeclaration?
-                var converterDefinition: ConverterDefinition? = null
-                if (converter != null && converter.toClassName() != Nothing::class.asClassName()) {
-                    if (converter.classKind != ClassKind.OBJECT) {
-                        error("Wrong converter type:${converter.toClassName()}, converter must be object instance.")
+            val columnDefs = classDeclaration.getAllProperties()
+                .mapNotNull { ksProperty ->
+                    val propertyKSType = ksProperty.type.resolve()
+                    val propertyName = ksProperty.simpleName.asString()
+                    if (ksProperty.isAnnotationPresent(Ignore::class) || propertyName in table.ignoreColumns) {
+                        return@mapNotNull null
                     }
-                    converterDefinition = ConverterDefinition(converter.toClassName(), converter)
-                }
-                val isPrimaryKey = ksProperty.getAnnotationsByType(PrimaryKey::class).any()
-                // todo: custom name style
-                val columnName = columnAnnotation?.columnName ?: propertyName
-                ColumnDefinition(
-                    columnName,
-                    isPrimaryKey,
-                    ksProperty,
-                    propertyKSType.toClassName(),
-                    MemberName(tableClassName, propertyName),
-                    converterDefinition
-                )
-            }.toList()
+                    val columnAnnotation = ksProperty.getAnnotationsByType(Column::class).firstOrNull()
+                    val ksColumnAnnotation =
+                        ksProperty.annotations.firstOrNull { anno -> anno.annotationType.resolve().declaration.qualifiedName?.asString() == columnQualifiedName }
+                    val converter =
+                        ksColumnAnnotation?.arguments?.firstOrNull { anno -> anno.name?.asString() == Column::columnName.name }?.value as KSClassDeclaration?
+                    var converterDefinition: ConverterDefinition? = null
+                    if (converter != null && converter.toClassName() != Nothing::class.asClassName()) {
+                        if (converter.classKind != ClassKind.OBJECT) {
+                            error("Wrong converter type:${converter.toClassName()}, converter must be object instance.")
+                        }
+                        converterDefinition = ConverterDefinition(converter.toClassName(), converter)
+                    }
+                    val isPrimaryKey = ksProperty.getAnnotationsByType(PrimaryKey::class).any()
+                    // todo: custom name style
+                    val columnName = columnAnnotation?.columnName ?: propertyName
+                    ColumnDefinition(
+                        columnName,
+                        isPrimaryKey,
+                        ksProperty,
+                        propertyKSType.toClassName(),
+                        MemberName(tableClassName, propertyName),
+                        converterDefinition
+                    )
+                }.toList()
 
             val tableDef = TableDefinition(
                 tableName,
