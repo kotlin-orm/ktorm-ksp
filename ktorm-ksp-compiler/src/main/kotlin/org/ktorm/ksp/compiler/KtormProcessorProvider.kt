@@ -156,7 +156,7 @@ public class KtormProcessor(
             val tableClassName = if (table.tableClassName.isEmpty()) {
                 ClassName(entityClassName.packageName, entityClassName.simpleName + "s")
             } else {
-                ClassName.bestGuess(table.tableClassName)
+                ClassName(entityClassName.packageName, table.tableClassName)
             }
 
             val tableName = table.tableName.ifEmpty { entityClassName.simpleName }

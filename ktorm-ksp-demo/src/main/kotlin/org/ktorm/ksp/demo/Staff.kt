@@ -24,6 +24,7 @@ public interface Staff : Entity<Staff> {
 }
 
 @Table(
+    tableClassName = "EmployeeTable",
     ignoreColumns = ["updateTime"]
 )
 public data class Employee(
