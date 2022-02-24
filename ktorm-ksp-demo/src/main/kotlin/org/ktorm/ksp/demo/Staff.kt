@@ -53,7 +53,8 @@ public enum class Gender {
 
 @KtormKspConfig(
     enumConverter = IntEnumConverter::class,
-    singleTypeConverters = [StringConverter::class]
+    singleTypeConverters = [StringConverter::class],
+    allowReflectionCreateEntity = false
 )
 public class KtormConfig
 

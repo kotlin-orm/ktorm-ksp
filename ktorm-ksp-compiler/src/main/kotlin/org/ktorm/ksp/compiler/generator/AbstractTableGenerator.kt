@@ -173,7 +173,6 @@ public open class BaseTableGenerator(
                     if (unknownParameters.isNotEmpty()) {
                         error("unknown constructor parameter for ${table.entityClassName.canonicalName} : ${unknownParameters.map { it.name?.asString() }}")
                     }
-                    addStatement("val instance: %T", table.entityClassName)
                     if (config.allowReflectionCreateEntity && constructor.parameters.any { it.hasDefault }) {
                         addStatement("val constructor = %T::class.%M!!", table.entityClassName, primaryConstructor)
                         addStatement("val parameterMap = %M<%T,%T?>()", mutableMapOfFun, kParameter, any)
@@ -199,14 +198,11 @@ public open class BaseTableGenerator(
                         }
                         endControlFlow()
                         endControlFlow()
-                        addStatement(
-                            "instance = constructor.callBy(parameterMap)",
-                            table.entityClassName,
-                            primaryConstructor
-                        )
+                        addStatement("val instance = constructor.callBy(parameterMap)", table.entityClassName)
                     } else {
                         // Create instance with code when construct has no default value parameter
-                        add("instance = %T(", table.entityClassName)
+                        add("val instance = %T(", table.entityClassName)
+                        logger.info("constructorParameter:${constructorParameter.map { it.name!!.asString() }}")
                         for (parameter in constructorParameter) {
                             val column =
                                 table.columns.firstOrNull { it.property.simpleName == parameter.name!!.asString() }
@@ -214,9 +210,9 @@ public open class BaseTableGenerator(
 
                             val isNullable = column.propertyTypeName.isNullable
                             val notNullOperator = if (isNullable) "" else "!!"
-                            addStatement(
+                            add(
                                 "%L = %L[%M]%L,",
-                                parameter.name,
+                                parameter.name!!.asString(),
                                 row,
                                 MemberName(table.tableClassName, column.property.simpleName),
                                 notNullOperator
