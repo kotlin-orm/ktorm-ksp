@@ -6,7 +6,7 @@ plugins {
 
 dependencies {
     ksp(project(":ktorm-ksp-compiler"))
-    implementation(project(":ktorm-ksp-annotations"))
+    implementation(project(":ktorm-ksp-api"))
     implementation("org.ktorm:ktorm-core:3.4.1")
 }
 

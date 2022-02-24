@@ -1,4 +1,4 @@
-package org.ktorm.ksp.compiler
+package org.ktorm.ksp.compiler.definition
 
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
@@ -13,5 +13,5 @@ public data class TableDefinition(
     val entityClassName: ClassName,
     val columns: List<ColumnDefinition>,
     val entityFile: KSFile,
-    val entityClassDeclaration: KSClassDeclaration
+    val entityClassDeclaration: KSClassDeclaration,
 )

@@ -1,13 +1,14 @@
-package org.ktorm.ksp.compiler
+package org.ktorm.ksp.compiler.definition
 
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
+import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.MemberName
-import com.squareup.kotlinpoet.TypeName
 
 public data class ColumnDefinition(
     val columnName: String,
     val isPrimaryKey: Boolean,
-    val propertyDeclaration : KSPropertyDeclaration,
-    val propertyTypeName: TypeName,
+    val propertyDeclaration: KSPropertyDeclaration,
+    val propertyTypeName: ClassName,
     val property: MemberName,
+    val converterDefinition: ConverterDefinition?
 )

@@ -1,37 +1,86 @@
 package org.ktorm.ksp.demo
 
-import Id
+import PrimaryKey
 import org.ktorm.entity.Entity
-import org.ktorm.ksp.annotation.Table
+import org.ktorm.ksp.annotation.*
+import org.ktorm.schema.BaseTable
+import org.ktorm.schema.Column
+import org.ktorm.schema.SqlType
+import org.ktorm.schema.varchar
+import java.sql.PreparedStatement
+import java.sql.ResultSet
+import java.sql.Types
 import java.time.LocalDate
+import kotlin.reflect.KClass
 
 @Table
 public interface Staff : Entity<Staff> {
-    @Id
+    @PrimaryKey
     public val id: Int
     public val name: String
     public val age: Int
     public val birthday: LocalDate
+
 }
 
 @Table
 public data class Employee(
-    @Id
+    @PrimaryKey
     public val id: Int,
     public val name: String,
     public val age: Int,
-    public val birthday: LocalDate = LocalDate.now()
+    public val birthday: LocalDate = LocalDate.now(),
+    public val gender: Gender,
 ) {
-    @Transient
+    @Ignore
     public var createTime: LocalDate = LocalDate.now()
 }
 
 @Table
 public class Job {
-    @Id
+    @PrimaryKey
     public var id: Int? = null
     public var name: String? = null
-    @Transient
+    @Ignore
     public var createTime: LocalDate = LocalDate.now()
+}
 
+public enum class Gender {
+    MALE,
+    FEMALE
+}
+
+
+@KtormKspConfig(
+    enumConverter = IntEnumConverter::class,
+    singleTypeConverters = [StringConverter::class]
+)
+public class KtormConfig
+
+public object StringConverter:SingleTypeConverter<String> {
+    override fun convert(table: BaseTable<*>, columnName: String, propertyType: KClass<String>): Column<String> {
+        return table.varchar(columnName)
+    }
+}
+
+public object IntEnumConverter: EnumConverter {
+    public override fun <E : Enum<E>> convert(
+        table: BaseTable<*>,
+        columnName: String,
+        propertyType: KClass<E>
+    ): Column<E> {
+        return table.registerColumn(columnName,IntEnumSqlType(propertyType.java))
+    }
+}
+
+public class IntEnumSqlType<C : Enum<C>>(private val enumClass: Class<C>) : SqlType<C>(Types.INTEGER, "int") {
+    override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: C) {
+        ps.setInt(index, parameter.ordinal)
+    }
+
+    override fun doGetResult(rs: ResultSet, index: Int): C? {
+        return rs.getString(index)
+            ?.toIntOrNull()
+            ?.let { enumClass.enumConstants.getOrNull(it) }
+    }
 }
