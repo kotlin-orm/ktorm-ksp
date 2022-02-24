@@ -2,7 +2,7 @@ package org.ktorm.ksp.compiler.definition
 
 import com.google.devtools.ksp.symbol.KSFile
 import com.squareup.kotlinpoet.ClassName
-import org.ktorm.ksp.annotation.KtormKspConfig
+import org.ktorm.ksp.api.KtormKspConfig
 
 /**
  * @see [KtormKspConfig]

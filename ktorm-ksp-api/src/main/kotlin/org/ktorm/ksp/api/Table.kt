@@ -1,4 +1,4 @@
-package org.ktorm.ksp.annotation
+package org.ktorm.ksp.api
 
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.SOURCE)

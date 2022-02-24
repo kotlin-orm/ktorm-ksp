@@ -2,7 +2,7 @@ package org.ktorm.ksp.demo
 
 import PrimaryKey
 import org.ktorm.entity.Entity
-import org.ktorm.ksp.annotation.*
+import org.ktorm.ksp.api.*
 import org.ktorm.schema.BaseTable
 import org.ktorm.schema.Column
 import org.ktorm.schema.SqlType
@@ -57,7 +57,10 @@ public enum class Gender {
 )
 public class KtormConfig
 
-public object StringConverter:SingleTypeConverter<String> {
+public interface CustomSingleTypeConverter: SingleTypeConverter<String> {
+}
+
+public object StringConverter:CustomSingleTypeConverter {
     override fun convert(table: BaseTable<*>, columnName: String, propertyType: KClass<String>): Column<String> {
         return table.varchar(columnName)
     }

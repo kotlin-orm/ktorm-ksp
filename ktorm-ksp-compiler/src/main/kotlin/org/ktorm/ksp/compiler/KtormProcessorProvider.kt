@@ -3,10 +3,7 @@
 package org.ktorm.ksp.compiler
 
 import PrimaryKey
-import com.google.devtools.ksp.KspExperimental
-import com.google.devtools.ksp.containingFile
-import com.google.devtools.ksp.getAnnotationsByType
-import com.google.devtools.ksp.isAnnotationPresent
+import com.google.devtools.ksp.*
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
@@ -17,9 +14,10 @@ import com.squareup.kotlinpoet.MemberName
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toClassName
-import org.ktorm.ksp.annotation.Column
-import org.ktorm.ksp.annotation.KtormKspConfig
-import org.ktorm.ksp.annotation.Table
+import org.ktorm.ksp.api.Column
+import org.ktorm.ksp.api.KtormKspConfig
+import org.ktorm.ksp.api.SingleTypeConverter
+import org.ktorm.ksp.api.Table
 import org.ktorm.ksp.compiler.definition.CodeGenerateConfig
 import org.ktorm.ksp.compiler.definition.ColumnDefinition
 import org.ktorm.ksp.compiler.definition.ConverterDefinition
@@ -45,7 +43,6 @@ public class KtormProcessor(
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
         logger.info("start ktorm ksp processor")
-
         // parse config
         val configSymbols = resolver.getSymbolsWithAnnotation(KtormKspConfig::class.qualifiedName!!)
         val configRet = configSymbols.filter { !it.ktormValidate() }.toList()
@@ -57,7 +54,7 @@ public class KtormProcessor(
         val configBuilder = CodeGenerateConfig.Builder()
         val configAnnotated = configClasses.firstOrNull()
         if (configAnnotated != null) {
-            configAnnotated.accept(ConverterProviderVisitor(configBuilder), Unit)
+            configAnnotated.accept(ConverterProviderVisitor(configBuilder, resolver), Unit)
             configBuilder.configDependencyFile = configAnnotated.containingFile
         }
         val config = configBuilder.build()
@@ -79,8 +76,12 @@ public class KtormProcessor(
     }
 
     public inner class ConverterProviderVisitor(
-        private val configBuilder: CodeGenerateConfig.Builder
+        private val configBuilder: CodeGenerateConfig.Builder,
+        private val resolver: Resolver
     ) : KSVisitorVoid() {
+
+        private val singleTypeConverterType =
+            resolver.getClassDeclarationByName(SingleTypeConverter::class.qualifiedName!!)!!
 
         override fun visitClassDeclaration(classDeclaration: KSClassDeclaration, data: Unit) {
             val kspConfig = classDeclaration.getAnnotationsByType(KtormKspConfig::class).first()
@@ -102,28 +103,45 @@ public class KtormProcessor(
                 )
             }
 
+
             // single type converter
             @Suppress("UNCHECKED_CAST") val singleTypeConverters =
                 argumentMap[KtormKspConfig::singleTypeConverters.name]!!.value as List<KSType>
             if (singleTypeConverters.isNotEmpty()) {
-                val singleTypeConverterMap = singleTypeConverters.asSequence().onEach {
-                    if ((it.declaration as KSClassDeclaration).classKind != ClassKind.OBJECT) {
-                        error("Wrong KtormKspConfig parameter:${KtormKspConfig::singleTypeConverters.name}, converter must be object instance.")
+                val singleTypeConverterMap = singleTypeConverters.asSequence()
+                    .onEach {
+                        if ((it.declaration as KSClassDeclaration).classKind != ClassKind.OBJECT) {
+                            error("Wrong KtormKspConfig parameter:${KtormKspConfig::singleTypeConverters.name}, converter must be object instance.")
+                        }
+                    }.associate {
+                        val supportType = (it.declaration as KSClassDeclaration).findSingleTypeConverterSupportType()!!.toClassName()
+                        val converterDefinition =
+                            ConverterDefinition(it.toClassName(), it.declaration as KSClassDeclaration)
+                        supportType to converterDefinition
                     }
-                }.associate {
-//                        val typeParameter = it.declaration.typeParameters.first()
-//                        logger.info("${it.toClassName()} superType: ${(it.declaration as KSClassDeclaration).superTypes.map { type -> type.toTypeName() }}")
-//                        val supportType =
-//                            ClassName(typeParameter.packageName.asString(), typeParameter.simpleName.asString())
-                    val converterDefinition =
-                        ConverterDefinition(it.toClassName(), it.declaration as KSClassDeclaration)
-                    it.toClassName() to converterDefinition
-                }
                 configBuilder.singleTypeConverters = singleTypeConverterMap
             }
         }
 
+        public fun KSClassDeclaration.findSingleTypeConverterSupportType(): KSClassDeclaration? {
+            for (superType in this.superTypes) {
+                val ksType = superType.resolve()
+                val declaration = ksType.declaration
+                if (declaration.qualifiedName!!.asString() == SingleTypeConverter::class.qualifiedName) {
+                    return ksType.arguments.first().type!!.resolve().declaration as KSClassDeclaration
+                }
+                if (declaration is KSClassDeclaration) {
+                    val result = declaration.findSingleTypeConverterSupportType()
+                    if (result != null) {
+                        return result
+                    }
+                }
+            }
+            return null
+        }
+
     }
+
 
 
     public inner class EntityVisitor(

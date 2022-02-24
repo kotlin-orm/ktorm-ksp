@@ -22,7 +22,8 @@ public class KtormCodeGenerator {
         columnInitializerGenerator: ColumnInitializerGenerator,
         logger: KSPLogger,
     ) {
-        logger.info("generate tables:${tables.map { it.entityClassName.simpleName }}}")
+        logger.info("generate tables:${tables.map { it.entityClassName.simpleName }}")
+        logger.info("code generator config:${config}")
         val configDependencyFile = config.configDependencyFile
         for (table in tables) {
             val dependencyFiles = mutableSetOf(table.entityFile)

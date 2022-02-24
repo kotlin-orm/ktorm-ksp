@@ -1,4 +1,4 @@
-package org.ktorm.ksp.annotation
+package org.ktorm.ksp.api
 
 import kotlin.reflect.KClass
 
