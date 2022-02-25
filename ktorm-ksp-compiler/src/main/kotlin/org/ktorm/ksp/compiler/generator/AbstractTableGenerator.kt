@@ -4,7 +4,9 @@ import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSFile
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import org.ktorm.database.Database
 import org.ktorm.dsl.QueryRowSet
+import org.ktorm.entity.EntitySequence
 import org.ktorm.ksp.compiler.definition.CodeGenerateConfig
 import org.ktorm.ksp.compiler.definition.ColumnDefinition
 import org.ktorm.ksp.compiler.definition.TableDefinition
@@ -35,7 +37,36 @@ public abstract class AbstractTableGenerator(
         typeBuilder.addProperties(properties)
         typeBuilder.addFunctions(functions)
         fileBuilder.addType(typeBuilder.build())
+
+        val topLevelFunctions = generateTopLevelFunctions()
+        topLevelFunctions.forEach { fileBuilder.addFunction(it) }
+        val topLevelProperties = generateTopLevelProperties()
+        topLevelProperties.forEach { fileBuilder.addProperty(it) }
+
         return fileBuilder.build()
+    }
+
+    public open fun generateTopLevelFunctions(): Iterable<FunSpec> {
+        return emptyList()
+    }
+
+    public open fun generateTopLevelProperties(): Iterable<PropertySpec> {
+        //sequence
+        val sequenceOf = MemberName("org.ktorm.entity", "sequenceOf", true)
+        val tableClassName = table.tableClassName.simpleName
+        val sequenceName = tableClassName.substring(0, 1).lowercase() + tableClassName.substring(1)
+        val entitySequence = EntitySequence::class.asClassName()
+        //EntitySequence<E, T>
+        val sequenceType = entitySequence.parameterizedBy(table.entityClassName, table.tableClassName)
+        val sequenceProperty = PropertySpec.builder(sequenceName, sequenceType)
+            .receiver(Database::class.asClassName())
+            .getter(
+                FunSpec.getterBuilder()
+                    .addStatement("return this.%M(%T)", sequenceOf, table.tableClassName)
+                    .build()
+            )
+            .build()
+        return listOf(sequenceProperty)
     }
 
     public abstract fun generateType(): TypeSpec.Builder
@@ -45,8 +76,7 @@ public abstract class AbstractTableGenerator(
     }
 
     public open fun generateProperties(): Iterable<PropertySpec> {
-        return table.columns
-            .filter { it.property.simpleName !in ignoreDefinitionProperties }
+        return table.columns.filter { it.property.simpleName !in ignoreDefinitionProperties }
             .map { generateProperty(it).build() }
     }
 
@@ -78,31 +108,23 @@ public open class TableGenerator(
     override val superType: ClassName = Table::class.asClassName()
 
     override fun generateType(): TypeSpec.Builder {
-        return TypeSpec.objectBuilder(table.tableClassName)
-            .superclass(superType.parameterizedBy(table.entityClassName))
-            .addSuperclassConstructorParameter(
-                buildCodeBlock {
-                    add("tableName=%S,", table.tableName)
-                    add("alias=%S,", table.alias)
-                    add("catalog=%S,", table.catalog)
-                    add("schema=%S,", table.schema)
-                    add("entityClass=%T::class,", table.entityClassName)
-                }
-            )
+        return TypeSpec.objectBuilder(table.tableClassName).superclass(superType.parameterizedBy(table.entityClassName))
+            .addSuperclassConstructorParameter(buildCodeBlock {
+                add("tableName=%S,", table.tableName)
+                add("alias=%S,", table.alias)
+                add("catalog=%S,", table.catalog)
+                add("schema=%S,", table.schema)
+                add("entityClass=%T::class,", table.entityClassName)
+            })
     }
 
     public override fun generatePropertyInitializer(column: ColumnDefinition, propertyType: TypeName): CodeBlock {
         val columnFunction = columnInitializerGenerator.generate(column, dependencyFiles)
         val params = mapOf(
-            "columnName" to column.columnName,
-            "bindTo" to bindToFun,
-            "primaryKey" to primaryKeyFun
+            "columnName" to column.columnName, "bindTo" to bindToFun, "primaryKey" to primaryKeyFun
         )
-        return CodeBlock.builder()
-            .add(columnFunction)
-            .addNamed(".%bindTo:M { it.%columnName:L }", params)
-            .apply { if (column.isPrimaryKey) addNamed(".%primaryKey:M()", params) }
-            .build()
+        return CodeBlock.builder().add(columnFunction).addNamed(".%bindTo:M { it.%columnName:L }", params)
+            .apply { if (column.isPrimaryKey) addNamed(".%primaryKey:M()", params) }.build()
     }
 }
 
@@ -128,23 +150,19 @@ public open class BaseTableGenerator(
     override fun generateType(): TypeSpec.Builder {
         return TypeSpec.objectBuilder(table.tableClassName)
             .superclass(BaseTable::class.asClassName().parameterizedBy(table.entityClassName))
-            .addSuperclassConstructorParameter(
-                buildCodeBlock {
-                    add("tableName=%S, ", table.tableName)
-                    add("alias=%S, ", table.alias)
-                    add("catalog=%S, ", table.catalog)
-                    add("schema=%S, ", table.schema)
-                    add("entityClass=%T::class", table.entityClassName)
-                }
-            )
+            .addSuperclassConstructorParameter(buildCodeBlock {
+                add("tableName=%S, ", table.tableName)
+                add("alias=%S, ", table.alias)
+                add("catalog=%S, ", table.catalog)
+                add("schema=%S, ", table.schema)
+                add("entityClass=%T::class", table.entityClassName)
+            })
     }
 
     public override fun generatePropertyInitializer(column: ColumnDefinition, propertyType: TypeName): CodeBlock {
         val columnFunction = columnInitializerGenerator.generate(column, dependencyFiles)
         val params = mapOf(
-            "columnName" to column.columnName,
-            "bindTo" to bindToFun,
-            "primaryKey" to primaryKeyFun
+            "columnName" to column.columnName, "bindTo" to bindToFun, "primaryKey" to primaryKeyFun
         )
         return buildCodeBlock {
             add(columnFunction)
@@ -155,13 +173,10 @@ public open class BaseTableGenerator(
     override fun generateFunctions(): Iterable<FunSpec> {
         val row = "row"
         val withReferences = "withReferences"
-        val createFun = FunSpec.builder("doCreateEntity")
-            .addModifiers(KModifier.OVERRIDE)
-            .returns(table.entityClassName)
-            .addParameter(row, QueryRowSet::class.asTypeName())
-            .addParameter(withReferences, Boolean::class.asTypeName())
-            .addCode(
-                buildCodeBlock {
+        val createFun =
+            FunSpec.builder("doCreateEntity").addModifiers(KModifier.OVERRIDE).returns(table.entityClassName)
+                .addParameter(row, QueryRowSet::class.asTypeName())
+                .addParameter(withReferences, Boolean::class.asTypeName()).addCode(buildCodeBlock {
                     val entityClassDeclaration = table.entityClassDeclaration
                     val constructor = entityClassDeclaration.primaryConstructor!!
                     val constructorParameter = constructor.parameters
@@ -238,9 +253,7 @@ public open class BaseTableGenerator(
                         )
                     }
                     addStatement("return instance")
-                }
-            )
-            .build()
+                }).build()
         return listOf(createFun)
     }
 }
