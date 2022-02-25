@@ -44,6 +44,7 @@ public open class ColumnInitializerGenerator(
         Year::class.asTypeName() to MemberName("org.ktorm.schema", "year", true),
         Instant::class.asTypeName() to MemberName("org.ktorm.schema", "timestamp", true),
         UUID::class.asTypeName() to MemberName("org.ktorm.schema", "uuid", true),
+        Byte::class.asTypeName() to MemberName("org.ktorm.schema","bytes",true)
     )
 
     @OptIn(KotlinPoetKspPreview::class)
