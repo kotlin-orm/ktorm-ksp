@@ -68,7 +68,7 @@ public open class ColumnInitializerGenerator(
                 )
             }
         }
-        // default initializer
+        // default enum initializer
         if (isEnum) {
             return buildCodeBlock {
                 add("%M(%S)", defaultEnumInitializer, column.columnName)
