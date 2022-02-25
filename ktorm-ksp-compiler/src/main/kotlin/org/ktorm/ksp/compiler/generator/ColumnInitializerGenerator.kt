@@ -44,13 +44,28 @@ public open class ColumnInitializerGenerator(
         Year::class.asTypeName() to MemberName("org.ktorm.schema", "year", true),
         Instant::class.asTypeName() to MemberName("org.ktorm.schema", "timestamp", true),
         UUID::class.asTypeName() to MemberName("org.ktorm.schema", "uuid", true),
-        Byte::class.asTypeName() to MemberName("org.ktorm.schema","bytes",true)
+        Byte::class.asTypeName() to MemberName("org.ktorm.schema", "bytes", true)
     )
 
     @OptIn(KotlinPoetKspPreview::class)
-    public open fun generate(column: ColumnDefinition, dependencyFiles: MutableSet<KSFile>): CodeBlock {
-        logger.info("generate column:${column.property.simpleName}")
-        val isEnum = (column.propertyDeclaration.type.resolve().declaration as KSClassDeclaration).classKind == ClassKind.ENUM_CLASS
+    public open fun generate(
+        column: ColumnDefinition,
+        dependencyFiles: MutableSet<KSFile>,
+        config: CodeGenerateConfig
+    ): CodeBlock {
+        logger.info("generate column:$column")
+
+        var columnName = column.columnName
+        if (columnName.isEmpty()) {
+            if (config.localNamingStrategy != null) {
+                columnName = config.localNamingStrategy.toColumnName(column.property.simpleName)
+            } else if (config.namingStrategy == null) {
+                columnName = column.property.simpleName
+            }
+        }
+
+        val isEnum =
+            (column.propertyDeclaration.type.resolve().declaration as KSClassDeclaration).classKind == ClassKind.ENUM_CLASS
         val converterDefinition = when {
             column.converterDefinition != null -> column.converterDefinition
             isEnum && enumConverterDefinition != null -> enumConverterDefinition
@@ -60,25 +75,48 @@ public open class ColumnInitializerGenerator(
         if (converterDefinition != null) {
             dependencyFiles.add(converterDefinition.converterClassDeclaration.containingFile!!)
             return buildCodeBlock {
-                add(
-                    "%T.convert(this, %S, %T::class)",
-                    converterDefinition.converterName,
-                    column.columnName,
-                    column.propertyTypeName
-                )
+                if (columnName.isNullOrEmpty()) {
+                    addStatement(
+                        "%T.convert(this,%T.toColumnName(%S),%T::class)",
+                        converterDefinition.converterName,
+                        config.namingStrategy,
+                        column.property.simpleName,
+                        column.propertyTypeName
+                    )
+                } else {
+                    addStatement("%T.convert(this,%S,%T::class)", converterDefinition.converterName, columnName, column.propertyTypeName)
+                }
             }
         }
         // default enum initializer
         if (isEnum) {
             return buildCodeBlock {
-                add("%M(%S)", defaultEnumInitializer, column.columnName)
+                if (columnName.isNullOrEmpty()) {
+                    addStatement(
+                        "%M(%T.toColumnName(%S))",
+                        defaultEnumInitializer,
+                        config.namingStrategy,
+                        column.property.simpleName
+                    )
+                } else {
+                    addStatement("%M(%S)", defaultEnumInitializer, columnName)
+                }
             }
         }
         // default initializer
         val defaultFunction = defaultInitializerMap[column.propertyTypeName]
         if (defaultFunction != null) {
             return buildCodeBlock {
-                add("%M(%S)", defaultFunction, column.columnName)
+                if (columnName.isNullOrEmpty()) {
+                    addStatement(
+                        "%M(%T.toColumnName(%S))",
+                        defaultFunction,
+                        config.namingStrategy,
+                        column.property.simpleName
+                    )
+                } else {
+                    addStatement("%M(%S)", defaultFunction, columnName)
+                }
             }
         }
         error("Cannot find column generate function, property:${column.property.canonicalName} propertyTypeName:${column.propertyTypeName.canonicalName}")

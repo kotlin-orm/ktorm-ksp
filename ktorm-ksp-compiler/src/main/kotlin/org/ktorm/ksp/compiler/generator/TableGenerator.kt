@@ -15,18 +15,35 @@ import org.ktorm.schema.Column
 import org.ktorm.schema.Table
 
 public abstract class AbstractTableGenerator(
-    public val table: TableDefinition,
-    public val config: CodeGenerateConfig,
-    public val dependencyFiles: MutableSet<KSFile>,
-    protected val columnInitializerGenerator: ColumnInitializerGenerator,
-    public val logger: KSPLogger
+    context: TableGenerateContext
 ) {
 
     protected val bindToFun: MemberName = MemberName("", "bindTo")
     protected val primaryKeyFun: MemberName = MemberName("", "primaryKey")
     protected val ignoreDefinitionProperties: Set<String> = setOf("entityClass", "properties")
     protected abstract val superType: ClassName
+    protected val table: TableDefinition = context.table
+    protected val logger: KSPLogger = context.logger
+    protected val dependencyFiles: MutableSet<KSFile> = context.dependencyFiles
+    protected val columnInitializerGenerator: ColumnInitializerGenerator = context.columnInitializerGenerator
+    protected val config: CodeGenerateConfig = context.config
 
+    public open fun CodeBlock.Builder.appendTableName() {
+        val tableName = when {
+            table.tableName.isNotEmpty() -> table.tableName
+            config.namingStrategy != null && config.localNamingStrategy != null -> {
+                config.localNamingStrategy.toTableName(table.entityClassName.simpleName)
+            }
+            config.namingStrategy == null -> {
+                table.entityClassName.simpleName
+            }
+            else -> {
+                add("tableName=%T.toTableName(%S),", config.namingStrategy, table.entityClassName.simpleName)
+                return
+            }
+        }
+        add("tableName=%S,", tableName)
+    }
 
     public open fun generate(): FileSpec {
         val fileBuilder = generateFile()
@@ -82,10 +99,10 @@ public abstract class AbstractTableGenerator(
 
     public open fun generateProperty(column: ColumnDefinition): PropertySpec.Builder {
         val ktormColumn = Column::class.asClassName()
-        val (columnName, _, _, propertyTypeName, _) = column
-        val propertyType = propertyTypeName.copy(nullable = false)
+        val propertyType = column.propertyTypeName.copy(nullable = false)
         val initializer = generatePropertyInitializer(column, propertyType)
-        return PropertySpec.builder(columnName, ktormColumn.parameterizedBy(propertyType)).initializer(initializer)
+        return PropertySpec.builder(column.property.simpleName, ktormColumn.parameterizedBy(propertyType))
+            .initializer(initializer)
     }
 
     public open fun generateFile(): FileSpec.Builder {
@@ -98,19 +115,13 @@ public abstract class AbstractTableGenerator(
 /**
  * generate fileSpec for [Table]
  */
-public open class TableGenerator(
-    table: TableDefinition,
-    config: CodeGenerateConfig,
-    dependencyFiles: MutableSet<KSFile>,
-    columnInitializerGenerator: ColumnInitializerGenerator,
-    logger: KSPLogger
-) : AbstractTableGenerator(table, config, dependencyFiles, columnInitializerGenerator, logger) {
+public open class TableGenerator(context: TableGenerateContext) : AbstractTableGenerator(context) {
     override val superType: ClassName = Table::class.asClassName()
 
     override fun generateType(): TypeSpec.Builder {
         return TypeSpec.objectBuilder(table.tableClassName).superclass(superType.parameterizedBy(table.entityClassName))
             .addSuperclassConstructorParameter(buildCodeBlock {
-                add("tableName=%S,", table.tableName)
+                appendTableName()
                 add("alias=%S,", table.alias)
                 add("catalog=%S,", table.catalog)
                 add("schema=%S,", table.schema)
@@ -119,29 +130,21 @@ public open class TableGenerator(
     }
 
     public override fun generatePropertyInitializer(column: ColumnDefinition, propertyType: TypeName): CodeBlock {
-        val columnFunction = columnInitializerGenerator.generate(column, dependencyFiles)
-        val params = mapOf(
-            "columnName" to column.columnName, "bindTo" to bindToFun, "primaryKey" to primaryKeyFun
-        )
-        return CodeBlock.builder().add(columnFunction).addNamed(".%bindTo:M { it.%columnName:L }", params)
-            .apply { if (column.isPrimaryKey) addNamed(".%primaryKey:M()", params) }.build()
+        val columnFunction = columnInitializerGenerator.generate(column, dependencyFiles, config)
+        return CodeBlock.builder().add(columnFunction)
+            .addStatement(".%M { it.%M }", bindToFun, column.property)
+            .apply { if (column.isPrimaryKey) addStatement(".%M()", primaryKeyFun) }.build()
     }
 }
 
 /**
  * generate fileSpec for [BaseTable]
  */
-public open class BaseTableGenerator(
-    table: TableDefinition,
-    config: CodeGenerateConfig,
-    dependencyFiles: MutableSet<KSFile>,
-    columnInitializerGenerator: ColumnInitializerGenerator,
-    logger: KSPLogger
-) : AbstractTableGenerator(table, config, dependencyFiles, columnInitializerGenerator, logger) {
+public open class BaseTableGenerator(context: TableGenerateContext) : AbstractTableGenerator(context) {
     override val superType: ClassName = BaseTable::class.asClassName()
 
     public companion object {
-        private val mutableMapOfFun = MemberName("kotlin.collections", "mutableMapOf", false)
+        private val hashMapClassName = HashMap::class.asClassName()
         private val kParameter = ClassName("kotlin.reflect", "KParameter")
         private val any = ClassName("kotlin", "Any")
         private val primaryConstructor = MemberName("kotlin.reflect.full", "primaryConstructor", true)
@@ -151,7 +154,7 @@ public open class BaseTableGenerator(
         return TypeSpec.objectBuilder(table.tableClassName)
             .superclass(BaseTable::class.asClassName().parameterizedBy(table.entityClassName))
             .addSuperclassConstructorParameter(buildCodeBlock {
-                add("tableName=%S, ", table.tableName)
+                appendTableName()
                 add("alias=%S, ", table.alias)
                 add("catalog=%S, ", table.catalog)
                 add("schema=%S, ", table.schema)
@@ -160,13 +163,10 @@ public open class BaseTableGenerator(
     }
 
     public override fun generatePropertyInitializer(column: ColumnDefinition, propertyType: TypeName): CodeBlock {
-        val columnFunction = columnInitializerGenerator.generate(column, dependencyFiles)
-        val params = mapOf(
-            "columnName" to column.columnName, "bindTo" to bindToFun, "primaryKey" to primaryKeyFun
-        )
+        val columnFunction = columnInitializerGenerator.generate(column, dependencyFiles, config)
         return buildCodeBlock {
             add(columnFunction)
-            if (column.isPrimaryKey) addNamed(".%primaryKey:M()", params)
+            if (column.isPrimaryKey) addStatement(".%M()", primaryKeyFun)
         }
     }
 
@@ -188,9 +188,15 @@ public open class BaseTableGenerator(
                     if (unknownParameters.isNotEmpty()) {
                         error("unknown constructor parameter for ${table.entityClassName.canonicalName} : ${unknownParameters.map { it.name?.asString() }}")
                     }
-                    if (config.allowReflectionCreateEntity && constructor.parameters.any { it.hasDefault }) {
+                    if (config.allowReflectionCreateEntity && constructorParameter.any { it.hasDefault }) {
                         addStatement("val constructor = %T::class.%M!!", table.entityClassName, primaryConstructor)
-                        addStatement("val parameterMap = %M<%T,%T?>()", mutableMapOfFun, kParameter, any)
+                        addStatement(
+                            "val parameterMap = %T<%T,%T?>(%L)",
+                            hashMapClassName,
+                            kParameter,
+                            any,
+                            constructorParameter.size
+                        )
                         beginControlFlow("for (parameter in constructor.parameters)")
                         beginControlFlow("when(parameter.name)")
                         for (parameter in constructor.parameters) {

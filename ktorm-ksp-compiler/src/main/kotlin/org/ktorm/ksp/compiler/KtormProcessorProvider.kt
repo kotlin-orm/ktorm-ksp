@@ -2,7 +2,6 @@
 
 package org.ktorm.ksp.compiler
 
-import PrimaryKey
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.containingFile
 import com.google.devtools.ksp.getAnnotationsByType
@@ -17,11 +16,9 @@ import com.squareup.kotlinpoet.MemberName
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toClassName
+import org.ktorm.entity.Entity
 import org.ktorm.ksp.api.*
-import org.ktorm.ksp.compiler.definition.CodeGenerateConfig
-import org.ktorm.ksp.compiler.definition.ColumnDefinition
-import org.ktorm.ksp.compiler.definition.ConverterDefinition
-import org.ktorm.ksp.compiler.definition.TableDefinition
+import org.ktorm.ksp.compiler.definition.*
 import org.ktorm.ksp.compiler.generator.ColumnInitializerGenerator
 import org.ktorm.ksp.compiler.generator.KtormCodeGenerator
 
@@ -70,7 +67,7 @@ public class KtormProcessor(
 
         // start generate
         KtormCodeGenerator().generate(
-            tableDefinitions, environment.codeGenerator, config, ColumnInitializerGenerator(config,logger), logger
+            tableDefinitions, environment.codeGenerator, config, ColumnInitializerGenerator(config, logger), logger
         )
         return configRet + tableRet
     }
@@ -107,34 +104,32 @@ public class KtormProcessor(
                 val singleTypeConverterMap = singleTypeConverters.asSequence()
                     .onEach {
                         if ((it.declaration as KSClassDeclaration).classKind != ClassKind.OBJECT) {
-                            error("Wrong KtormKspConfig parameter:${KtormKspConfig::singleTypeConverters.name}, converter must be object instance.")
+                            error("Wrong KtormKspConfig parameter:${KtormKspConfig::singleTypeConverters.name} value:${it.declaration.qualifiedName!!.asString()} converter must be object instance.")
                         }
                     }.associate {
-                        val supportType =
-                            (it.declaration as KSClassDeclaration).findSingleTypeConverterSupportType()!!.toClassName()
+                        val singleTypeReference =
+                            (it.declaration as KSClassDeclaration).findSuperTypeReference(SingleTypeConverter::class.qualifiedName!!)!!
+                        val supportType = singleTypeReference.resolve().arguments.first().type!!.resolve().toClassName()
                         val converterDefinition =
                             ConverterDefinition(it.toClassName(), it.declaration as KSClassDeclaration)
                         supportType to converterDefinition
                     }
                 configBuilder.singleTypeConverters = singleTypeConverterMap
             }
-        }
 
-        public fun KSClassDeclaration.findSingleTypeConverterSupportType(): KSClassDeclaration? {
-            for (superType in this.superTypes) {
-                val ksType = superType.resolve()
-                val declaration = ksType.declaration
-                if (declaration.qualifiedName!!.asString() == SingleTypeConverter::class.qualifiedName) {
-                    return ksType.arguments.first().type!!.resolve().declaration as KSClassDeclaration
+            val namingStrategyType = argumentMap[KtormKspConfig::namingStrategy.name]!!.value as KSType
+            if (namingStrategyType.toClassName() != Nothing::class.asClassName()) {
+                if ((namingStrategyType.declaration as KSClassDeclaration).classKind != ClassKind.OBJECT) {
+                    error("Wrong KtormKspConfig parameter:${KtormKspConfig::namingStrategy.name}, converter must be object instance.")
                 }
-                if (declaration is KSClassDeclaration) {
-                    val result = declaration.findSingleTypeConverterSupportType()
-                    if (result != null) {
-                        return result
-                    }
+                configBuilder.namingStrategy = namingStrategyType.toClassName()
+                try {
+                    @Suppress("KotlinConstantConditions")
+                    configBuilder.localNamingStrategy  = Class.forName(namingStrategyType.declaration.qualifiedName!!.asString()).kotlin.objectInstance as NamingStrategy
+                } catch (e: Exception) {
+                    // ignore
                 }
             }
-            return null
         }
 
     }
@@ -150,15 +145,25 @@ public class KtormProcessor(
             data: Unit,
         ) {
             val entityClassName = classDeclaration.toClassName()
+            val ktormEntityType = when (classDeclaration.classKind) {
+                ClassKind.INTERFACE -> {
+                    val entityQualifiedName = Entity::class.qualifiedName
+                    classDeclaration.findSuperTypeReference(entityQualifiedName!!)
+                        ?: error("wrong entity class declaration: ${entityClassName.canonicalName}, Entity of interface type must inherit [${entityQualifiedName}]")
+                    KtormEntityType.INTERFACE
+                }
+                ClassKind.CLASS -> KtormEntityType.CLASS
+                else -> error("wrong entity class declaration: ${entityClassName.canonicalName}, classKind must to be Interface or Class")
+            }
             val table = classDeclaration.getAnnotationsByType(Table::class).first()
-            // todo: custom name style
             val tableClassName = if (table.tableClassName.isEmpty()) {
-                ClassName(entityClassName.packageName, entityClassName.simpleName + "s")
+                ClassName(entityClassName.packageName, entityClassName.simpleName.pluralNoun())
             } else {
                 ClassName(entityClassName.packageName, table.tableClassName)
             }
+            val tableName = table.tableName
 
-            val tableName = table.tableName.ifEmpty { entityClassName.simpleName }
+            // parse column definition
             val columnDefs = classDeclaration.getAllProperties()
                 .mapNotNull { ksProperty ->
                     val propertyKSType = ksProperty.type.resolve()
@@ -180,8 +185,7 @@ public class KtormProcessor(
                         converterDefinition = ConverterDefinition(converter.toClassName(), converterDeclaration)
                     }
                     val isPrimaryKey = ksProperty.getAnnotationsByType(PrimaryKey::class).any()
-                    // todo: custom name style
-                    val columnName = columnAnnotation?.columnName?.ifEmpty {  propertyName } ?: propertyName
+                    val columnName = columnAnnotation?.columnName ?: ""
                     ColumnDefinition(
                         columnName,
                         isPrimaryKey,
@@ -202,9 +206,31 @@ public class KtormProcessor(
                 columnDefs,
                 classDeclaration.containingFile!!,
                 classDeclaration,
+                ktormEntityType
             )
             tableDefinitions.add(tableDef)
         }
 
+
+        internal fun String.pluralNoun(): String {
+            when {
+                this.endsWith("x") or
+                        this.endsWith("s") or
+                        this.endsWith("sh") or
+                        this.endsWith("ch") -> {
+                    return this + "es"
+                }
+                this.endsWith("y") -> {
+                    return this.substring(0, this.length - 1) + "ies"
+                }
+                this.endsWith("o") -> {
+                    return this + "es"
+                }
+                else -> {
+                    return this + "s"
+                }
+
+            }
+        }
     }
 }

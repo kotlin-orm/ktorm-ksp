@@ -1,6 +1,5 @@
 package org.ktorm.ksp.demo
 
-import PrimaryKey
 import org.ktorm.entity.Entity
 import org.ktorm.ksp.api.*
 import org.ktorm.schema.BaseTable
@@ -24,6 +23,17 @@ public interface Staff : Entity<Staff> {
 
 }
 
+@Table
+public data class Money(
+    @PrimaryKey
+    public val id: Int
+)
+
+@Table
+public data class Box(
+    @PrimaryKey
+    public val id: Int
+)
 
 @Table(
     tableClassName = "EmployeeTable",
@@ -31,13 +41,13 @@ public interface Staff : Entity<Staff> {
 )
 public data class Employee(
     @PrimaryKey
-    public val id: Int,
+    public val pneumonoultramicroscopicsilicovolcanoconiosisPneumonoultramicroscopicsilicovolcanoconiosisPneumonoultramicroscopicsilicovolcanoconiosis: Int,
     public val name: String,
     public val age: Int,
     public val birthday: LocalDate = LocalDate.now(),
     public val gender: Gender,
     @org.ktorm.ksp.api.Column(converter = JsonConverter::class)
-    public val salary: Salary
+    public val salary: Salary,
 ) {
     @Ignore
     public var createTime: LocalDate = LocalDate.now()
@@ -64,10 +74,6 @@ public enum class Gender {
     FEMALE
 }
 
-public interface CustomSingleTypeConverter : SingleTypeConverter<String> {
-}
-
-
 public object JsonConverter : MultiTypeConverter {
     override fun <T : Any> convert(table: BaseTable<*>, columnName: String, propertyType: KClass<T>): Column<T> {
         return table.registerColumn(columnName, JsonSqlType(propertyType.java))
@@ -84,7 +90,7 @@ public class JsonSqlType<T : Any>(private val clazz: Class<T>) : SqlType<T>(Type
 
 }
 
-public object StringConverter : CustomSingleTypeConverter {
+public object CustomStringConverter : SingleTypeConverter<String> {
     override fun convert(table: BaseTable<*>, columnName: String, propertyType: KClass<String>): Column<String> {
         return table.varchar(columnName)
     }
