@@ -190,6 +190,7 @@ public class KtormProcessor(
                         columnName,
                         isPrimaryKey,
                         ksProperty,
+                        propertyKSType,
                         propertyKSType.toClassName(),
                         MemberName(tableClassName, propertyName),
                         converterDefinition

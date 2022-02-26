@@ -69,7 +69,7 @@ public open class ColumnInitializerGenerator(
         val converterDefinition = when {
             column.converterDefinition != null -> column.converterDefinition
             isEnum && enumConverterDefinition != null -> enumConverterDefinition
-            !isEnum && singleTypeConverterMap.containsKey(column.propertyTypeName) -> singleTypeConverterMap[column.propertyTypeName]
+            !isEnum && singleTypeConverterMap.containsKey(column.propertyClassName) -> singleTypeConverterMap[column.propertyClassName]
             else -> null
         }
         if (converterDefinition != null) {
@@ -81,10 +81,10 @@ public open class ColumnInitializerGenerator(
                         converterDefinition.converterName,
                         config.namingStrategy,
                         column.property.simpleName,
-                        column.propertyTypeName
+                        column.propertyClassName
                     )
                 } else {
-                    addStatement("%T.convert(this,%S,%T::class)", converterDefinition.converterName, columnName, column.propertyTypeName)
+                    addStatement("%T.convert(this,%S,%T::class)", converterDefinition.converterName, columnName, column.propertyClassName)
                 }
             }
         }
@@ -104,7 +104,7 @@ public open class ColumnInitializerGenerator(
             }
         }
         // default initializer
-        val defaultFunction = defaultInitializerMap[column.propertyTypeName]
+        val defaultFunction = defaultInitializerMap[column.propertyClassName]
         if (defaultFunction != null) {
             return buildCodeBlock {
                 if (columnName.isNullOrEmpty()) {
@@ -119,7 +119,7 @@ public open class ColumnInitializerGenerator(
                 }
             }
         }
-        error("Cannot find column generate function, property:${column.property.canonicalName} propertyTypeName:${column.propertyTypeName.canonicalName}")
+        error("Cannot find column generate function, property:${column.property.canonicalName} propertyTypeName:${column.propertyClassName.canonicalName}")
     }
 
 }

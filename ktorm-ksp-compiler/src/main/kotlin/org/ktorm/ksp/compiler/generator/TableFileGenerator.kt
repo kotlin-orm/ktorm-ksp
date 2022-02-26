@@ -45,7 +45,8 @@ public abstract class TableFileGenerator(
  */
 public open class InterfaceEntityTableFileGenerator(context: TableGenerateContext) : TableFileGenerator(context) {
     override val typeGenerator: TableCodeGenerator<TypeSpec.Builder> = InterfaceEntityTableTypeGenerator()
-    override val propertyGenerator: List<TableCodeGenerator<PropertySpec>> = listOf(InterfaceEntityTablePropertyGenerator())
+    override val propertyGenerator: List<TableCodeGenerator<PropertySpec>> =
+        listOf(InterfaceEntityTablePropertyGenerator())
     override val functionGenerator: List<TableCodeGenerator<FunSpec>> = emptyList()
     override val topLevelPropertyGenerator: List<TableCodeGenerator<PropertySpec>> = listOf(SequencePropertyGenerator())
     override val topLevelFunctionGenerator: List<TableCodeGenerator<FunSpec>> = emptyList()
@@ -57,7 +58,8 @@ public open class InterfaceEntityTableFileGenerator(context: TableGenerateContex
 public open class ClassEntityTableFileGenerator(context: TableGenerateContext) : TableFileGenerator(context) {
     override val typeGenerator: TableCodeGenerator<TypeSpec.Builder> = ClassEntityTableTypeGenerator()
     override val propertyGenerator: List<TableCodeGenerator<PropertySpec>> = listOf(ClassEntityTablePropertyGenerator())
-    override val functionGenerator: List<TableCodeGenerator<FunSpec>> = listOf(ClassEntityCreateEntityGenerator())
+    override val functionGenerator: List<TableCodeGenerator<FunSpec>> = listOf(ClassEntityCreateEntityFunGenerator())
     override val topLevelPropertyGenerator: List<TableCodeGenerator<PropertySpec>> = listOf(SequencePropertyGenerator())
-    override val topLevelFunctionGenerator: List<TableCodeGenerator<FunSpec>> = emptyList()
+    override val topLevelFunctionGenerator: List<TableCodeGenerator<FunSpec>> =
+        listOf(EntitySequenceAddFunGenerator())
 }

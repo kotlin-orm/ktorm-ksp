@@ -23,7 +23,7 @@ public class InterfaceEntityTablePropertyGenerator : TableCodeGenerator<Property
                 PropertySpec
                     .builder(
                         column.property.simpleName,
-                        Column::class.asClassName().parameterizedBy(column.propertyTypeName.copy(nullable = false))
+                        Column::class.asClassName().parameterizedBy(column.propertyClassName.copy(nullable = false))
                     )
                     .initializer(buildCodeBlock {
                         add(columnInitializerGenerator.generate(column, dependencyFiles, config))
@@ -47,7 +47,7 @@ public class ClassEntityTablePropertyGenerator : TableCodeGenerator<PropertySpec
                 PropertySpec
                     .builder(
                         column.property.simpleName,
-                        Column::class.asClassName().parameterizedBy(column.propertyTypeName.copy(nullable = false))
+                        Column::class.asClassName().parameterizedBy(column.propertyClassName.copy(nullable = false))
                     )
                     .initializer(buildCodeBlock {
                         add(columnInitializerGenerator.generate(column, dependencyFiles, config))

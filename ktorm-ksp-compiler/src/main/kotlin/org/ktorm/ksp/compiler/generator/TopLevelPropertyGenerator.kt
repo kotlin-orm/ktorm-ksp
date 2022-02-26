@@ -17,7 +17,7 @@ public class SequencePropertyGenerator : TableCodeGenerator<PropertySpec> {
         val entitySequence = EntitySequence::class.asClassName()
         //EntitySequence<E, T>
         val sequenceType = entitySequence.parameterizedBy(table.entityClassName, table.tableClassName)
-        val sequenceProperty = PropertySpec.builder(sequenceName, sequenceType)
+        PropertySpec.builder(sequenceName, sequenceType)
             .receiver(Database::class.asClassName())
             .getter(
                 FunSpec.getterBuilder()
@@ -25,6 +25,6 @@ public class SequencePropertyGenerator : TableCodeGenerator<PropertySpec> {
                     .build()
             )
             .build()
-        emitter(sequenceProperty)
+            .run(emitter)
     }
 }

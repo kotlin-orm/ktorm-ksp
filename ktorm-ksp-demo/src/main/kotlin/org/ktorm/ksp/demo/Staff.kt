@@ -23,7 +23,7 @@ public interface Staff : Entity<Staff> {
 
 }
 
-@Table
+@Table(tableClassName = "MoneyTable")
 public data class Money(
     @PrimaryKey
     public val id: Int
@@ -32,24 +32,21 @@ public data class Money(
 @Table
 public data class Box(
     @PrimaryKey
-    public val id: Int
+    public val id: Int,
+    public val name:String
 )
 
-@Table(
-    tableClassName = "EmployeeTable",
-    ignoreColumns = ["updateTime"]
-)
+@Table
 public data class Employee(
     @PrimaryKey
-    public val pneumonoultramicroscopicsilicovolcanoconiosisPneumonoultramicroscopicsilicovolcanoconiosisPneumonoultramicroscopicsilicovolcanoconiosis: Int,
+    public val id: Int,
     public val name: String,
-    public val age: Int,
+    public val age: Int?,
     public val birthday: LocalDate = LocalDate.now(),
     public val gender: Gender,
     @org.ktorm.ksp.api.Column(converter = JsonConverter::class)
     public val salary: Salary,
 ) {
-    @Ignore
     public var createTime: LocalDate = LocalDate.now()
     public var updateTime: LocalDate = LocalDate.now()
 }
@@ -62,7 +59,7 @@ public data class Salary(
 @Table
 public class Job {
     @PrimaryKey
-    public var id: Int? = null
+    public val id: Int = 0
     public var name: String? = null
 
     @Ignore
