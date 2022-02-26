@@ -1,9 +1,10 @@
-package org.ktorm.ksp.compiler.definition
+package org.ktorm.ksp.codegen
 
 import com.google.devtools.ksp.symbol.KSFile
 import com.squareup.kotlinpoet.ClassName
 import org.ktorm.ksp.api.KtormKspConfig
 import org.ktorm.ksp.api.NamingStrategy
+import org.ktorm.ksp.codegen.definition.ConverterDefinition
 
 /**
  * @see [KtormKspConfig]

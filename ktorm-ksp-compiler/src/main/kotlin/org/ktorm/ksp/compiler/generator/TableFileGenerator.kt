@@ -1,20 +1,35 @@
 package org.ktorm.ksp.compiler.generator
 
+import com.google.devtools.ksp.processing.SymbolProcessorProvider
 import com.squareup.kotlinpoet.FileSpec
-import com.squareup.kotlinpoet.FunSpec
-import com.squareup.kotlinpoet.PropertySpec
-import com.squareup.kotlinpoet.TypeSpec
+import org.ktorm.ksp.codegen.*
+import java.util.*
 
-public abstract class TableFileGenerator(
-    public val context: TableGenerateContext
+public open class TableFileGenerator(
+    protected val context: TableGenerateContext
 ) {
 
-    protected abstract val typeGenerator: TableCodeGenerator<TypeSpec.Builder>
-    protected abstract val propertyGenerator: List<TableCodeGenerator<PropertySpec>>
-    protected abstract val functionGenerator: List<TableCodeGenerator<FunSpec>>
-    protected abstract val topLevelPropertyGenerator: List<TableCodeGenerator<PropertySpec>>
-    protected abstract val topLevelFunctionGenerator: List<TableCodeGenerator<FunSpec>>
+    public companion object {
 
+        public val typeGenerator: TableTypeGenerator = getOneOrNullService() ?: DefaultTableTypeGenerator()
+        public val propertyGenerator: TablePropertyGenerator = getOneOrNullService() ?: DefaultTablePropertyGenerator()
+        public val functionGenerator: TableFunctionGenerator = getOneOrNullService() ?: DefaultTableFunctionGenerator()
+        public val topLevelPropertyGenerator: List<TopLevelPropertyGenerator> = getAllService()
+        public val topLevelFunctionGenerator: List<TopLevelFunctionGenerator> = getAllService()
+        public val symbolProcessorProviders: List<SymbolProcessorProvider> = getAllService()
+
+        private inline fun <reified T> getOneOrNullService(): T? {
+            val services = ServiceLoader.load(T::class.java, TableFileGenerator::class.java.classLoader).toList()
+            if (services.isEmpty()) return null
+            if (services.size > 1) error("Service ${T::class.java.canonicalName} cannot be more than one")
+            return services.first()
+        }
+
+        private inline fun <reified T> getAllService(): List<T> {
+            return ServiceLoader.load(T::class.java, TableFileGenerator::class.java.classLoader).toList()
+        }
+
+    }
 
     private fun <T : Any> Iterable<TableCodeGenerator<T>>.forEachGenerate(action: (T) -> Unit) {
         forEach {
@@ -23,10 +38,15 @@ public abstract class TableFileGenerator(
     }
 
     public open fun generate(): FileSpec {
+        context.logger.info("typeGenerator: ${typeGenerator::class.simpleName}")
+        context.logger.info("propertyGenerator: ${propertyGenerator::class.simpleName}")
+        context.logger.info("functionGenerator: ${functionGenerator::class.simpleName}")
+        context.logger.info("topLevelPropertyGenerator: ${topLevelPropertyGenerator.map { it::class.simpleName }}")
+        context.logger.info("topLevelFunctionGenerator: ${topLevelFunctionGenerator.map { it::class.simpleName }}")
         val fileBuilder = generateFile()
         typeGenerator.generate(context) { typeBuilder ->
-            propertyGenerator.forEachGenerate { typeBuilder.addProperty(it) }
-            functionGenerator.forEachGenerate { typeBuilder.addFunction(it) }
+            propertyGenerator.generate(context) { typeBuilder.addProperty(it) }
+            functionGenerator.generate(context) { typeBuilder.addFunction(it) }
             fileBuilder.addType(typeBuilder.build())
         }
         topLevelFunctionGenerator.forEachGenerate { fileBuilder.addFunction(it) }
@@ -34,32 +54,8 @@ public abstract class TableFileGenerator(
         return fileBuilder.build()
     }
 
-    public open fun generateFile(): FileSpec.Builder {
+    protected open fun generateFile(): FileSpec.Builder {
         val table = context.table
         return FileSpec.builder(table.tableClassName.packageName, table.tableClassName.simpleName)
     }
-}
-
-/**
- * generate a table file of interface entity types
- */
-public open class InterfaceEntityTableFileGenerator(context: TableGenerateContext) : TableFileGenerator(context) {
-    override val typeGenerator: TableCodeGenerator<TypeSpec.Builder> = InterfaceEntityTableTypeGenerator()
-    override val propertyGenerator: List<TableCodeGenerator<PropertySpec>> =
-        listOf(InterfaceEntityTablePropertyGenerator())
-    override val functionGenerator: List<TableCodeGenerator<FunSpec>> = emptyList()
-    override val topLevelPropertyGenerator: List<TableCodeGenerator<PropertySpec>> = listOf(SequencePropertyGenerator())
-    override val topLevelFunctionGenerator: List<TableCodeGenerator<FunSpec>> = emptyList()
-}
-
-/**
- * generate a table file of class entity types
- */
-public open class ClassEntityTableFileGenerator(context: TableGenerateContext) : TableFileGenerator(context) {
-    override val typeGenerator: TableCodeGenerator<TypeSpec.Builder> = ClassEntityTableTypeGenerator()
-    override val propertyGenerator: List<TableCodeGenerator<PropertySpec>> = listOf(ClassEntityTablePropertyGenerator())
-    override val functionGenerator: List<TableCodeGenerator<FunSpec>> = listOf(ClassEntityCreateEntityFunGenerator())
-    override val topLevelPropertyGenerator: List<TableCodeGenerator<PropertySpec>> = listOf(SequencePropertyGenerator())
-    override val topLevelFunctionGenerator: List<TableCodeGenerator<FunSpec>> =
-        listOf(EntitySequenceAddFunGenerator())
 }

@@ -18,8 +18,12 @@ import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toClassName
 import org.ktorm.entity.Entity
 import org.ktorm.ksp.api.*
-import org.ktorm.ksp.compiler.definition.*
-import org.ktorm.ksp.compiler.generator.ColumnInitializerGenerator
+import org.ktorm.ksp.codegen.CodeGenerateConfig
+import org.ktorm.ksp.codegen.ColumnInitializerGenerator
+import org.ktorm.ksp.codegen.definition.ColumnDefinition
+import org.ktorm.ksp.codegen.definition.ConverterDefinition
+import org.ktorm.ksp.codegen.definition.KtormEntityType
+import org.ktorm.ksp.codegen.definition.TableDefinition
 import org.ktorm.ksp.compiler.generator.KtormCodeGenerator
 
 public class KtormProcessorProvider : SymbolProcessorProvider {
@@ -36,6 +40,7 @@ public class KtormProcessor(
 
     private companion object {
         private val columnQualifiedName = Column::class.qualifiedName!!
+        private val ignoreInterfaceEntityProperties: Set<String> = setOf("entityClass", "properties")
     }
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
@@ -125,7 +130,8 @@ public class KtormProcessor(
                 configBuilder.namingStrategy = namingStrategyType.toClassName()
                 try {
                     @Suppress("KotlinConstantConditions")
-                    configBuilder.localNamingStrategy  = Class.forName(namingStrategyType.declaration.qualifiedName!!.asString()).kotlin.objectInstance as NamingStrategy
+                    configBuilder.localNamingStrategy =
+                        Class.forName(namingStrategyType.declaration.qualifiedName!!.asString()).kotlin.objectInstance as NamingStrategy
                 } catch (e: Exception) {
                     // ignore
                 }
@@ -163,13 +169,30 @@ public class KtormProcessor(
             }
             val tableName = table.tableName
 
+            val columnDefs = mutableListOf<ColumnDefinition>()
+            val tableDef = TableDefinition(
+                tableName,
+                tableClassName,
+                table.alias,
+                table.catalog,
+                table.schema,
+                entityClassName,
+                columnDefs,
+                classDeclaration.containingFile!!,
+                classDeclaration,
+                ktormEntityType
+            )
+            tableDefinitions.add(tableDef)
             // parse column definition
-            val columnDefs = classDeclaration.getAllProperties()
-                .mapNotNull { ksProperty ->
+            classDeclaration.getAllProperties()
+                .forEach { ksProperty ->
                     val propertyKSType = ksProperty.type.resolve()
                     val propertyName = ksProperty.simpleName.asString()
-                    if (ksProperty.isAnnotationPresent(Ignore::class) || propertyName in table.ignoreColumns) {
-                        return@mapNotNull null
+                    if (ksProperty.isAnnotationPresent(Ignore::class) || propertyName in table.ignoreColumns
+                        || (tableDef.ktormEntityType == KtormEntityType.INTERFACE && propertyName in ignoreInterfaceEntityProperties)
+                    ) {
+                        logger.info("ignore column: ${tableDef.entityClassName.canonicalName}.$propertyName")
+                        return@forEach
                     }
                     val columnAnnotation = ksProperty.getAnnotationsByType(Column::class).firstOrNull()
                     val ksColumnAnnotation =
@@ -186,30 +209,18 @@ public class KtormProcessor(
                     }
                     val isPrimaryKey = ksProperty.getAnnotationsByType(PrimaryKey::class).any()
                     val columnName = columnAnnotation?.columnName ?: ""
-                    ColumnDefinition(
+                    val columnDef = ColumnDefinition(
                         columnName,
                         isPrimaryKey,
                         ksProperty,
                         propertyKSType,
                         propertyKSType.toClassName(),
                         MemberName(tableClassName, propertyName),
-                        converterDefinition
+                        converterDefinition,
+                        tableDef
                     )
-                }.toList()
-
-            val tableDef = TableDefinition(
-                tableName,
-                tableClassName,
-                table.alias,
-                table.catalog,
-                table.schema,
-                entityClassName,
-                columnDefs,
-                classDeclaration.containingFile!!,
-                classDeclaration,
-                ktormEntityType
-            )
-            tableDefinitions.add(tableDef)
+                    columnDefs.add(columnDef)
+                }
         }
 
 

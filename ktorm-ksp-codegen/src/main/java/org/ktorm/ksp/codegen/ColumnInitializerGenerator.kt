@@ -1,4 +1,4 @@
-package org.ktorm.ksp.compiler.generator
+package org.ktorm.ksp.codegen
 
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.ClassKind
@@ -6,9 +6,8 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
-import org.ktorm.ksp.compiler.definition.CodeGenerateConfig
-import org.ktorm.ksp.compiler.definition.ColumnDefinition
-import org.ktorm.ksp.compiler.definition.ConverterDefinition
+import org.ktorm.ksp.codegen.definition.ColumnDefinition
+import org.ktorm.ksp.codegen.definition.ConverterDefinition
 import java.math.BigDecimal
 import java.sql.Time
 import java.sql.Timestamp
@@ -55,12 +54,12 @@ public open class ColumnInitializerGenerator(
     ): CodeBlock {
         logger.info("generate column:$column")
 
-        var columnName = column.columnName
+        var columnName = column.sqlColumnName
         if (columnName.isEmpty()) {
             if (config.localNamingStrategy != null) {
-                columnName = config.localNamingStrategy.toColumnName(column.property.simpleName)
+                columnName = config.localNamingStrategy.toColumnName(column.propertyMemberName.simpleName)
             } else if (config.namingStrategy == null) {
-                columnName = column.property.simpleName
+                columnName = column.propertyMemberName.simpleName
             }
         }
 
@@ -80,7 +79,7 @@ public open class ColumnInitializerGenerator(
                         "%T.convert(this,%T.toColumnName(%S),%T::class)",
                         converterDefinition.converterName,
                         config.namingStrategy,
-                        column.property.simpleName,
+                        column.propertyMemberName.simpleName,
                         column.propertyClassName
                     )
                 } else {
@@ -96,7 +95,7 @@ public open class ColumnInitializerGenerator(
                         "%M(%T.toColumnName(%S))",
                         defaultEnumInitializer,
                         config.namingStrategy,
-                        column.property.simpleName
+                        column.propertyMemberName.simpleName
                     )
                 } else {
                     addStatement("%M(%S)", defaultEnumInitializer, columnName)
@@ -112,14 +111,14 @@ public open class ColumnInitializerGenerator(
                         "%M(%T.toColumnName(%S))",
                         defaultFunction,
                         config.namingStrategy,
-                        column.property.simpleName
+                        column.propertyMemberName.simpleName
                     )
                 } else {
                     addStatement("%M(%S)", defaultFunction, columnName)
                 }
             }
         }
-        error("Cannot find column generate function, property:${column.property.canonicalName} propertyTypeName:${column.propertyClassName.canonicalName}")
+        error("Cannot find column generate function, property:${column.propertyMemberName.canonicalName} propertyTypeName:${column.propertyClassName.canonicalName}")
     }
 
 }

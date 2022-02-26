@@ -1,4 +1,4 @@
-package org.ktorm.ksp.compiler.generator
+package org.ktorm.ksp.codegen
 
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.MemberName
@@ -8,6 +8,9 @@ import com.squareup.kotlinpoet.asClassName
 import org.ktorm.database.Database
 import org.ktorm.entity.EntitySequence
 
+public interface TopLevelPropertyGenerator: TableCodeGenerator<PropertySpec>
+
+// todo Add an annotation attribute to configure whether to enable, the generator is enabled by default
 public class SequencePropertyGenerator : TableCodeGenerator<PropertySpec> {
     override fun generate(context: TableGenerateContext, emitter: (PropertySpec) -> Unit) {
         val table = context.table

@@ -1,9 +1,12 @@
-package org.ktorm.ksp.compiler.generator
+package org.ktorm.ksp.codegen
 
 import com.squareup.kotlinpoet.*
 import org.ktorm.dsl.QueryRowSet
+import org.ktorm.ksp.codegen.definition.KtormEntityType
 
-public class ClassEntityCreateEntityFunGenerator : TableCodeGenerator<FunSpec> {
+public interface TableFunctionGenerator : TableCodeGenerator<FunSpec>
+
+public class DefaultTableFunctionGenerator : TableFunctionGenerator {
 
     public companion object {
         private val hashMapClassName = HashMap::class.asClassName()
@@ -13,6 +16,9 @@ public class ClassEntityCreateEntityFunGenerator : TableCodeGenerator<FunSpec> {
     }
 
     override fun generate(context: TableGenerateContext, emitter: (FunSpec) -> Unit) {
+        if (context.table.ktormEntityType != KtormEntityType.CLASS) {
+            return
+        }
         val (table, config, _, logger, _) = context
         val row = "row"
         val withReferences = "withReferences"
@@ -22,9 +28,9 @@ public class ClassEntityCreateEntityFunGenerator : TableCodeGenerator<FunSpec> {
                 val entityClassDeclaration = table.entityClassDeclaration
                 val constructor = entityClassDeclaration.primaryConstructor!!
                 val constructorParameter = constructor.parameters
-                val nonStructuralProperties = table.columns.map { it.property.simpleName }.toMutableSet()
+                val nonStructuralProperties = table.columns.map { it.propertyMemberName.simpleName }.toMutableSet()
                 // propertyName -> columnMember
-                val columnMap = table.columns.associateBy { it.property.simpleName }
+                val columnMap = table.columns.associateBy { it.propertyMemberName.simpleName }
                 val unknownParameters =
                     constructor.parameters.filter { !it.hasDefault && it.name?.asString() !in nonStructuralProperties }
                 if (unknownParameters.isNotEmpty()) {
@@ -45,7 +51,7 @@ public class ClassEntityCreateEntityFunGenerator : TableCodeGenerator<FunSpec> {
                         val parameterName = parameter.name!!.asString()
                         beginControlFlow("%S -> ", parameterName)
                         val column = columnMap[parameterName]!!
-                        addStatement("val value = %L[%M]", row, column.property)
+                        addStatement("val value = %L[%M]", row, column.propertyMemberName)
                         // hasDefault
                         if (parameter.hasDefault) {
                             beginControlFlow("if (value != null)")
@@ -67,7 +73,7 @@ public class ClassEntityCreateEntityFunGenerator : TableCodeGenerator<FunSpec> {
                     logger.info("constructorParameter:${constructorParameter.map { it.name!!.asString() }}")
                     for (parameter in constructorParameter) {
                         val column =
-                            table.columns.firstOrNull { it.property.simpleName == parameter.name!!.asString() }
+                            table.columns.firstOrNull { it.propertyMemberName.simpleName == parameter.name!!.asString() }
                                 ?: error("Construct parameter not exists in table: ${parameter.name!!.asString()}")
 
                         val notNullOperator = if (column.propertyIsNullable) "" else "!!"
@@ -75,10 +81,10 @@ public class ClassEntityCreateEntityFunGenerator : TableCodeGenerator<FunSpec> {
                             "%L = %L[%M]%L,",
                             parameter.name!!.asString(),
                             row,
-                            MemberName(table.tableClassName, column.property.simpleName),
+                            MemberName(table.tableClassName, column.propertyMemberName.simpleName),
                             notNullOperator
                         )
-                        nonStructuralProperties.remove(column.property.simpleName)
+                        nonStructuralProperties.remove(column.propertyMemberName.simpleName)
                     }
                     addStatement(")")
                 }
@@ -93,7 +99,7 @@ public class ClassEntityCreateEntityFunGenerator : TableCodeGenerator<FunSpec> {
                         "instance.%L = %L[%M]%L",
                         property,
                         row,
-                        MemberName(table.tableClassName, column.property.simpleName),
+                        MemberName(table.tableClassName, column.propertyMemberName.simpleName),
                         notNullOperator
                     )
                 }
