@@ -3,7 +3,7 @@ package org.ktorm.ksp.compiler.generator
 import com.squareup.kotlinpoet.*
 import org.ktorm.dsl.QueryRowSet
 
-public class BaseTableCreateEntityGenerator: TableCodeGenerator<FunSpec> {
+public class ClassEntityCreateEntityGenerator: TableCodeGenerator<FunSpec> {
 
     public companion object {
         private val hashMapClassName = HashMap::class.asClassName()

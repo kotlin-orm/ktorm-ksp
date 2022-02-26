@@ -40,8 +40,8 @@ public class KtormCodeGenerator {
 
     public fun generateTable(context: TableGenerateContext): FileSpec {
         val generator = when (context.table.ktormEntityType) {
-            KtormEntityType.INTERFACE -> TableFileGenerator(context)
-            KtormEntityType.CLASS -> BaseTableFileGenerator(context)
+            KtormEntityType.INTERFACE -> InterfaceEntityTableFileGenerator(context)
+            KtormEntityType.CLASS -> ClassEntityTableFileGenerator(context)
         }
         return generator.generate()
     }

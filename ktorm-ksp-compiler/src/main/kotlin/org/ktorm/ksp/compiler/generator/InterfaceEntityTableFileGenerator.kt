@@ -4,10 +4,8 @@ import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
-import org.ktorm.schema.BaseTable
-import org.ktorm.schema.Table
 
-public abstract class AbstractTableFileGenerator(
+public abstract class TableFileGenerator(
     public val context: TableGenerateContext
 ) {
 
@@ -43,23 +41,23 @@ public abstract class AbstractTableFileGenerator(
 }
 
 /**
- * generate fileSpec for [Table]
+ * generate a table file of interface entity types
  */
-public open class TableFileGenerator(context: TableGenerateContext) : AbstractTableFileGenerator(context) {
-    override val typeGenerator: TableCodeGenerator<TypeSpec.Builder> = TableTypeGenerator()
-    override val propertyGenerator: List<TableCodeGenerator<PropertySpec>> = listOf(TablePropertyGenerator())
+public open class InterfaceEntityTableFileGenerator(context: TableGenerateContext) : TableFileGenerator(context) {
+    override val typeGenerator: TableCodeGenerator<TypeSpec.Builder> = InterfaceEntityTableTypeGenerator()
+    override val propertyGenerator: List<TableCodeGenerator<PropertySpec>> = listOf(InterfaceEntityTablePropertyGenerator())
     override val functionGenerator: List<TableCodeGenerator<FunSpec>> = emptyList()
     override val topLevelPropertyGenerator: List<TableCodeGenerator<PropertySpec>> = listOf(SequencePropertyGenerator())
     override val topLevelFunctionGenerator: List<TableCodeGenerator<FunSpec>> = emptyList()
 }
 
 /**
- * generate fileSpec for [BaseTable]
+ * generate a table file of class entity types
  */
-public open class BaseTableFileGenerator(context: TableGenerateContext) : AbstractTableFileGenerator(context) {
-    override val typeGenerator: TableCodeGenerator<TypeSpec.Builder> = BaseTableTypeGenerator()
-    override val propertyGenerator: List<TableCodeGenerator<PropertySpec>> = listOf(BaseTablePropertyGenerator())
-    override val functionGenerator: List<TableCodeGenerator<FunSpec>> = listOf(BaseTableCreateEntityGenerator())
+public open class ClassEntityTableFileGenerator(context: TableGenerateContext) : TableFileGenerator(context) {
+    override val typeGenerator: TableCodeGenerator<TypeSpec.Builder> = ClassEntityTableTypeGenerator()
+    override val propertyGenerator: List<TableCodeGenerator<PropertySpec>> = listOf(ClassEntityTablePropertyGenerator())
+    override val functionGenerator: List<TableCodeGenerator<FunSpec>> = listOf(ClassEntityCreateEntityGenerator())
     override val topLevelPropertyGenerator: List<TableCodeGenerator<PropertySpec>> = listOf(SequencePropertyGenerator())
     override val topLevelFunctionGenerator: List<TableCodeGenerator<FunSpec>> = emptyList()
 }

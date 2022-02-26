@@ -10,7 +10,7 @@ import org.ktorm.schema.Column
 private val bindToFun: MemberName = MemberName("", "bindTo")
 private val primaryKeyFun: MemberName = MemberName("", "primaryKey")
 
-public class TablePropertyGenerator : TableCodeGenerator<PropertySpec> {
+public class InterfaceEntityTablePropertyGenerator : TableCodeGenerator<PropertySpec> {
 
     private val ignoreDefinitionProperties: Set<String> = setOf("entityClass", "properties")
 
@@ -37,7 +37,7 @@ public class TablePropertyGenerator : TableCodeGenerator<PropertySpec> {
 
 }
 
-public class BaseTablePropertyGenerator : TableCodeGenerator<PropertySpec> {
+public class ClassEntityTablePropertyGenerator : TableCodeGenerator<PropertySpec> {
 
     override fun generate(context: TableGenerateContext, emitter: (PropertySpec) -> Unit) {
         val (table, config, columnInitializerGenerator, _, dependencyFiles) = context

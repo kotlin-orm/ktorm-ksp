@@ -27,7 +27,7 @@ private fun CodeBlock.Builder.appendTableNameParameter(table: TableDefinition, c
     add("tableName=%S,", tableName)
 }
 
-public class BaseTableTypeGenerator : TableCodeGenerator<TypeSpec.Builder> {
+public class ClassEntityTableTypeGenerator : TableCodeGenerator<TypeSpec.Builder> {
 
     override fun generate(context: TableGenerateContext, emitter: (TypeSpec.Builder) -> Unit) {
         val table = context.table
@@ -44,7 +44,7 @@ public class BaseTableTypeGenerator : TableCodeGenerator<TypeSpec.Builder> {
     }
 }
 
-public class TableTypeGenerator : TableCodeGenerator<TypeSpec.Builder> {
+public class InterfaceEntityTableTypeGenerator : TableCodeGenerator<TypeSpec.Builder> {
 
     override fun generate(context: TableGenerateContext, emitter: (TypeSpec.Builder) -> Unit) {
         val table = context.table
