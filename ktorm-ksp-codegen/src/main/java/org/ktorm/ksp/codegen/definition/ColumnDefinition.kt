@@ -6,6 +6,7 @@ import com.google.devtools.ksp.symbol.Nullability
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.MemberName
 
+// todo reference support
 public data class ColumnDefinition(
     val sqlColumnName: String,
     val isPrimaryKey: Boolean,

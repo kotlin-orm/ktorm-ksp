@@ -20,6 +20,7 @@ import org.ktorm.entity.Entity
 import org.ktorm.ksp.api.*
 import org.ktorm.ksp.codegen.CodeGenerateConfig
 import org.ktorm.ksp.codegen.ColumnInitializerGenerator
+import org.ktorm.ksp.codegen.DefaultGeneratorConfig
 import org.ktorm.ksp.codegen.definition.ColumnDefinition
 import org.ktorm.ksp.codegen.definition.ConverterDefinition
 import org.ktorm.ksp.codegen.definition.KtormEntityType
@@ -56,7 +57,7 @@ public class KtormProcessor(
         val configBuilder = CodeGenerateConfig.Builder()
         val configAnnotated = configClasses.firstOrNull()
         if (configAnnotated != null) {
-            configAnnotated.accept(ConverterProviderVisitor(configBuilder), Unit)
+            configAnnotated.accept(KtormKspConfigVisitor(configBuilder), Unit)
             configBuilder.configDependencyFile = configAnnotated.containingFile
         }
         val config = configBuilder.build()
@@ -77,18 +78,37 @@ public class KtormProcessor(
         return configRet + tableRet
     }
 
-    public inner class ConverterProviderVisitor(
+    public inner class KtormKspConfigVisitor(
         private val configBuilder: CodeGenerateConfig.Builder,
     ) : KSVisitorVoid() {
 
         override fun visitClassDeclaration(classDeclaration: KSClassDeclaration, data: Unit) {
             val kspConfig = classDeclaration.getAnnotationsByType(KtormKspConfig::class).first()
-            configBuilder.allowReflectionCreateEntity = kspConfig.allowReflectionCreateEntity
-
             val kspConfigAnnotation = classDeclaration.annotations.first {
                 it.annotationType.resolve().toClassName() == KtormKspConfig::class.asClassName()
             }
             val argumentMap = kspConfigAnnotation.arguments.associateBy { it.name!!.asString() }
+            configBuilder.allowReflectionCreateEntity = kspConfig.allowReflectionCreateEntity
+            configBuilder.defaultGenerator = DefaultGeneratorConfig(
+                kspConfig.defaultGenerator.enableSequenceOf,
+                kspConfig.defaultGenerator.enableClassEntitySequenceAddFun,
+                kspConfig.defaultGenerator.enableClassEntitySequenceUpdateFun,
+            )
+            //namingStrategy
+            val namingStrategyType = argumentMap[KtormKspConfig::namingStrategy.name]!!.value as KSType
+            if (namingStrategyType.toClassName() != Nothing::class.asClassName()) {
+                if ((namingStrategyType.declaration as KSClassDeclaration).classKind != ClassKind.OBJECT) {
+                    error("Wrong KtormKspConfig parameter:${KtormKspConfig::namingStrategy.name}, converter must be object instance.")
+                }
+                configBuilder.namingStrategy = namingStrategyType.toClassName()
+                try {
+                    @Suppress("KotlinConstantConditions")
+                    configBuilder.localNamingStrategy =
+                        Class.forName(namingStrategyType.declaration.qualifiedName!!.asString()).kotlin.objectInstance as NamingStrategy
+                } catch (e: Exception) {
+                    // ignore
+                }
+            }
 
             // enum converter
             val enumConverterType = argumentMap[KtormKspConfig::enumConverter.name]!!.value as KSType
@@ -100,7 +120,6 @@ public class KtormProcessor(
                     enumConverterType.toClassName(), enumConverterType.declaration as KSClassDeclaration
                 )
             }
-
 
             // single type converter
             @Suppress("UNCHECKED_CAST") val singleTypeConverters =
@@ -122,20 +141,6 @@ public class KtormProcessor(
                 configBuilder.singleTypeConverters = singleTypeConverterMap
             }
 
-            val namingStrategyType = argumentMap[KtormKspConfig::namingStrategy.name]!!.value as KSType
-            if (namingStrategyType.toClassName() != Nothing::class.asClassName()) {
-                if ((namingStrategyType.declaration as KSClassDeclaration).classKind != ClassKind.OBJECT) {
-                    error("Wrong KtormKspConfig parameter:${KtormKspConfig::namingStrategy.name}, converter must be object instance.")
-                }
-                configBuilder.namingStrategy = namingStrategyType.toClassName()
-                try {
-                    @Suppress("KotlinConstantConditions")
-                    configBuilder.localNamingStrategy =
-                        Class.forName(namingStrategyType.declaration.qualifiedName!!.asString()).kotlin.objectInstance as NamingStrategy
-                } catch (e: Exception) {
-                    // ignore
-                }
-            }
         }
 
     }

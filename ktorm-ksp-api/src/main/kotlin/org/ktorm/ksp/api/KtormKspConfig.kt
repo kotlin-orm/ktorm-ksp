@@ -1,6 +1,5 @@
 package org.ktorm.ksp.api
 
-import org.ktorm.schema.BaseTable
 import kotlin.reflect.KClass
 
 @Target(AnnotationTarget.CLASS)
@@ -10,5 +9,31 @@ public annotation class KtormKspConfig(
     val enumConverter: KClass<out EnumConverter> = Nothing::class,
     val singleTypeConverters: Array<KClass<out SingleTypeConverter<*>>> = [],
     val namingStrategy: KClass<out NamingStrategy> = Nothing::class,
-    val defaultTableSuperType: KClass<out BaseTable<*>> = Nothing::class
+    val defaultGenerator: DefaultGenerator = DefaultGenerator()
+)
+
+@Retention(AnnotationRetention.SOURCE)
+public annotation class DefaultGenerator(
+
+    /**
+     * ```kotlin
+     * val Database.employees: EntitySequence<Employee,Employees>
+     *     get() = this.sequenceOf(Employees)
+     * ```
+     */
+    val enableSequenceOf: Boolean = true,
+
+    /**
+     * ```kotlin
+     * fun EntitySequence<Employee,Employees>.update(employee)
+     * ```
+     */
+    val enableClassEntitySequenceAddFun: Boolean = true,
+
+    /**
+     * ```kotlin
+     * fun EntitySequence<Employee,Employees>.update(employee)
+     * ```
+     */
+    val enableClassEntitySequenceUpdateFun: Boolean = true
 )
