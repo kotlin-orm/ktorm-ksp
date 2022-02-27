@@ -6,7 +6,7 @@ import org.ktorm.ksp.api.LowerCaseCamelCaseToUnderscoresNamingStrategy
 import org.ktorm.ksp.api.NamingStrategy
 
 @KtormKspConfig(
-    allowReflectionCreateEntity = true,
+    allowReflectionCreateClassEntity = true,
     enumConverter = IntEnumConverter::class,
     singleTypeConverters = [CustomStringConverter::class],
     namingStrategy = MyNamingStrategy::class,

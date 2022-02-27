@@ -88,7 +88,7 @@ public class KtormProcessor(
                 it.annotationType.resolve().toClassName() == KtormKspConfig::class.asClassName()
             }
             val argumentMap = kspConfigAnnotation.arguments.associateBy { it.name!!.asString() }
-            configBuilder.allowReflectionCreateEntity = kspConfig.allowReflectionCreateEntity
+            configBuilder.allowReflectionCreateEntity = kspConfig.allowReflectionCreateClassEntity
             configBuilder.defaultGenerator = DefaultGeneratorConfig(
                 kspConfig.defaultGenerator.enableSequenceOf,
                 kspConfig.defaultGenerator.enableClassEntitySequenceAddFun,
