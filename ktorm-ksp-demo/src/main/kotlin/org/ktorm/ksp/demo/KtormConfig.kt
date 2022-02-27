@@ -1,6 +1,5 @@
 package org.ktorm.ksp.demo
 
-import org.ktorm.ksp.api.DefaultGenerator
 import org.ktorm.ksp.api.KtormKspConfig
 import org.ktorm.ksp.api.LowerCaseCamelCaseToUnderscoresNamingStrategy
 import org.ktorm.ksp.api.NamingStrategy
@@ -10,11 +9,6 @@ import org.ktorm.ksp.api.NamingStrategy
     enumConverter = IntEnumConverter::class,
     singleTypeConverters = [CustomStringConverter::class],
     namingStrategy = MyNamingStrategy::class,
-    defaultGenerator = DefaultGenerator(
-        enableSequenceOf = false,
-        enableClassEntitySequenceAddFun = false,
-        enableClassEntitySequenceUpdateFun = true
-    )
 )
 public class KtormConfig {
 }

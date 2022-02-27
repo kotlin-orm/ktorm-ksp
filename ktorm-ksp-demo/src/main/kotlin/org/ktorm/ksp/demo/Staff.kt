@@ -1,17 +1,10 @@
 package org.ktorm.ksp.demo
 
 import org.ktorm.entity.Entity
-import org.ktorm.ksp.api.*
-import org.ktorm.schema.BaseTable
-import org.ktorm.schema.Column
-import org.ktorm.schema.SqlType
-import org.ktorm.schema.varchar
-import java.math.BigDecimal
-import java.sql.PreparedStatement
-import java.sql.ResultSet
-import java.sql.Types
+import org.ktorm.ksp.api.Column
+import org.ktorm.ksp.api.PrimaryKey
+import org.ktorm.ksp.api.Table
 import java.time.LocalDate
-import kotlin.reflect.KClass
 
 @Table
 public interface Staff : Entity<Staff> {
@@ -23,17 +16,11 @@ public interface Staff : Entity<Staff> {
 
 }
 
-@Table(tableClassName = "MoneyTable")
-public data class Money(
-    @PrimaryKey
-    public val id: Int
-)
-
 @Table
 public data class Box(
     @PrimaryKey
     public val id: Int,
-    public val name:String
+    public val name: String
 )
 
 @Table
@@ -44,73 +31,33 @@ public data class Employee(
     public val age: Int?,
     public val birthday: LocalDate = LocalDate.now(),
     public val gender: Gender,
-    @org.ktorm.ksp.api.Column(converter = JsonConverter::class)
-    public val salary: Salary,
-) {
-    public var createTime: LocalDate = LocalDate.now()
-    public var updateTime: LocalDate = LocalDate.now()
-}
-
-public data class Salary(
-    val money: BigDecimal,
-    val currency: String
 )
 
 @Table
-public class Job {
+public data class Department(
     @PrimaryKey
-    public val id: Int = 0
-    public var name: String? = null
+    public val id: Int,
+    public val name: String
+)
 
-    @Ignore
-    public var createTime: LocalDate = LocalDate.now()
+@Table
+public interface Student : Entity<Student> {
+    @PrimaryKey
+    public var id: Int
+    public var name: String
+
+    @Column(isReferences = true, columnName = "schoolId")
+    public var school: School
+}
+
+@Table
+public interface School : Entity<School> {
+    @PrimaryKey
+    public var id: Int
+    public var name: String
 }
 
 public enum class Gender {
     MALE,
     FEMALE
-}
-
-public object JsonConverter : MultiTypeConverter {
-    override fun <T : Any> convert(table: BaseTable<*>, columnName: String, propertyType: KClass<T>): Column<T> {
-        return table.registerColumn(columnName, JsonSqlType(propertyType.java))
-    }
-}
-
-public class JsonSqlType<T : Any>(private val clazz: Class<T>) : SqlType<T>(Types.VARCHAR, "varchar") {
-    override fun doGetResult(rs: ResultSet, index: Int): T? {
-        return null
-    }
-
-    override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: T) {
-    }
-
-}
-
-public object CustomStringConverter : SingleTypeConverter<String> {
-    override fun convert(table: BaseTable<*>, columnName: String, propertyType: KClass<String>): Column<String> {
-        return table.varchar(columnName)
-    }
-}
-
-public object IntEnumConverter : EnumConverter {
-    public override fun <E : Enum<E>> convert(
-        table: BaseTable<*>,
-        columnName: String,
-        propertyType: KClass<E>
-    ): Column<E> {
-        return table.registerColumn(columnName, IntEnumSqlType(propertyType.java))
-    }
-}
-
-public class IntEnumSqlType<C : Enum<C>>(private val enumClass: Class<C>) : SqlType<C>(Types.INTEGER, "int") {
-    override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: C) {
-        ps.setInt(index, parameter.ordinal)
-    }
-
-    override fun doGetResult(rs: ResultSet, index: Int): C? {
-        return rs.getString(index)
-            ?.toIntOrNull()
-            ?.let { enumClass.enumConstants.getOrNull(it) }
-    }
 }

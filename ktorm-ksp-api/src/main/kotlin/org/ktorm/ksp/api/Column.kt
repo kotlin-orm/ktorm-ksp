@@ -25,5 +25,13 @@ public annotation class Column(
      * @see [org.ktorm.schema.Column]
      * @see [Converter]
      */
-    val converter: KClass<out Converter> = Nothing::class
+    val converter: KClass<out Converter> = Nothing::class,
+
+    /**
+     * property names in generate [Table]. If the value is an empty string, will use the name of the property
+     * to which this annotation is added
+     */
+    val propertyName: String = "",
+
+    val isReferences: Boolean = false
 )

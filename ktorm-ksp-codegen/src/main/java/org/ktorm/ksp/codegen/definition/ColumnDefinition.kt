@@ -1,27 +1,30 @@
 package org.ktorm.ksp.codegen.definition
 
-import com.google.devtools.ksp.symbol.KSPropertyDeclaration
-import com.google.devtools.ksp.symbol.KSType
-import com.google.devtools.ksp.symbol.Nullability
+import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.MemberName
 
 // todo reference support
 public data class ColumnDefinition(
-    val sqlColumnName: String,
+    val columnName: String,
     val isPrimaryKey: Boolean,
-    val propertyDeclaration: KSPropertyDeclaration,
-    val propertyTypeDeclaration: KSType,
     val propertyClassName: ClassName,
-    val propertyMemberName: MemberName,
+    val entityPropertyName: MemberName,
+    val tablePropertyName: MemberName,
     val converterDefinition: ConverterDefinition?,
-    val tableDefinition: TableDefinition
+    val propertyDeclaration: KSPropertyDeclaration,
+    val propertyType: KSType,
+    val tableDefinition: TableDefinition,
+    val isReferences: Boolean,
+    var referencesColumn: ColumnDefinition?
 ) {
-    val propertyIsNullable: Boolean = propertyTypeDeclaration.nullability != Nullability.NOT_NULL
-    val columnMemberName: MemberName = MemberName(tableDefinition.tableClassName, propertyMemberName.simpleName)
+
+    val isMutable: Boolean = propertyDeclaration.isMutable
+    val isNullable: Boolean = propertyType.nullability != Nullability.NOT_NULL
+    val isEnum: Boolean = (propertyType.declaration as KSClassDeclaration).classKind == ClassKind.ENUM_CLASS
 
     override fun toString(): String {
-        return "ColumnDefinition(sqlColumnName='$sqlColumnName', isPrimaryKey=$isPrimaryKey, propertyDeclaration=$propertyDeclaration, propertyTypeDeclaration=$propertyTypeDeclaration, propertyClassName=$propertyClassName, propertyMemberName=$propertyMemberName, converterDefinition=$converterDefinition, propertyIsNullable=$propertyIsNullable, columnMemberName=$columnMemberName)"
+        return "ColumnDefinition(columnName='$columnName', isPrimaryKey=$isPrimaryKey, propertyClassName=$propertyClassName, entityPropertyName=$entityPropertyName, tablePropertyName=$tablePropertyName, converterDefinition=$converterDefinition, referencesColumn=$referencesColumn)"
     }
 
 }

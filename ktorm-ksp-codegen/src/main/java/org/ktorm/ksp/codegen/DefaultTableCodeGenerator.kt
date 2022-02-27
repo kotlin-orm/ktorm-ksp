@@ -70,6 +70,7 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
 
 private val bindToFun: MemberName = MemberName("", "bindTo")
 private val primaryKeyFun: MemberName = MemberName("", "primaryKey")
+private val referencesFun: MemberName = MemberName("", "references")
 
 public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
 
@@ -85,15 +86,37 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
         table.columns
             .asSequence()
             .map { column ->
+                val columnType = if(column.isReferences) {
+                    Column::class.asClassName().parameterizedBy(column.referencesColumn!!.propertyClassName.copy(nullable = false))
+                } else {
+                    Column::class.asClassName().parameterizedBy(column.propertyClassName.copy(nullable = false))
+                }
                 PropertySpec
                     .builder(
-                        column.propertyMemberName.simpleName,
-                        Column::class.asClassName().parameterizedBy(column.propertyClassName.copy(nullable = false))
+                        column.entityPropertyName.simpleName,
+                        columnType
                     )
                     .initializer(buildCodeBlock {
                         add(columnInitializerGenerator.generate(column, dependencyFiles, config))
-                        addStatement(".%M { it.%M }", bindToFun, column.propertyMemberName)
-                        if (column.isPrimaryKey) addStatement(".%M()", primaryKeyFun)
+                        val params = mutableMapOf(
+                            "bindTo" to bindToFun,
+                            "references" to referencesFun,
+                            "primaryKey" to primaryKeyFun,
+                            "referencesTable" to column.referencesColumn?.tableDefinition?.tableClassName,
+                            "entityPropertyName" to column.entityPropertyName.simpleName
+                        )
+                        val code = buildString {
+                            if (column.isReferences) {
+                                append(".%references:M(%referencesTable:T) { it.%entityPropertyName:L } ")
+                            } else {
+                                append(".%bindTo:M { it.%entityPropertyName:L }")
+                            }
+                            if (column.isPrimaryKey) {
+                                append(".%primaryKey:M()")
+                            }
+
+                        }
+                        addNamed(code, params)
                     })
                     .build()
             }
@@ -107,7 +130,7 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
             .map { column ->
                 PropertySpec
                     .builder(
-                        column.propertyMemberName.simpleName,
+                        column.entityPropertyName.simpleName,
                         Column::class.asClassName().parameterizedBy(column.propertyClassName.copy(nullable = false))
                     )
                     .initializer(buildCodeBlock {
@@ -143,9 +166,9 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
                 val entityClassDeclaration = table.entityClassDeclaration
                 val constructor = entityClassDeclaration.primaryConstructor!!
                 val constructorParameter = constructor.parameters
-                val nonStructuralProperties = table.columns.map { it.propertyMemberName.simpleName }.toMutableSet()
+                val nonStructuralProperties = table.columns.map { it.entityPropertyName.simpleName }.toMutableSet()
                 // propertyName -> columnMember
-                val columnMap = table.columns.associateBy { it.propertyMemberName.simpleName }
+                val columnMap = table.columns.associateBy { it.entityPropertyName.simpleName }
                 val unknownParameters =
                     constructor.parameters.filter { !it.hasDefault && it.name?.asString() !in nonStructuralProperties }
                 if (unknownParameters.isNotEmpty()) {
@@ -166,14 +189,14 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
                         val parameterName = parameter.name!!.asString()
                         beginControlFlow("%S -> ", parameterName)
                         val column = columnMap[parameterName]!!
-                        addStatement("val value = %L[%M]", row, column.propertyMemberName)
+                        addStatement("val value = %L[%M]", row, column.tablePropertyName)
                         // hasDefault
                         if (parameter.hasDefault) {
                             beginControlFlow("if (value != null)")
                             addStatement("parameterMap[parameter] = value")
                             endControlFlow()
                         } else {
-                            val notNullOperator = if (column.propertyIsNullable) "" else "!!"
+                            val notNullOperator = if (column.isNullable) "" else "!!"
                             addStatement("parameterMap[parameter] = value%L", notNullOperator)
                         }
                         endControlFlow()
@@ -188,33 +211,33 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
                     logger.info("constructorParameter:${constructorParameter.map { it.name!!.asString() }}")
                     for (parameter in constructorParameter) {
                         val column =
-                            table.columns.firstOrNull { it.propertyMemberName.simpleName == parameter.name!!.asString() }
+                            table.columns.firstOrNull { it.entityPropertyName.simpleName == parameter.name!!.asString() }
                                 ?: error("Construct parameter not exists in table: ${parameter.name!!.asString()}")
 
-                        val notNullOperator = if (column.propertyIsNullable) "" else "!!"
+                        val notNullOperator = if (column.isNullable) "" else "!!"
                         add(
                             "%L = %L[%M]%L,",
                             parameter.name!!.asString(),
                             row,
-                            MemberName(table.tableClassName, column.propertyMemberName.simpleName),
+                            column.tablePropertyName,
                             notNullOperator
                         )
-                        nonStructuralProperties.remove(column.propertyMemberName.simpleName)
+                        nonStructuralProperties.remove(column.entityPropertyName.simpleName)
                     }
                     addStatement(")")
                 }
                 //non-structural property
                 for (property in nonStructuralProperties) {
                     val column = columnMap[property]!!
-                    if (!column.propertyDeclaration.isMutable) {
+                    if (!column.isMutable) {
                         continue
                     }
-                    val notNullOperator = if (column.propertyIsNullable) "" else "!!"
+                    val notNullOperator = if (column.isNullable) "" else "!!"
                     addStatement(
                         "instance.%L = %L[%M]%L",
                         property,
                         row,
-                        MemberName(table.tableClassName, column.propertyMemberName.simpleName),
+                        column.tablePropertyName,
                         notNullOperator
                     )
                 }
@@ -265,19 +288,19 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
             .addCode(buildCodeBlock {
                 beginControlFlow("return this.database.%M(%T)", insertFun, table.tableClassName)
                 for (column in table.columns) {
-                    if (column.propertyIsNullable) {
-                        beginControlFlow("if (entity.%M != null)", column.propertyMemberName)
+                    if (column.isNullable) {
+                        beginControlFlow("if (entity.%L != null)", column.entityPropertyName.simpleName)
                         addStatement(
-                            "set(%M,entity.%M)",
-                            MemberName(table.tableClassName, column.propertyMemberName.simpleName),
-                            column.propertyMemberName
+                            "set(%M,entity.%L)",
+                            column.tablePropertyName,
+                            column.entityPropertyName.simpleName
                         )
                         endControlFlow()
                     } else {
                         addStatement(
-                            "set(%M,entity.%M)",
-                            MemberName(table.tableClassName, column.propertyMemberName.simpleName),
-                            column.propertyMemberName
+                            "set(%M,entity.%L)",
+                            column.tablePropertyName,
+                            column.entityPropertyName.simpleName
                         )
                     }
                 }
@@ -304,16 +327,21 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
                 for (column in table.columns) {
                     if (!column.isPrimaryKey) {
                         addStatement(
-                            "set(%M,entity.%M)",
-                            column.columnMemberName,
-                            column.propertyMemberName
+                            "set(%M,entity.%L)",
+                            column.tablePropertyName,
+                            column.entityPropertyName.simpleName
                         )
                     }
                 }
                 beginControlFlow("where")
                 for (column in table.columns) {
                     if (column.isPrimaryKey) {
-                        addStatement("it.%M %M entity.%M", column.columnMemberName, eqFun, column.propertyMemberName)
+                        addStatement(
+                            "it.%M %M entity.%L",
+                            column.tablePropertyName,
+                            eqFun,
+                            column.entityPropertyName.simpleName
+                        )
                     }
                 }
                 endControlFlow()

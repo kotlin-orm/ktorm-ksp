@@ -64,13 +64,40 @@ public class KtormProcessor(
         logger.info("config:$config")
 
         // parse entity
+        // entityClassName -> tableClassName
+        val entityTableMap = mutableMapOf<ClassName, ClassName>()
         val symbols = resolver.getSymbolsWithAnnotation(Table::class.qualifiedName!!)
         logger.info("symbols:${symbols.toList()}")
         val tableDefinitions = mutableListOf<TableDefinition>()
         val tableRet = symbols.filter { !it.ktormValidate() }.toList()
         symbols.filter { it is KSClassDeclaration && it.ktormValidate() }
-            .forEach { it.accept(EntityVisitor(tableDefinitions), Unit) }
-
+            .forEach { it.accept(EntityVisitor(tableDefinitions, entityTableMap), Unit) }
+        val entityClassMap = tableDefinitions.associateBy { it.entityClassName }
+        logger.info("tableClassNameMap: $entityClassMap")
+        tableDefinitions
+            .asSequence()
+            .flatMap { it.columns }
+            .filter { it.isReferences }
+            .forEach {
+                if (it.tableDefinition.ktormEntityType != KtormEntityType.INTERFACE) {
+                    error("Wrong references column: ${it.tablePropertyName.canonicalName} , References are only allowed for interface entity types")
+                }
+                val table = entityClassMap[it.propertyClassName]
+                    ?: error("Wrong references column: ${it.tablePropertyName.canonicalName} , Type ${it.propertyClassName} " +
+                            "is not an entity type, please check if a @Table annotation is added to type ${it.propertyClassName}")
+                if (table.ktormEntityType != KtormEntityType.INTERFACE) {
+                    error("Wrong references column: ${it.tablePropertyName.canonicalName}. Type ${it.propertyClassName} is not an interface entity type, " +
+                            "References are only allowed for interface entity types")
+                }
+                val primaryKeyColumns = table.columns.filter { column -> column.isPrimaryKey }
+                if (primaryKeyColumns.isEmpty()) {
+                    error("Wrong references column: ${it.tablePropertyName.canonicalName} , Table ${it.propertyClassName} must have a primary key")
+                }
+                if (primaryKeyColumns.size > 1) {
+                    error("Wrong references column: ${it.tablePropertyName.canonicalName} , Table ${it.propertyClassName} cannot have more than one primary key")
+                }
+                it.referencesColumn = primaryKeyColumns.first()
+            }
         // start generate
         KtormCodeGenerator().generate(
             tableDefinitions, environment.codeGenerator, config, ColumnInitializerGenerator(config, logger), logger
@@ -148,6 +175,7 @@ public class KtormProcessor(
 
     public inner class EntityVisitor(
         private val tableDefinitions: MutableList<TableDefinition>,
+        private val entityTableMap: MutableMap<ClassName, ClassName>
     ) : KSVisitorVoid() {
 
         @OptIn(KspExperimental::class, KotlinPoetKspPreview::class)
@@ -202,6 +230,7 @@ public class KtormProcessor(
                     val columnAnnotation = ksProperty.getAnnotationsByType(Column::class).firstOrNull()
                     val ksColumnAnnotation =
                         ksProperty.annotations.firstOrNull { anno -> anno.annotationType.resolve().declaration.qualifiedName?.asString() == columnQualifiedName }
+                    //converter
                     val converter =
                         ksColumnAnnotation?.arguments?.firstOrNull { anno -> anno.name?.asString() == Column::converter.name }?.value as KSType?
                     var converterDefinition: ConverterDefinition? = null
@@ -212,20 +241,30 @@ public class KtormProcessor(
                         }
                         converterDefinition = ConverterDefinition(converter.toClassName(), converterDeclaration)
                     }
+
                     val isPrimaryKey = ksProperty.getAnnotationsByType(PrimaryKey::class).any()
                     val columnName = columnAnnotation?.columnName ?: ""
+                    val tablePropertyName = if (columnAnnotation?.propertyName.isNullOrEmpty()) {
+                        MemberName(tableClassName, propertyName)
+                    } else {
+                        MemberName(tableClassName, columnAnnotation!!.propertyName)
+                    }
                     val columnDef = ColumnDefinition(
                         columnName,
                         isPrimaryKey,
+                        propertyKSType.toClassName(),
+                        MemberName(entityClassName, propertyName),
+                        tablePropertyName,
+                        converterDefinition,
                         ksProperty,
                         propertyKSType,
-                        propertyKSType.toClassName(),
-                        MemberName(tableClassName, propertyName),
-                        converterDefinition,
-                        tableDef
+                        tableDef,
+                        columnAnnotation?.isReferences ?: false,
+                        null
                     )
                     columnDefs.add(columnDef)
                 }
+            entityTableMap[entityClassName] = tableClassName
         }
 
 

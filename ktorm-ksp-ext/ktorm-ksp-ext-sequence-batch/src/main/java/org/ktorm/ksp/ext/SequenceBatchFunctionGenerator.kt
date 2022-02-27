@@ -13,6 +13,8 @@ private val batchInsertFun = MemberName("org.ktorm.dsl", "batchInsert", true)
 private val batchUpdateFun = MemberName("org.ktorm.dsl", "batchUpdate", true)
 private val eqFun = MemberName("org.ktorm.dsl", "eq", true)
 
+// todo batch fun not support reference column
+
 public class SequenceAddAllFunctionGenerator : TopLevelFunctionGenerator {
     override fun generate(context: TableGenerateContext, emitter: (FunSpec) -> Unit) {
         val table = context.table
@@ -26,9 +28,9 @@ public class SequenceAddAllFunctionGenerator : TopLevelFunctionGenerator {
                 beginControlFlow("item")
                 for (column in table.columns) {
                     addStatement(
-                        "set(%M,entity.%M)",
-                        MemberName(table.tableClassName, column.propertyMemberName.simpleName),
-                        column.propertyMemberName
+                        "set(%M,entity.%L)",
+                        column.tablePropertyName,
+                        column.entityPropertyName.simpleName
                     )
                 }
                 endControlFlow()
@@ -54,9 +56,9 @@ public class SequenceUpdateAllFunctionGenerator : TopLevelFunctionGenerator {
                 for (column in table.columns) {
                     if (!column.isPrimaryKey) {
                         addStatement(
-                            "set(%M,entity.%M)",
-                            column.columnMemberName,
-                            column.propertyMemberName
+                            "set(%M,entity.%L)",
+                            column.tablePropertyName,
+                            column.entityPropertyName.simpleName
                         )
                     }
                 }
@@ -64,10 +66,10 @@ public class SequenceUpdateAllFunctionGenerator : TopLevelFunctionGenerator {
                 for (column in table.columns) {
                     if (column.isPrimaryKey) {
                         addStatement(
-                            "%M %M entity.%M",
-                            column.columnMemberName,
+                            "%M %M entity.%L",
+                            column.tablePropertyName,
                             eqFun,
-                            column.propertyMemberName
+                            column.entityPropertyName.simpleName
                         )
                     }
                 }
