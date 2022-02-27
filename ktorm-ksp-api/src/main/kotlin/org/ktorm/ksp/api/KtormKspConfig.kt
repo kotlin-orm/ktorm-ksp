@@ -25,7 +25,7 @@ public annotation class DefaultGenerator(
 
     /**
      * ```kotlin
-     * fun EntitySequence<Employee,Employees>.update(employee)
+     * fun EntitySequence<Employee,Employees>.add(employee)
      * ```
      */
     val enableClassEntitySequenceAddFun: Boolean = true,
