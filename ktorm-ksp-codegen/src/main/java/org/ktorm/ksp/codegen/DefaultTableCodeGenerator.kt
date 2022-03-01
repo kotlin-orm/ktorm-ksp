@@ -5,6 +5,7 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import org.ktorm.database.Database
 import org.ktorm.dsl.QueryRowSet
 import org.ktorm.entity.EntitySequence
+import org.ktorm.expression.*
 import org.ktorm.ksp.codegen.definition.KtormEntityType
 import org.ktorm.ksp.codegen.definition.TableDefinition
 import org.ktorm.schema.BaseTable
@@ -86,8 +87,9 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
         table.columns
             .asSequence()
             .map { column ->
-                val columnType = if(column.isReferences) {
-                    Column::class.asClassName().parameterizedBy(column.referencesColumn!!.propertyClassName.copy(nullable = false))
+                val columnType = if (column.isReferences) {
+                    Column::class.asClassName()
+                        .parameterizedBy(column.referencesColumn!!.propertyClassName.copy(nullable = false))
                 } else {
                     Column::class.asClassName().parameterizedBy(column.propertyClassName.copy(nullable = false))
                 }
@@ -273,6 +275,11 @@ public class SequencePropertyGenerator : TopLevelPropertyGenerator {
 private val insertFun = MemberName("org.ktorm.dsl", "insert", true)
 private val updateFun = MemberName("org.ktorm.dsl", "update", true)
 private val eqFun = MemberName("org.ktorm.dsl", "eq", true)
+private val columnAssignmentExpressionType = ColumnAssignmentExpression::class.asClassName()
+private val columnExpressionType = ColumnExpression::class.asClassName()
+private val argumentExpressionType = ArgumentExpression::class.asClassName()
+private val tableExpressionType = TableExpression::class.asClassName()
+private val insertExpressionType = InsertExpression::class.asClassName()
 
 public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
 
@@ -286,25 +293,77 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
             .addParameter("entity", table.entityClassName)
             .returns(Int::class.asClassName())
             .addCode(buildCodeBlock {
-                beginControlFlow("return this.database.%M(%T)", insertFun, table.tableClassName)
+                val primaryKey = table.columns.firstOrNull { it.isPrimaryKey }
+                addStatement("val assignments = ArrayList<ColumnAssignmentExpression<*>>(%L)", table.columns.size)
                 for (column in table.columns) {
                     if (column.isNullable) {
                         beginControlFlow("if (entity.%L != null)", column.entityPropertyName.simpleName)
-                        addStatement(
-                            "set(%M,entity.%L)",
-                            column.tablePropertyName,
-                            column.entityPropertyName.simpleName
-                        )
+                    }
+                    val params = mapOf(
+                        "columnAssignmentExpr" to columnAssignmentExpressionType,
+                        "columnExpr" to columnExpressionType,
+                        "argumentExpr" to argumentExpressionType,
+                        "table" to table.tableClassName,
+                        "column" to column.tablePropertyName.simpleName
+                    )
+                    addNamed(
+                        """
+                                assignments.add(
+                                    %columnAssignmentExpr:T(
+                                        column = %columnExpr:T(null, %table:T.%column:L.name, %table:T.%column:L.sqlType),
+                                        expression = %argumentExpr:T(entity.%column:L, %table:T.%column:L.sqlType)
+                                    )
+                                )
+                                
+                            """.trimIndent(),
+                        params
+                    )
+                    if (column.isNullable) {
                         endControlFlow()
-                    } else {
-                        addStatement(
-                            "set(%M,entity.%L)",
-                            column.tablePropertyName,
-                            column.entityPropertyName.simpleName
-                        )
                     }
                 }
-                endControlFlow()
+
+                val params = mapOf(
+                    "insertExpr" to insertExpressionType,
+                    "tableExpr" to tableExpressionType,
+                    "table" to table.tableClassName,
+                )
+                addNamed(
+                    """
+                        val expression = %insertExpr:T(
+                            table = %tableExpr:T(%table:T.tableName, null, %table:T.catalog, %table:T.schema),
+                            assignments = assignments
+                        )
+                        
+                    """.trimIndent(), params
+                )
+                if (primaryKey != null && primaryKey.isMutable) {
+                    if (primaryKey.isNullable) {
+                        beginControlFlow("if (entity.%L == null)", primaryKey.entityPropertyName.simpleName)
+                    }
+                    add(
+                        """
+                        val (effects, rowSet) = database.executeUpdateAndRetrieveKeys(expression)
+                        if (rowSet.next()) {
+                            val generatedKey = %M.sqlType.getResult(rowSet, 1)
+                            if (generatedKey != null) {
+                                if (database.logger.isDebugEnabled()) {
+                                    database.logger.debug("Generated Key: ${'$'}generatedKey")
+                                }
+                                entity.%L = generatedKey
+                            }
+                        }
+                        return effects
+                        
+                    """.trimIndent(), primaryKey.tablePropertyName, primaryKey.entityPropertyName.simpleName
+                    )
+                    if (primaryKey.isNullable) {
+                        endControlFlow()
+                        addStatement("return database.executeUpdate(expression)")
+                    }
+                } else {
+                    addStatement("return database.executeUpdate(expression)")
+                }
             })
             .build()
             .run(emitter)
@@ -337,10 +396,11 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
                 for (column in table.columns) {
                     if (column.isPrimaryKey) {
                         addStatement(
-                            "it.%M %M entity.%L",
+                            "it.%M %M entity.%L%L",
                             column.tablePropertyName,
                             eqFun,
-                            column.entityPropertyName.simpleName
+                            column.entityPropertyName.simpleName,
+                            if (column.isNullable) "!!" else ""
                         )
                     }
                 }

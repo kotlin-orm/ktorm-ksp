@@ -26,7 +26,8 @@ public data class Box(
 @Table
 public data class Employee(
     @PrimaryKey
-    public val id: Int,
+    public var id: Int?,
+    @PrimaryKey
     public val name: String,
     public val age: Int?,
     public val birthday: LocalDate = LocalDate.now(),

@@ -66,10 +66,11 @@ public class SequenceUpdateAllFunctionGenerator : TopLevelFunctionGenerator {
                 for (column in table.columns) {
                     if (column.isPrimaryKey) {
                         addStatement(
-                            "%M %M entity.%L",
+                            "%M %M entity.%L%L",
                             column.tablePropertyName,
                             eqFun,
-                            column.entityPropertyName.simpleName
+                            column.entityPropertyName.simpleName,
+                            if (column.isNullable) "!!" else ""
                         )
                     }
                 }
