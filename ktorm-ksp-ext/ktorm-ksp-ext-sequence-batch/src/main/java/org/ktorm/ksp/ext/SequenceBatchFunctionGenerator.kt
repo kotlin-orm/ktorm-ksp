@@ -27,11 +27,21 @@ public class SequenceAddAllFunctionGenerator : TopLevelFunctionGenerator {
                 beginControlFlow("for (entity in entities)")
                 beginControlFlow("item")
                 for (column in table.columns) {
-                    addStatement(
-                        "set(%M,entity.%L)",
-                        column.tablePropertyName,
-                        column.entityPropertyName.simpleName
-                    )
+                    if (column.isReferences) {
+                        val primaryKey  = column.referencesColumn!!
+                        addStatement(
+                            "set(%M,entity.%L.%L)",
+                            column.tablePropertyName,
+                            column.entityPropertyName.simpleName,
+                            primaryKey.entityPropertyName.simpleName
+                        )
+                    } else {
+                        addStatement(
+                            "set(%M,entity.%L)",
+                            column.tablePropertyName,
+                            column.entityPropertyName.simpleName
+                        )
+                    }
                 }
                 endControlFlow()
                 endControlFlow()
@@ -55,11 +65,21 @@ public class SequenceUpdateAllFunctionGenerator : TopLevelFunctionGenerator {
                 beginControlFlow("item")
                 for (column in table.columns) {
                     if (!column.isPrimaryKey) {
-                        addStatement(
-                            "set(%M,entity.%L)",
-                            column.tablePropertyName,
-                            column.entityPropertyName.simpleName
-                        )
+                        if (column.isReferences) {
+                            val primaryKey  = column.referencesColumn!!
+                            addStatement(
+                                "set(%M,entity.%L.%L)",
+                                column.tablePropertyName,
+                                column.entityPropertyName.simpleName,
+                                primaryKey.entityPropertyName.simpleName
+                            )
+                        } else {
+                            addStatement(
+                                "set(%M,entity.%L)",
+                                column.tablePropertyName,
+                                column.entityPropertyName.simpleName
+                            )
+                        }
                     }
                 }
                 beginControlFlow("where")
