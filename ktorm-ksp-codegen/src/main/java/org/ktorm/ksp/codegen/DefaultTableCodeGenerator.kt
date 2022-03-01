@@ -293,7 +293,6 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
             .addParameter("entity", table.entityClassName)
             .returns(Int::class.asClassName())
             .addCode(buildCodeBlock {
-                val primaryKey = table.columns.firstOrNull { it.isPrimaryKey }
                 addStatement("val assignments = ArrayList<ColumnAssignmentExpression<*>>(%L)", table.columns.size)
                 for (column in table.columns) {
                     if (column.isNullable) {
@@ -337,7 +336,9 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
                         
                     """.trimIndent(), params
                 )
-                if (primaryKey != null && primaryKey.isMutable) {
+                val primaryKeys = table.columns.filter { it.isPrimaryKey }
+                if (primaryKeys.isNotEmpty() && primaryKeys.first().isMutable) {
+                    val primaryKey = primaryKeys.first()
                     if (primaryKey.isNullable) {
                         beginControlFlow("if (entity.%L == null)", primaryKey.entityPropertyName.simpleName)
                     }
