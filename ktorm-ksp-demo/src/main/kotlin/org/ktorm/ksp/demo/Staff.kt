@@ -1,7 +1,6 @@
 package org.ktorm.ksp.demo
 
 import org.ktorm.entity.Entity
-import org.ktorm.ksp.api.Column
 import org.ktorm.ksp.api.PrimaryKey
 import org.ktorm.ksp.api.Table
 import java.time.LocalDate
@@ -27,12 +26,12 @@ public data class Box(
 public data class Employee(
     @PrimaryKey
     public var id: Int?,
-    @PrimaryKey
     public val name: String,
     public val age: Int?,
     public val birthday: LocalDate = LocalDate.now(),
     public val gender: Gender,
 )
+
 
 @Table
 public data class Department(
@@ -42,14 +41,12 @@ public data class Department(
 )
 
 @Table
-public interface Student : Entity<Student> {
+public data class Student(
     @PrimaryKey
-    public var id: Int
-    public var name: String
-
-    @Column(isReferences = true, columnName = "schoolId")
-    public var school: School
-}
+    public var id: Int?,
+    public var name: String,
+    public var age: Int
+)
 
 @Table
 public interface School : Entity<School> {

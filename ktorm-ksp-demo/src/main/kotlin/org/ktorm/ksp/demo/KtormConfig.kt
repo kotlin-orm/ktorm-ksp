@@ -7,8 +7,6 @@ import org.ktorm.ksp.api.NamingStrategy
 @KtormKspConfig(
     allowReflectionCreateClassEntity = true,
     enumConverter = IntEnumConverter::class,
-    singleTypeConverters = [CustomStringConverter::class],
-    namingStrategy = MyNamingStrategy::class,
 )
 public class KtormConfig {
 }

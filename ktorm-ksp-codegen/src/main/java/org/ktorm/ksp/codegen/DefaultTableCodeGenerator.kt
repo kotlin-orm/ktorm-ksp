@@ -41,7 +41,7 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
 
     public open fun generateInterfaceEntity(context: TableGenerateContext, emitter: (TypeSpec.Builder) -> Unit) {
         val table = context.table
-        val builder = TypeSpec.objectBuilder(table.tableClassName)
+        TypeSpec.objectBuilder(table.tableClassName)
             .superclass(Table::class.asClassName().parameterizedBy(table.entityClassName))
             .addSuperclassConstructorParameter(buildCodeBlock {
                 appendTableNameParameter(table, context.config)
@@ -50,12 +50,12 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
                 add("schema=%S,", table.schema)
                 add("entityClass=%T::class,", table.entityClassName)
             })
-        emitter(builder)
+            .run(emitter)
     }
 
     public open fun generateClassEntity(context: TableGenerateContext, emitter: (TypeSpec.Builder) -> Unit) {
         val table = context.table
-        val builder = TypeSpec.objectBuilder(table.tableClassName)
+        TypeSpec.objectBuilder(table.tableClassName)
             .superclass(BaseTable::class.asClassName().parameterizedBy(table.entityClassName))
             .addSuperclassConstructorParameter(buildCodeBlock {
                 appendTableNameParameter(table, context.config)
@@ -64,7 +64,7 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
                 add("schema=%S, ", table.schema)
                 add("entityClass=%T::class", table.entityClassName)
             })
-        emitter(builder)
+            .run(emitter)
     }
 
 }
@@ -109,9 +109,9 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
                         )
                         val code = buildString {
                             if (column.isReferences) {
-                                append(".%references:M(%referencesTable:T) { it.%entityPropertyName:L } ")
+                                append(".%references:M(%referencesTable:T)·{·it.%entityPropertyName:L }·")
                             } else {
-                                append(".%bindTo:M { it.%entityPropertyName:L }")
+                                append(".%bindTo:M·{·it.%entityPropertyName:L·}")
                             }
                             if (column.isPrimaryKey) {
                                 append(".%primaryKey:M()")
@@ -137,7 +137,7 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
                     )
                     .initializer(buildCodeBlock {
                         add(columnInitializerGenerator.generate(column, dependencyFiles, config))
-                        if (column.isPrimaryKey) addStatement(".%M()", primaryKeyFun)
+                        if (column.isPrimaryKey) add(".%M()", primaryKeyFun)
                     })
                     .build()
             }
@@ -167,27 +167,31 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
             .addParameter(withReferences, Boolean::class.asTypeName()).addCode(buildCodeBlock {
                 val entityClassDeclaration = table.entityClassDeclaration
                 val constructor = entityClassDeclaration.primaryConstructor!!
-                val constructorParameter = constructor.parameters
-                val nonStructuralProperties = table.columns.map { it.entityPropertyName.simpleName }.toMutableSet()
+                val constructorParameters = constructor.parameters
+                val constructorParameterNames = constructorParameters.map { it.name!!.asString() }.toSet()
+                val nonConstructorParameterNames = table.columns
+                    .map { it.entityPropertyName.simpleName }
+                    .filter { it !in constructorParameterNames }
+                    .toSet()
                 // propertyName -> columnMember
                 val columnMap = table.columns.associateBy { it.entityPropertyName.simpleName }
                 val unknownParameters =
-                    constructor.parameters.filter { !it.hasDefault && it.name?.asString() !in nonStructuralProperties }
+                    constructor.parameters.filter { !it.hasDefault && it.name?.asString() !in constructorParameterNames }
                 if (unknownParameters.isNotEmpty()) {
                     error("unknown constructor parameter for ${table.entityClassName.canonicalName} : ${unknownParameters.map { it.name?.asString() }}")
                 }
-                if (config.allowReflectionCreateEntity && constructorParameter.any { it.hasDefault }) {
+                if (config.allowReflectionCreateEntity && constructorParameters.any { it.hasDefault }) {
                     addStatement("val constructor = %T::class.%M!!", table.entityClassName, primaryConstructor)
                     addStatement(
                         "val parameterMap = %T<%T,%T?>(%L)",
                         hashMapClassName,
                         kParameter,
                         any,
-                        constructorParameter.size
+                        constructorParameters.size
                     )
                     beginControlFlow("for (parameter in constructor.parameters)")
                     beginControlFlow("when(parameter.name)")
-                    for (parameter in constructor.parameters) {
+                    for (parameter in constructorParameters) {
                         val parameterName = parameter.name!!.asString()
                         beginControlFlow("%S -> ", parameterName)
                         val column = columnMap[parameterName]!!
@@ -202,16 +206,23 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
                             addStatement("parameterMap[parameter] = value%L", notNullOperator)
                         }
                         endControlFlow()
-                        nonStructuralProperties.remove(parameterName)
                     }
                     endControlFlow()
                     endControlFlow()
-                    addStatement("val instance = constructor.callBy(parameterMap)", table.entityClassName)
+                    if (nonConstructorParameterNames.isEmpty()) {
+                        addStatement("return constructor.callBy(parameterMap)", table.entityClassName)
+                    } else {
+                        addStatement("val instance = constructor.callBy(parameterMap)", table.entityClassName)
+                    }
                 } else {
                     // Create instance with code when construct has no default value parameter
-                    add("val instance = %T(", table.entityClassName)
-                    logger.info("constructorParameter:${constructorParameter.map { it.name!!.asString() }}")
-                    for (parameter in constructorParameter) {
+                    if (nonConstructorParameterNames.isEmpty()) {
+                        add(" return %T(", table.entityClassName)
+                    } else {
+                        add("val instance = %T(", table.entityClassName)
+                    }
+                    logger.info("constructorParameter:${constructorParameters.map { it.name!!.asString() }}")
+                    for (parameter in constructorParameters) {
                         val column =
                             table.columns.firstOrNull { it.entityPropertyName.simpleName == parameter.name!!.asString() }
                                 ?: error("Construct parameter not exists in table: ${parameter.name!!.asString()}")
@@ -224,26 +235,28 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
                             column.tablePropertyName,
                             notNullOperator
                         )
-                        nonStructuralProperties.remove(column.entityPropertyName.simpleName)
                     }
                     addStatement(")")
                 }
-                //non-structural property
-                for (property in nonStructuralProperties) {
-                    val column = columnMap[property]!!
-                    if (!column.isMutable) {
-                        continue
+                context.logger.info("constructorParameter:${constructorParameters.toString()}")
+                if (nonConstructorParameterNames.isNotEmpty()) {
+                    //non-structural property
+                    for (property in nonConstructorParameterNames) {
+                        val column = columnMap[property]!!
+                        if (!column.isMutable) {
+                            continue
+                        }
+                        val notNullOperator = if (column.isNullable) "" else "!!"
+                        addStatement(
+                            "instance.%L = %L[%M]%L",
+                            property,
+                            row,
+                            column.tablePropertyName,
+                            notNullOperator
+                        )
                     }
-                    val notNullOperator = if (column.isNullable) "" else "!!"
-                    addStatement(
-                        "instance.%L = %L[%M]%L",
-                        property,
-                        row,
-                        column.tablePropertyName,
-                        notNullOperator
-                    )
+                    addStatement("return instance")
                 }
-                addStatement("return instance")
             })
             .build()
             .run(emitter)

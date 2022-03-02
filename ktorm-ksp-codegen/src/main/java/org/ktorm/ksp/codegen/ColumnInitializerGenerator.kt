@@ -104,7 +104,7 @@ public open class ColumnInitializerGenerator(
             dependencyFiles.add(actualConverterDefinition.converterClassDeclaration.containingFile!!)
             return buildCodeBlock {
                 if (actualColumnName.isEmpty()) {
-                    addStatement(
+                    add(
                         "%T.convert(this,%T.toColumnName(%S),%T::class)",
                         actualConverterDefinition.converterName,
                         config.namingStrategy,
@@ -112,7 +112,7 @@ public open class ColumnInitializerGenerator(
                         propertyClassName
                     )
                 } else {
-                    addStatement(
+                    add(
                         "%T.convert(this,%S,%T::class)",
                         actualConverterDefinition.converterName,
                         actualColumnName,
@@ -125,14 +125,14 @@ public open class ColumnInitializerGenerator(
         if (isEnum) {
             return buildCodeBlock {
                 if (actualColumnName.isEmpty()) {
-                    addStatement(
+                    add(
                         "%M(%T.toColumnName(%S))",
                         defaultEnumInitializer,
                         config.namingStrategy,
                         entityPropertyName.simpleName
                     )
                 } else {
-                    addStatement("%M(%S)", defaultEnumInitializer, actualColumnName)
+                    add("%M(%S)", defaultEnumInitializer, actualColumnName)
                 }
             }
         }
@@ -141,14 +141,14 @@ public open class ColumnInitializerGenerator(
         if (defaultFunction != null) {
             return buildCodeBlock {
                 if (actualColumnName.isEmpty()) {
-                    addStatement(
+                    add(
                         "%M(%T.toColumnName(%S))",
                         defaultFunction,
                         config.namingStrategy,
                         entityPropertyName.simpleName
                     )
                 } else {
-                    addStatement("%M(%S)", defaultFunction, actualColumnName)
+                    add("%M(%S)", defaultFunction, actualColumnName)
                 }
             }
         }
