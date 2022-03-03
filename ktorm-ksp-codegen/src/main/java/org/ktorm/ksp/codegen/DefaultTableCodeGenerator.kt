@@ -109,7 +109,7 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
                         )
                         val code = buildString {
                             if (column.isReferences) {
-                                append(".%references:M(%referencesTable:T)·{·it.%entityPropertyName:L }·")
+                                append(".%references:M(%referencesTable:T)·{·it.%entityPropertyName:L·}·")
                             } else {
                                 append(".%bindTo:M·{·it.%entityPropertyName:L·}")
                             }
@@ -285,7 +285,6 @@ public class SequencePropertyGenerator : TopLevelPropertyGenerator {
     }
 }
 
-private val insertFun = MemberName("org.ktorm.dsl", "insert", true)
 private val updateFun = MemberName("org.ktorm.dsl", "update", true)
 private val eqFun = MemberName("org.ktorm.dsl", "eq", true)
 private val columnAssignmentExpressionType = ColumnAssignmentExpression::class.asClassName()
