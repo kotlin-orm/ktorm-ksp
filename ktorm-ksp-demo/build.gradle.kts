@@ -1,5 +1,5 @@
 plugins {
-    id("com.google.devtools.ksp") version "1.6.10-1.0.4"
+    id("com.google.devtools.ksp")
     kotlin("jvm")
 }
 
@@ -8,7 +8,7 @@ dependencies {
     ksp(project(":ktorm-ksp-compiler"))
     ksp(project(":ktorm-ksp-ext:ktorm-ksp-ext-sequence-batch"))
     implementation(project(":ktorm-ksp-api"))
-    implementation("org.ktorm:ktorm-core:3.4.1")
+    implementation(libs.ktorm.core)
 }
 
 kotlin {

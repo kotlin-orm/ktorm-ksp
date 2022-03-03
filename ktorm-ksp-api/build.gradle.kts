@@ -4,5 +4,5 @@ plugins {
 
 dependencies {
     api(kotlin("stdlib"))
-    compileOnly("org.ktorm:ktorm-core:3.4.1")
+    compileOnly(libs.ktorm.core)
 }

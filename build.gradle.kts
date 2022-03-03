@@ -1,10 +1,11 @@
 plugins {
-    kotlin("jvm") version "1.6.10" apply false
+    kotlin("jvm") apply false
 }
 
 buildscript {
     dependencies {
-        classpath(kotlin("gradle-plugin", version = "1.6.10"))
+        val gradlePluginVersion: String by project
+        classpath(kotlin("gradle-plugin", version = gradlePluginVersion))
     }
 }
 
@@ -28,6 +29,4 @@ allprojects {
         jcenter()
     }
 
-    dependencies {
-    }
 }
