@@ -3,12 +3,10 @@ plugins {
     kotlin("jvm")
 }
 
-
 dependencies {
     ksp(project(":ktorm-ksp-compiler"))
-    ksp(project(":ktorm-ksp-ext:ktorm-ksp-ext-sequence-batch"))
     implementation(project(":ktorm-ksp-api"))
-    implementation(libs.ktorm.core)
+    implementation(project(":ktorm-ksp-example:ktorm-ksp-example-common"))
 }
 
 kotlin {
