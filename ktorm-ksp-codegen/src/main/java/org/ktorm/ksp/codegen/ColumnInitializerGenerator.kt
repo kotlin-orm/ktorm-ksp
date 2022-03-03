@@ -52,7 +52,7 @@ public open class ColumnInitializerGenerator(
     ): CodeBlock {
         logger.info("generate column:$column")
         if (column.isReferences) {
-            val referenceColumn =  column.referencesColumn!!
+            val referenceColumn = column.referencesColumn!!
             dependencyFiles.add(referenceColumn.propertyDeclaration.containingFile!!)
             return doGenerate(
                 column.columnName,
@@ -126,13 +126,14 @@ public open class ColumnInitializerGenerator(
             return buildCodeBlock {
                 if (actualColumnName.isEmpty()) {
                     add(
-                        "%M(%T.toColumnName(%S))",
+                        "%M<%T>(%T.toColumnName(%S))",
                         defaultEnumInitializer,
+                        propertyClassName,
                         config.namingStrategy,
                         entityPropertyName.simpleName
                     )
                 } else {
-                    add("%M(%S)", defaultEnumInitializer, actualColumnName)
+                    add("%M<%T>(%S)", propertyClassName, defaultEnumInitializer, actualColumnName)
                 }
             }
         }
