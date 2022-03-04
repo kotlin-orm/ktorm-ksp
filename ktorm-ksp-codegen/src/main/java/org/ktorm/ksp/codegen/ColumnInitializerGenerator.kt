@@ -54,8 +54,9 @@ public open class ColumnInitializerGenerator(
         if (column.isReferences) {
             val referenceColumn = column.referencesColumn!!
             dependencyFiles.add(referenceColumn.propertyDeclaration.containingFile!!)
+            val columnName = column.columnName.ifEmpty { column.entityPropertyName.simpleName }
             return doGenerate(
-                column.columnName,
+                columnName,
                 config,
                 referenceColumn.entityPropertyName,
                 referenceColumn.converterDefinition,

@@ -95,7 +95,7 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
                 }
                 PropertySpec
                     .builder(
-                        column.entityPropertyName.simpleName,
+                        column.tablePropertyName.simpleName,
                         columnType
                     )
                     .initializer(buildCodeBlock {
@@ -132,7 +132,7 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
             .map { column ->
                 PropertySpec
                     .builder(
-                        column.entityPropertyName.simpleName,
+                        column.tablePropertyName.simpleName,
                         Column::class.asClassName().parameterizedBy(column.propertyClassName.copy(nullable = false))
                     )
                     .initializer(buildCodeBlock {
@@ -230,7 +230,9 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
                     for (parameter in constructorParameters) {
                         val column =
                             table.columns.firstOrNull { it.entityPropertyName.simpleName == parameter.name!!.asString() }
-                                ?: error("Construct parameter not exists in table: ${parameter.name!!.asString()}")
+                                ?: error("Construct parameter not exists in tableDefinition: ${parameter.name!!.asString()}, " +
+                                        "If the parameter is not a sql column, add a default value. If the parameter is a sql column, " +
+                                        "please remove the Ignore annotation or ignoreColumns in the Table annotation to remove the parameter")
 
                         val notNullOperator = if (column.isNullable) "" else "!!"
                         add(
@@ -320,14 +322,15 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
                         "columnExpr" to columnExpressionType,
                         "argumentExpr" to argumentExpressionType,
                         "table" to table.tableClassName,
-                        "column" to column.tablePropertyName.simpleName
+                        "entityProperty" to column.entityPropertyName.simpleName,
+                        "tableProperty" to column.tablePropertyName.simpleName
                     )
                     addNamed(
                         """
                                 assignments.add(
                                     %columnAssignmentExpr:T(
-                                        column = %columnExpr:T(null, %table:T.%column:L.name, %table:T.%column:L.sqlType),
-                                        expression = %argumentExpr:T(entity.%column:L, %table:T.%column:L.sqlType)
+                                        column = %columnExpr:T(null, %table:T.%tableProperty:L.name, %table:T.%tableProperty:L.sqlType),
+                                        expression = %argumentExpr:T(entity.%entityProperty:L, %table:T.%tableProperty:L.sqlType)
                                     )
                                 )
                                 
