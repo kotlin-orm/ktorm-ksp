@@ -193,8 +193,13 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
                     beginControlFlow("when(parameter.name)")
                     for (parameter in constructorParameters) {
                         val parameterName = parameter.name!!.asString()
+                        val column = columnMap[parameterName]
+                            ?: if (parameter.hasDefault) {
+                                continue
+                            } else {
+                                error("not found column definition: $parameterName")
+                            }
                         beginControlFlow("%S -> ", parameterName)
-                        val column = columnMap[parameterName]!!
                         addStatement("val value = %L[%M]", row, column.tablePropertyName)
                         // hasDefault
                         if (parameter.hasDefault) {
@@ -409,7 +414,7 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
                 for (column in table.columns) {
                     if (column.isPrimaryKey) {
                         addStatement(
-                            "it.%M %M entity.%L%L",
+                            "%M %M entity.%L%L",
                             column.tablePropertyName,
                             eqFun,
                             column.entityPropertyName.simpleName,
