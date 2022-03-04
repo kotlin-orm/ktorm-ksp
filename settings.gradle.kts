@@ -1,13 +1,5 @@
 rootProject.name = "ktorm-ksp"
 
-include("ktorm-ksp-api")
-include("ktorm-ksp-compiler")
-include("ktorm-ksp-codegen")
-include("ktorm-ksp-ext")
-include("ktorm-ksp-ext:ktorm-ksp-ext-sequence-batch")
-include("ktorm-ksp-example")
-include("ktorm-ksp-example:ktorm-ksp-example-common")
-
 pluginManagement {
     val kotlinVersion: String by settings
     val googleKspVersion: String by settings
@@ -35,5 +27,12 @@ dependencyResolutionManagement {
         }
     }
 }
+
+include("ktorm-ksp-api")
+include("ktorm-ksp-compiler")
+include("ktorm-ksp-codegen")
+include("ktorm-ksp-ext")
+include("ktorm-ksp-ext:ktorm-ksp-ext-sequence-batch")
+include("ktorm-ksp-example")
+include("ktorm-ksp-example:ktorm-ksp-example-common")
 include("ktorm-ksp-example:ktorm-ksp-example-simple")
-findProject(":ktorm-ksp-example:ktorm-ksp-example-simple")?.name = "ktorm-ksp-example-simple"
