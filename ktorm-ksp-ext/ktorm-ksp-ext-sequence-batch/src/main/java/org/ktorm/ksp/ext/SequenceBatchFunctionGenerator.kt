@@ -52,9 +52,16 @@ public class SequenceAddAllFunctionGenerator : TopLevelFunctionGenerator {
     }
 }
 
+private val andFun = MemberName("org.ktorm.dsl", "and", true)
+
 public class SequenceUpdateAllFunctionGenerator : TopLevelFunctionGenerator {
     override fun generate(context: TableGenerateContext, emitter: (FunSpec) -> Unit) {
         val table = context.table
+        val primaryKeyColumns = table.columns.filter { it.isPrimaryKey }
+        if (primaryKeyColumns.isEmpty()) {
+            context.logger.info("skip the entity sequence updateAll method of table ${table.entityClassName} because it does not have a primary key column")
+            return
+        }
         FunSpec.builder("updateAll")
             .receiver(EntitySequence::class.asClassName().parameterizedBy(table.entityClassName, table.tableClassName))
             .addParameter("entities", Iterable::class.asClassName().parameterizedBy(table.entityClassName))
@@ -83,10 +90,24 @@ public class SequenceUpdateAllFunctionGenerator : TopLevelFunctionGenerator {
                     }
                 }
                 beginControlFlow("where")
-                for (column in table.columns) {
-                    if (column.isPrimaryKey) {
+                primaryKeyColumns.forEachIndexed { index, column ->
+                    if (index == 0) {
+                        val conditionTemperate = if (primaryKeyColumns.size == 1) {
+                            "it.%M %M entity.%L%L"
+                        } else {
+                            "(it.%M %M entity.%L%L)"
+                        }
                         addStatement(
-                            "%M %M entity.%L%L",
+                            conditionTemperate,
+                            column.tablePropertyName,
+                            eqFun,
+                            column.entityPropertyName.simpleName,
+                            if (column.isNullable) "!!" else ""
+                        )
+                    } else {
+                        addStatement(
+                            ".%M(it.%M %M entity.%L%L)",
+                            andFun,
                             column.tablePropertyName,
                             eqFun,
                             column.entityPropertyName.simpleName,
