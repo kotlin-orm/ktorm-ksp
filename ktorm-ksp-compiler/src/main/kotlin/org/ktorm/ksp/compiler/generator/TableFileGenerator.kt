@@ -18,18 +18,14 @@ public object TableFileGenerator {
 
     public fun init(config: CodeGenerateConfig, logger: KSPLogger) {
         val defaultGenerator = config.defaultGenerator
-        if (topLevelPropertyGenerator.isEmpty()) {
-            if (defaultGenerator.enableSequenceOf) {
-                topLevelPropertyGenerator.add(SequencePropertyGenerator())
-            }
+        if (defaultGenerator.enableSequenceOf && topLevelPropertyGenerator.none { it is SequencePropertyGenerator }) {
+            topLevelPropertyGenerator.add(SequencePropertyGenerator())
         }
-        if (topLevelFunctionGenerator.isEmpty()) {
-            if (defaultGenerator.enableClassEntitySequenceAddFun) {
-                topLevelFunctionGenerator.add(ClassEntitySequenceAddFunGenerator())
-            }
-            if (defaultGenerator.enableClassEntitySequenceUpdateFun) {
-                topLevelFunctionGenerator.add(ClassEntitySequenceUpdateFunGenerator())
-            }
+        if (defaultGenerator.enableClassEntitySequenceAddFun && topLevelFunctionGenerator.none { it is ClassEntitySequenceAddFunGenerator }) {
+            topLevelFunctionGenerator.add(ClassEntitySequenceAddFunGenerator())
+        }
+        if (defaultGenerator.enableClassEntitySequenceUpdateFun && topLevelFunctionGenerator.none { it is ClassEntitySequenceUpdateFunGenerator }) {
+            topLevelFunctionGenerator.add(ClassEntitySequenceUpdateFunGenerator())
         }
         logger.info("typeGenerator: ${typeGenerator::class.simpleName}")
         logger.info("propertyGenerator: ${propertyGenerator::class.simpleName}")
