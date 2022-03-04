@@ -80,14 +80,14 @@ public class KtormProcessor(
             .filter { it.isReferences }
             .forEach {
                 if (it.tableDefinition.ktormEntityType != KtormEntityType.INTERFACE) {
-                    error("Wrong references column: ${it.tablePropertyName.canonicalName} , References are only allowed for interface entity types")
+                    error("Wrong references column: ${it.tablePropertyName.canonicalName}, References Column are only allowed for interface entity type")
                 }
                 val table = entityClassMap[it.propertyClassName]
                     ?: error("Wrong references column: ${it.tablePropertyName.canonicalName} , Type ${it.propertyClassName} " +
                             "is not an entity type, please check if a @Table annotation is added to type ${it.propertyClassName}")
                 if (table.ktormEntityType != KtormEntityType.INTERFACE) {
                     error("Wrong references column: ${it.tablePropertyName.canonicalName}. Type ${it.propertyClassName} is not an interface entity type, " +
-                            "References are only allowed for interface entity types")
+                            "References column must be interface entity type")
                 }
                 val primaryKeyColumns = table.columns.filter { column -> column.isPrimaryKey }
                 if (primaryKeyColumns.isEmpty()) {
