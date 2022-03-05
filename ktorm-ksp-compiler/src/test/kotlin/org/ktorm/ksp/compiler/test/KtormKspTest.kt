@@ -959,7 +959,7 @@ public class KtormKspTest {
                     val yearMonth: YearMonth,
                     val year: Year,
                     val instant: Instant,
-                    val uUID: UUID,
+                    val uuid: UUID,
                     val byteArray: ByteArray,
                     val gender: Gender
                 )
@@ -994,7 +994,7 @@ public class KtormKspTest {
                 "yearMonth" -> assertThat(it.sqlType).isEqualTo(YearMonthSqlType)
                 "year" -> assertThat(it.sqlType).isEqualTo(YearSqlType)
                 "instant" -> assertThat(it.sqlType).isEqualTo(InstantSqlType)
-                "uUID" -> assertThat(it.sqlType).isEqualTo(UuidSqlType)
+                "uuid" -> assertThat(it.sqlType).isEqualTo(UuidSqlType)
                 "byteArray" -> assertThat(it.sqlType).isEqualTo(BytesSqlType)
                 "gender" -> assertThat(it.sqlType).isInstanceOf(EnumSqlType::class.java)
             }
@@ -1029,6 +1029,7 @@ public class KtormKspTest {
                 class KtormConfig
 
                 object TestBridge {
+                    @Suppress("MemberVisibilityCanBePrivate")
                     fun getUsers(database:Database): EntitySequence<User,Users> {
                         return database.users
                     }
