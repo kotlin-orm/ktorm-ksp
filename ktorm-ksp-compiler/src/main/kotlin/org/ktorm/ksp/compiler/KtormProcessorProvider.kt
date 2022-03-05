@@ -125,7 +125,7 @@ public class KtormProcessor(
             val namingStrategyType = argumentMap[KtormKspConfig::namingStrategy.name]!!.value as KSType
             if (namingStrategyType.toClassName() != Nothing::class.asClassName()) {
                 if ((namingStrategyType.declaration as KSClassDeclaration).classKind != ClassKind.OBJECT) {
-                    error("Wrong KtormKspConfig parameter:${KtormKspConfig::namingStrategy.name}, converter must be singleton.")
+                    error("Wrong KtormKspConfig parameter:${KtormKspConfig::namingStrategy.name}, namingStrategy must be singleton.")
                 }
                 configBuilder.namingStrategy = namingStrategyType.toClassName()
                 try {
