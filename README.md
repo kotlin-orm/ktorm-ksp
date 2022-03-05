@@ -1,15 +1,17 @@
+:us: English | :cn: [简体中文](README_cn.md)
+
 # ktorm-ksp是什么？
-Ktorm KSP用于帮助 [Ktorm](https://github.com/kotlin-orm/ktorm) 减少样板代码（基于 [ksp](https://github.com/google/ksp) 实现）。 只需要编写Entity类，自动生成相应的Table类。并可定义自动生成有用的扩展方法/属性
+[Ktorm](https://github.com/kotlin-orm/ktorm) KSP extension to help generate boilerplate code. It can automatically generate Table objects through entity classes, while making entities defined by data classes easier to use, and supports custom extension code generation logic.
 
-- 注意： 该项目还在进行开发中
+- PS： The project is still in development
 
-# 特性
+# Feature
 
-- 支持继承Entity接口定义的"实体"
+- Just write the entity class and automatically generate the corresponding Table object. Support classes defined based on the Entity interface, as well as entities defined by ordinary class or data class
+  
+- Better support for class entity classes, the default implementation of the doCreateEntity method, and the add and update method of the entity sequence 
 
-- 支持 class/data class定义的"实体"，在ktorm中如果使用data class作为实体，会存在一些限制（可以通过[链接](https://www.ktorm.org/zh-cn/define-entities-as-any-kind-of-classes.html) 参考） 通过ktorm-ksp可以改善此问题，让ktorm更好的支持data class 
-
-- 可自定义的代码生成配置，通过Java SPI机制可以扩展代码生成逻辑。
+- Extensible code generation logic. Through the SPI mechanism, you only need to implement the specified interface, and you can write your own automatically generated logic.
 
 ```kotlin
 //custom entity
@@ -20,7 +22,7 @@ public data class Student(
     public var name: String,
     public var age: Int
 )
-//generate code
+//auto generate code
 public object Students : BaseTable<Student>(tableName="Student",alias="", catalog="",
     schema="", entityClass=Student::class) {
         
@@ -31,51 +33,49 @@ public object Students : BaseTable<Student>(tableName="Student",alias="", catalo
     public val age: Column<Int> = int("age")
 
     public override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean): Student {
-        val instance = Student(id = row[id],name = row[name]!!,age = row[age]!!,)
-        return instance
+        return Student(id = row[id],name = row[name]!!,age = row[age]!!,)
     }
 }
 
-public fun EntitySequence<Student, Students>.add(entity: Student): Int { ... }
+public fun EntitySequence<Student, Students>.add(entity: Student): Int { /* omit code */ }
 
-public fun EntitySequence<Student, Students>.update(entity: Student):Int { ... }
+public fun EntitySequence<Student, Students>.update(entity: Student):Int { /* omit code */ }
 
-public val Database.students: EntitySequence<Student, Students>
-  get() = this.sequenceOf(Students)
+public val Database.students: EntitySequence<Student, Students> get() = this.sequenceOf(Students)
 ```
 
-### 快速入门
+### Start
 
 ...
 
-### 实体定义
+### Table Definition
 
 ...
 
-#### interface 实体
+#### interface entity
 
 ...
 
-#### class/data class 实体
+#### class/data class entity
 
 ...
 
-#### 命名风格
+#### NamingStyle
 
 ...
 
-### 类型转换器
+### TypeConverter
 
 ...
 
-### 方法/属性扩展
+### property or function generator
 
 ...
 
-#### 默认方法/属性扩展
+#### default property or function generator
 
 ...
 
-#### 自定义方法/属性扩展
+#### custom property or function generator
 
 ...
