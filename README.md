@@ -1,6 +1,9 @@
+<p align="center">
+    <img src="https://raw.githubusercontent.com/kotlin-orm/ktorm-docs/master/source/images/logo-full.png" alt="Ktorm" width="300" />
+</p>
 :us: English | :cn: [简体中文](README_cn.md)
 
-# ktorm-ksp是什么？
+# What's Ktorm-ksp?
 
 [Ktorm](https://github.com/kotlin-orm/ktorm) KSP extension to help generate boilerplate code. It can automatically
 generate Table objects through entity classes, while making entities defined by data classes easier to use, and supports
