@@ -125,7 +125,7 @@ public class KtormProcessor(
             val namingStrategyType = argumentMap[KtormKspConfig::namingStrategy.name]!!.value as KSType
             if (namingStrategyType.toClassName() != Nothing::class.asClassName()) {
                 if ((namingStrategyType.declaration as KSClassDeclaration).classKind != ClassKind.OBJECT) {
-                    error("Wrong KtormKspConfig parameter:${KtormKspConfig::namingStrategy.name}, converter must be object instance.")
+                    error("Wrong KtormKspConfig parameter:${KtormKspConfig::namingStrategy.name}, converter must be singleton.")
                 }
                 configBuilder.namingStrategy = namingStrategyType.toClassName()
                 try {
@@ -141,7 +141,7 @@ public class KtormProcessor(
             val enumConverterType = argumentMap[KtormKspConfig::enumConverter.name]!!.value as KSType
             if (enumConverterType.toClassName() != Nothing::class.asClassName()) {
                 if ((enumConverterType.declaration as KSClassDeclaration).classKind != ClassKind.OBJECT) {
-                    error("Wrong KtormKspConfig parameter:${KtormKspConfig::enumConverter.name}, converter must be object instance.")
+                    error("Wrong KtormKspConfig parameter:${KtormKspConfig::enumConverter.name}, converter must be singleton.")
                 }
                 configBuilder.enumConverter = ConverterDefinition(
                     enumConverterType.toClassName(), enumConverterType.declaration as KSClassDeclaration
@@ -155,7 +155,7 @@ public class KtormProcessor(
                 val singleTypeConverterMap = singleTypeConverters.asSequence()
                     .onEach {
                         if ((it.declaration as KSClassDeclaration).classKind != ClassKind.OBJECT) {
-                            error("Wrong KtormKspConfig parameter:${KtormKspConfig::singleTypeConverters.name} value:${it.declaration.qualifiedName!!.asString()} converter must be object instance.")
+                            error("Wrong KtormKspConfig parameter:${KtormKspConfig::singleTypeConverters.name} value:${it.declaration.qualifiedName!!.asString()} converter must be singleton.")
                         }
                     }.associate {
                         val singleTypeReference =
@@ -237,7 +237,7 @@ public class KtormProcessor(
                     if (converter != null && converter.toClassName() != Nothing::class.asClassName()) {
                         val converterDeclaration = converter.declaration as KSClassDeclaration
                         if (converterDeclaration.classKind != ClassKind.OBJECT) {
-                            error("Wrong converter type:${converter.toClassName()}, converter must be object instance.")
+                            error("Wrong converter type:${converter.toClassName()}, converter must be singleton.")
                         }
                         converterDefinition = ConverterDefinition(converter.toClassName(), converterDeclaration)
                     }
