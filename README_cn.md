@@ -13,8 +13,8 @@
 
 - 可扩展的代码生成逻辑。通过SPI机制，只需实现指定的接口，即可编写自己所需的自动生成逻辑。
 
+定义实体 ▼
 ```kotlin
-//定义实体
 @Table
 public data class Student(
     @PrimaryKey
@@ -22,7 +22,9 @@ public data class Student(
     public var name: String,
     public var age: Int
 )
-//自动生成的代码 
+```
+自动生成代码 ▼
+```kotlin
 public object Students : BaseTable<Student>(tableName="Student",alias="", catalog="",
     schema="", entityClass=Student::class) {
         
@@ -43,6 +45,8 @@ public fun EntitySequence<Student, Students>.update(entity: Student):Int { /*此
 
 public val Database.students: EntitySequence<Student, Students> get() = this.sequenceOf(Students)
 ```
+```
+
 
 ### 快速入门
 
