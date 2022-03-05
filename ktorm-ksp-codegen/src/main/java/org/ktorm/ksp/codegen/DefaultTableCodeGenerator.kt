@@ -235,7 +235,7 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
                                         "please remove the Ignore annotation or ignoreColumns in the Table annotation to remove the parameter")
 
                         val notNullOperator = if (column.isNullable) "" else "!!"
-                        add(
+                        addStatement(
                             "%L = %L[%M]%L,",
                             parameter.name!!.asString(),
                             row,
