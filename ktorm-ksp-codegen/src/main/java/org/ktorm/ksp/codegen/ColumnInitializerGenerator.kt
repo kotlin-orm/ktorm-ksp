@@ -7,6 +7,7 @@ import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import org.ktorm.ksp.codegen.definition.ColumnDefinition
 import org.ktorm.ksp.codegen.definition.ConverterDefinition
 import java.math.BigDecimal
+import java.sql.Date
 import java.sql.Time
 import java.sql.Timestamp
 import java.time.*
@@ -30,9 +31,9 @@ public open class ColumnInitializerGenerator(
         Double::class.asTypeName() to MemberName("org.ktorm.schema", "double", true),
         Float::class.asTypeName() to MemberName("org.ktorm.schema", "float", true),
         BigDecimal::class.asTypeName() to MemberName("org.ktorm.schema", "decimal", true),
-        Date::class.asTypeName() to MemberName("org.ktorm.schema", "date", true),
-        Time::class.asTypeName() to MemberName("org.ktorm.schema", "time", true),
-        Timestamp::class.asTypeName() to MemberName("org.ktorm.schema", "timestamp", true),
+        Date::class.asTypeName() to MemberName("org.ktorm.schema", "jdbcDate", true),
+        Time::class.asTypeName() to MemberName("org.ktorm.schema", "jdbcTime", true),
+        Timestamp::class.asTypeName() to MemberName("org.ktorm.schema", "jdbcTimestamp", true),
         LocalDateTime::class.asTypeName() to MemberName("org.ktorm.schema", "datetime", true),
         LocalDate::class.asTypeName() to MemberName("org.ktorm.schema", "date", true),
         LocalTime::class.asTypeName() to MemberName("org.ktorm.schema", "time", true),
@@ -41,7 +42,7 @@ public open class ColumnInitializerGenerator(
         Year::class.asTypeName() to MemberName("org.ktorm.schema", "year", true),
         Instant::class.asTypeName() to MemberName("org.ktorm.schema", "timestamp", true),
         UUID::class.asTypeName() to MemberName("org.ktorm.schema", "uuid", true),
-        Byte::class.asTypeName() to MemberName("org.ktorm.schema", "bytes", true)
+        ByteArray::class.asTypeName() to MemberName("org.ktorm.schema", "bytes", true)
     )
 
     @OptIn(KotlinPoetKspPreview::class)
@@ -134,7 +135,7 @@ public open class ColumnInitializerGenerator(
                         entityPropertyName.simpleName
                     )
                 } else {
-                    add("%M<%T>(%S)", propertyClassName, defaultEnumInitializer, actualColumnName)
+                    add("%M<%T>(%S)", defaultEnumInitializer, propertyClassName, actualColumnName)
                 }
             }
         }
