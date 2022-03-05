@@ -8,4 +8,5 @@ dependencies {
     testImplementation(libs.assertj.core)
     testImplementation(libs.kotlinCompileTesting)
     testImplementation(libs.kotlinCompileTesting.ksp)
+    testImplementation(libs.h2database)
 }
