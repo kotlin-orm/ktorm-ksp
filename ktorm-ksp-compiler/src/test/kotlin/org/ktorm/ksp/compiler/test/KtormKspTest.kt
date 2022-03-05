@@ -12,10 +12,7 @@ import org.ktorm.entity.toList
 import org.ktorm.ksp.compiler.KtormProcessorProvider
 import org.ktorm.logging.ConsoleLogger
 import org.ktorm.logging.LogLevel
-import org.ktorm.schema.BaseTable
-import org.ktorm.schema.IntSqlType
-import org.ktorm.schema.Table
-import org.ktorm.schema.VarcharSqlType
+import org.ktorm.schema.*
 import java.io.File
 import kotlin.reflect.full.functions
 
@@ -700,6 +697,111 @@ public class KtormKspTest {
     }
 
     @Test
+    public fun `enable sequenceOf for defaultGenerator`() {
+        val (result1, result2) = twiceCompile(
+            SourceFile.kotlin(
+                "source.kt",
+                """
+                import org.ktorm.ksp.api.*
+                    
+                @Table
+                data class User(
+                    @PrimaryKey
+                    var id: Int?,
+                    var username: String,
+                    var age: Int,
+                )
+                
+                @KtormKspConfig(
+                    defaultGenerator = DefaultGenerator(
+                        enableSequenceOf = true, 
+                        enableClassEntitySequenceAddFun = false,
+                        enableClassEntitySequenceUpdateFun = false
+                    )
+                )
+                class KtormConfig
+                """,
+            )
+        ) {
+            val sequenceLine = it.lineSequence().filter { str -> str.contains("EntitySequence<User, Users>") }.toList()
+            assertThat(sequenceLine.size).isEqualTo(1)
+            assertThat(sequenceLine.first()).contains("val Database.users: EntitySequence<User, Users>")
+        }
+        assertThat(result1.exitCode).isEqualTo(ExitCode.OK)
+        assertThat(result2.exitCode).isEqualTo(ExitCode.OK)
+    }
+
+    @Test
+    public fun `enable sequence add function for defaultGenerator`() {
+        val (result1, result2) = twiceCompile(
+            SourceFile.kotlin(
+                "source.kt",
+                """
+                import org.ktorm.ksp.api.*
+                    
+                @Table
+                data class User(
+                    @PrimaryKey
+                    var id: Int?,
+                    var username: String,
+                    var age: Int,
+                )
+                
+                @KtormKspConfig(
+                    defaultGenerator = DefaultGenerator(
+                        enableSequenceOf = false, 
+                        enableClassEntitySequenceAddFun = true,
+                        enableClassEntitySequenceUpdateFun = false
+                    )
+                )
+                class KtormConfig
+                """,
+            )
+        ) {
+            val sequenceLine = it.lineSequence().filter { str -> str.contains("EntitySequence<User, Users>") }.toList()
+            assertThat(sequenceLine.size).isEqualTo(1)
+            assertThat(sequenceLine.first()).contains("EntitySequence<User, Users>.add")
+        }
+        assertThat(result1.exitCode).isEqualTo(ExitCode.OK)
+        assertThat(result2.exitCode).isEqualTo(ExitCode.OK)
+    }
+
+    @Test
+    public fun `enable sequence update function for defaultGenerator`() {
+        val (result1, result2) = twiceCompile(
+            SourceFile.kotlin(
+                "source.kt",
+                """
+                import org.ktorm.ksp.api.*
+                    
+                @Table
+                data class User(
+                    @PrimaryKey
+                    var id: Int?,
+                    var username: String,
+                    var age: Int,
+                )
+                
+                @KtormKspConfig(
+                    defaultGenerator = DefaultGenerator(
+                        enableSequenceOf = false, 
+                        enableClassEntitySequenceAddFun = false,
+                        enableClassEntitySequenceUpdateFun = true
+                    )
+                )
+                class KtormConfig
+                """,
+            )
+        ) {
+            val sequenceLine = it.lineSequence().filter { str -> str.contains("EntitySequence<User, Users>") }.toList()
+            assertThat(sequenceLine.size).isEqualTo(1)
+            assertThat(sequenceLine.first()).contains("EntitySequence<User, Users>.update")
+        }
+        assertThat(result1.exitCode).isEqualTo(ExitCode.OK)
+        assertThat(result2.exitCode).isEqualTo(ExitCode.OK)
+    }
+
+    @Test
     public fun `sequenceOf function`() {
         val (result1, result2) = twiceCompile(
             SourceFile.kotlin(
@@ -748,7 +850,8 @@ public class KtormKspTest {
         val bridge = bridgeClass.kotlin.objectInstance
         useDatabase { database ->
             val users =
-                bridgeClass.kotlin.functions.first { it.name == "getUsers" }.call(bridge, database) as EntitySequence<*, *>
+                bridgeClass.kotlin.functions.first { it.name == "getUsers" }
+                    .call(bridge, database) as EntitySequence<*, *>
             assertThat(users.sourceTable.tableName).isEqualTo("user")
             val toList = users.toList()
             assertThat(toList.toString()).isEqualTo("[User(id=1, username=jack, age=20), User(id=2, username=lucy, age=22), User(id=3, username=mike, age=22)]")
@@ -801,7 +904,8 @@ public class KtormKspTest {
         val bridge = bridgeClass.kotlin.objectInstance
         useDatabase { database ->
             var users =
-                bridgeClass.kotlin.functions.first { it.name == "getUsers" }.call(bridge, database) as EntitySequence<*, *>
+                bridgeClass.kotlin.functions.first { it.name == "getUsers" }
+                    .call(bridge, database) as EntitySequence<*, *>
             assertThat(users.sourceTable.tableName).isEqualTo("user")
             assertThat(
                 users.toList().toString()
@@ -809,12 +913,94 @@ public class KtormKspTest {
 
             bridgeClass.kotlin.functions.first { it.name == "addUser" }.call(bridge, database)
             users =
-                bridgeClass.kotlin.functions.first { it.name == "getUsers" }.call(bridge, database) as EntitySequence<*, *>
+                bridgeClass.kotlin.functions.first { it.name == "getUsers" }
+                    .call(bridge, database) as EntitySequence<*, *>
             assertThat(
                 users.toList().toString()
             ).isEqualTo("[User(id=1, username=jack, age=20), User(id=2, username=lucy, age=22), User(id=3, username=mike, age=22), User(id=4, username=test, age=100)]")
         }
     }
+
+    @Test
+    public fun `default column initializer`() {
+        val (result1, result2) = twiceCompile(
+            SourceFile.kotlin(
+                "source.kt",
+                """
+                import org.ktorm.database.Database
+                import org.ktorm.entity.Entity
+                import org.ktorm.entity.EntitySequence
+                import org.ktorm.ksp.api.*
+                import java.math.BigDecimal
+                import java.sql.Time
+                import java.sql.Date
+                import java.sql.Timestamp
+                import java.time.*
+                import java.util.UUID
+                    
+                @Table
+                @Suppress("ArrayInDataClass")
+                data class User(
+                    val int: Int,
+                    val string: String,
+                    val boolean: Boolean,
+                    val long: Long,
+                    val short: Short,
+                    val double: Double,
+                    val float: Float,
+                    val bigDecimal: BigDecimal,
+                    val date: Date,
+                    val time: Time,
+                    val timestamp: Timestamp,
+                    val localDateTime: LocalDateTime,
+                    val localDate: LocalDate,
+                    val localTime: LocalTime,
+                    val monthDay: MonthDay,
+                    val yearMonth: YearMonth,
+                    val year: Year,
+                    val instant: Instant,
+                    val uUID: UUID,
+                    val byteArray: ByteArray,
+                    val gender: Gender
+                )
+
+                enum class Gender {
+                    MALE,
+                    FEMALE
+                }
+                """,
+            )
+        )
+        assertThat(result1.exitCode).isEqualTo(ExitCode.OK)
+        assertThat(result2.exitCode).isEqualTo(ExitCode.OK)
+        val table = result2.getBaseTable("Users")
+        table.columns.forEach {
+            when (it.name) {
+                "int" -> assertThat(it.sqlType).isEqualTo(IntSqlType)
+                "string" -> assertThat(it.sqlType).isEqualTo(VarcharSqlType)
+                "boolean" -> assertThat(it.sqlType).isEqualTo(BooleanSqlType)
+                "long" -> assertThat(it.sqlType).isEqualTo(LongSqlType)
+                "short" -> assertThat(it.sqlType).isEqualTo(ShortSqlType)
+                "double" -> assertThat(it.sqlType).isEqualTo(DoubleSqlType)
+                "float" -> assertThat(it.sqlType).isEqualTo(FloatSqlType)
+                "bigDecimal" -> assertThat(it.sqlType).isEqualTo(DecimalSqlType)
+                "date" -> assertThat(it.sqlType).isEqualTo(DateSqlType)
+                "time" -> assertThat(it.sqlType).isEqualTo(TimeSqlType)
+                "timestamp" -> assertThat(it.sqlType).isEqualTo(TimestampSqlType)
+                "localDateTime" -> assertThat(it.sqlType).isEqualTo(LocalDateTimeSqlType)
+                "localDate" -> assertThat(it.sqlType).isEqualTo(LocalDateSqlType)
+                "localTime" -> assertThat(it.sqlType).isEqualTo(LocalTimeSqlType)
+                "monthDay" -> assertThat(it.sqlType).isEqualTo(MonthDaySqlType)
+                "yearMonth" -> assertThat(it.sqlType).isEqualTo(YearMonthSqlType)
+                "year" -> assertThat(it.sqlType).isEqualTo(YearSqlType)
+                "instant" -> assertThat(it.sqlType).isEqualTo(InstantSqlType)
+                "uUID" -> assertThat(it.sqlType).isEqualTo(UuidSqlType)
+                "byteArray" -> assertThat(it.sqlType).isEqualTo(BytesSqlType)
+                "gender" -> assertThat(it.sqlType).isInstanceOf(EnumSqlType::class.java)
+            }
+        }
+    }
+
 
     @Test
     public fun `sequence update function`() {
@@ -861,14 +1047,16 @@ public class KtormKspTest {
         val bridge = bridgeClass.kotlin.objectInstance
         useDatabase { database ->
             var users =
-                bridgeClass.kotlin.functions.first { it.name == "getUsers" }.call(bridge, database) as EntitySequence<*, *>
+                bridgeClass.kotlin.functions.first { it.name == "getUsers" }
+                    .call(bridge, database) as EntitySequence<*, *>
             assertThat(users.sourceTable.tableName).isEqualTo("user")
             assertThat(
                 users.toList().toString()
             ).isEqualTo("[User(id=1, username=jack, age=20), User(id=2, username=lucy, age=22), User(id=3, username=mike, age=22)]")
 
             bridgeClass.kotlin.functions.first { it.name == "updateUser" }.call(bridge, database)
-            users = bridgeClass.kotlin.functions.first { it.name == "getUsers" }.call(bridge, database) as EntitySequence<*, *>
+            users = bridgeClass.kotlin.functions.first { it.name == "getUsers" }
+                .call(bridge, database) as EntitySequence<*, *>
             assertThat(
                 users.toList().toString()
             ).isEqualTo("[User(id=1, username=tom, age=20), User(id=2, username=lucy, age=22), User(id=3, username=mike, age=22)]")
