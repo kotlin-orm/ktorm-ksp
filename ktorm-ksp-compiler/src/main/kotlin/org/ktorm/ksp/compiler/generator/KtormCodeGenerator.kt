@@ -23,7 +23,7 @@ public class KtormCodeGenerator {
     ) {
         logger.info("generate tables:${tables.map { it.entityClassName.simpleName }}")
         logger.info("code generator config:${config}")
-        TableFileGenerator.init(config, logger)
+        val tableFileGenerator = TableFileGenerator(config, logger)
         val configDependencyFile = config.configDependencyFile
         for (table in tables) {
             val dependencyFiles = mutableSetOf(table.entityFile)
@@ -32,7 +32,7 @@ public class KtormCodeGenerator {
             }
             logger.info("generate table:$table")
             val context = TableGenerateContext(table, config, columnInitializerGenerator, logger, dependencyFiles)
-            val file = TableFileGenerator.generate(context)
+            val file = tableFileGenerator.generate(context)
             logger.info("table dependencyFiles:${dependencyFiles.map { it.location }}")
             file.writeTo(codeGenerator, Dependencies(true, *dependencyFiles.toTypedArray()))
         }

@@ -5,7 +5,7 @@ import com.squareup.kotlinpoet.FileSpec
 import org.ktorm.ksp.codegen.*
 import java.util.*
 
-public object TableFileGenerator {
+public class TableFileGenerator(config: CodeGenerateConfig, logger: KSPLogger) {
 
 
     private val typeGenerator: TableTypeGenerator = getOneOrNullService() ?: DefaultTableTypeGenerator()
@@ -16,15 +16,15 @@ public object TableFileGenerator {
     private val topLevelFunctionGenerator: MutableSet<TopLevelFunctionGenerator> =
         getAllService<TopLevelFunctionGenerator>().toMutableSet()
 
-    public fun init(config: CodeGenerateConfig, logger: KSPLogger) {
+    init {
         val defaultGenerator = config.defaultGenerator
-        if (defaultGenerator.enableSequenceOf && topLevelPropertyGenerator.none { it is SequencePropertyGenerator }) {
+        if (defaultGenerator.enableSequenceOf) {
             topLevelPropertyGenerator.add(SequencePropertyGenerator())
         }
-        if (defaultGenerator.enableClassEntitySequenceAddFun && topLevelFunctionGenerator.none { it is ClassEntitySequenceAddFunGenerator }) {
+        if (defaultGenerator.enableClassEntitySequenceAddFun) {
             topLevelFunctionGenerator.add(ClassEntitySequenceAddFunGenerator())
         }
-        if (defaultGenerator.enableClassEntitySequenceUpdateFun && topLevelFunctionGenerator.none { it is ClassEntitySequenceUpdateFunGenerator }) {
+        if (defaultGenerator.enableClassEntitySequenceUpdateFun) {
             topLevelFunctionGenerator.add(ClassEntitySequenceUpdateFunGenerator())
         }
         logger.info("typeGenerator: ${typeGenerator::class.simpleName}")
