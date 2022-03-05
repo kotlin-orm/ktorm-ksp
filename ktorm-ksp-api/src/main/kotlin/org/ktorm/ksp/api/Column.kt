@@ -19,7 +19,7 @@ public annotation class Column(
     val columnName: String = "",
 
     /**
-     * Column converter，Used to declare the column property in the generated table, value must be an singleton
+     * Column converter，Used to declare the column property in the generated table, value must be a singleton type
      * or nothing. If the value is a Nothing::class, will try to find the appropriate column type automatically
      *
      * @see [org.ktorm.schema.Column]
@@ -32,6 +32,7 @@ public annotation class Column(
      * to which this annotation is added
      */
     val propertyName: String = "",
+
 
     val isReferences: Boolean = false
 )
