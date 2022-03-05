@@ -50,11 +50,9 @@ public object Students : BaseTable<Student>(
     }
 }
 
-public fun EntitySequence<Student, Students>.add(entity: Student): Int { /* omit code */
-}
+public fun EntitySequence<Student, Students>.add(entity: Student): Int { /* omit code */ }
 
-public fun EntitySequence<Student, Students>.update(entity: Student): Int { /* omit code */
-}
+public fun EntitySequence<Student, Students>.update(entity: Student): Int { /* omit code */ }
 
 public val Database.students: EntitySequence<Student, Students> get() = this.sequenceOf(Students)
 ```
