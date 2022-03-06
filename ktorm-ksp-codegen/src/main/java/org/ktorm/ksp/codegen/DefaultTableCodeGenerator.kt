@@ -36,6 +36,16 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
             }
         }
         add("tableName=%S,", tableName)
+        if (table.alias.isNotEmpty()) {
+            add("alias=%S,", table.alias)
+        }
+        if (table.catalog.isNotEmpty()) {
+            add("catalog=%S,", table.catalog)
+        }
+        if (table.schema.isNotEmpty()) {
+            add("schema=%S,", table.schema)
+        }
+        add("entityClass=%T::class,", table.entityClassName)
     }
 
 
@@ -45,10 +55,6 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
             .superclass(Table::class.asClassName().parameterizedBy(table.entityClassName))
             .addSuperclassConstructorParameter(buildCodeBlock {
                 appendTableNameParameter(table, context.config)
-                add("alias=%S,", table.alias)
-                add("catalog=%S,", table.catalog)
-                add("schema=%S,", table.schema)
-                add("entityClass=%T::class,", table.entityClassName)
             })
             .run(emitter)
     }
@@ -59,10 +65,6 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
             .superclass(BaseTable::class.asClassName().parameterizedBy(table.entityClassName))
             .addSuperclassConstructorParameter(buildCodeBlock {
                 appendTableNameParameter(table, context.config)
-                add("alias=%S, ", table.alias)
-                add("catalog=%S, ", table.catalog)
-                add("schema=%S, ", table.schema)
-                add("entityClass=%T::class", table.entityClassName)
             })
             .run(emitter)
     }
