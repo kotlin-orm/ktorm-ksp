@@ -45,7 +45,7 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
         if (table.schema.isNotEmpty()) {
             add("schema=%S,", table.schema)
         }
-        add("entityClass=%T::class,", table.entityClassName)
+        add("entityClass=%T::class", table.entityClassName)
     }
 
 
