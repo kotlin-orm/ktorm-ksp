@@ -20,7 +20,7 @@ import org.ktorm.entity.Entity
 import org.ktorm.ksp.api.*
 import org.ktorm.ksp.codegen.CodeGenerateConfig
 import org.ktorm.ksp.codegen.ColumnInitializerGenerator
-import org.ktorm.ksp.codegen.DefaultGeneratorConfig
+import org.ktorm.ksp.codegen.ExtensionGeneratorConfig
 import org.ktorm.ksp.codegen.definition.ColumnDefinition
 import org.ktorm.ksp.codegen.definition.ConverterDefinition
 import org.ktorm.ksp.codegen.definition.KtormEntityType
@@ -116,7 +116,7 @@ public class KtormProcessor(
             }
             val argumentMap = kspConfigAnnotation.arguments.associateBy { it.name!!.asString() }
             configBuilder.allowReflectionCreateEntity = kspConfig.allowReflectionCreateClassEntity
-            configBuilder.defaultGenerator = DefaultGeneratorConfig(
+            configBuilder.extension = ExtensionGeneratorConfig(
                 kspConfig.extension.enableSequenceOf,
                 kspConfig.extension.enableClassEntitySequenceAddFun,
                 kspConfig.extension.enableClassEntitySequenceUpdateFun,

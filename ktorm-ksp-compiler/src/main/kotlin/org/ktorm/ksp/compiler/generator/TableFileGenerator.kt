@@ -17,14 +17,14 @@ public class TableFileGenerator(config: CodeGenerateConfig, logger: KSPLogger) {
         getAllService<TopLevelFunctionGenerator>().toMutableSet()
 
     init {
-        val defaultGenerator = config.defaultGenerator
-        if (defaultGenerator.enableSequenceOf) {
+        val extensionGenerator = config.extensionGenerator
+        if (extensionGenerator.enableSequenceOf) {
             topLevelPropertyGenerator.add(SequencePropertyGenerator())
         }
-        if (defaultGenerator.enableClassEntitySequenceAddFun) {
+        if (extensionGenerator.enableClassEntitySequenceAddFun) {
             topLevelFunctionGenerator.add(ClassEntitySequenceAddFunGenerator())
         }
-        if (defaultGenerator.enableClassEntitySequenceUpdateFun) {
+        if (extensionGenerator.enableClassEntitySequenceUpdateFun) {
             topLevelFunctionGenerator.add(ClassEntitySequenceUpdateFunGenerator())
         }
         logger.info("typeGenerator: ${typeGenerator::class.simpleName}")

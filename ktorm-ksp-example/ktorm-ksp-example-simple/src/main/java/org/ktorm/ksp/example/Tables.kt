@@ -59,3 +59,12 @@ public data class Customer(
 )
 
 public data class LocationWrapper(val underlying: String = "") : Serializable
+
+
+@Table
+public data class Student(
+    @PrimaryKey
+    public var id: Int?,
+    public var name: String,
+    public var age: Int
+)

@@ -697,7 +697,7 @@ public class KtormKspTest {
     }
 
     @Test
-    public fun `enable sequenceOf for defaultGenerator`() {
+    public fun `enable sequenceOf for extensionGenerator`() {
         val (result1, result2) = twiceCompile(
             SourceFile.kotlin(
                 "source.kt",
@@ -713,7 +713,7 @@ public class KtormKspTest {
                 )
                 
                 @KtormKspConfig(
-                    defaultGenerator = DefaultGenerator(
+                    extension = ExtensionGenerator(
                         enableSequenceOf = true, 
                         enableClassEntitySequenceAddFun = false,
                         enableClassEntitySequenceUpdateFun = false
@@ -732,7 +732,7 @@ public class KtormKspTest {
     }
 
     @Test
-    public fun `enable sequence add function for defaultGenerator`() {
+    public fun `enable sequence add function for extensionGenerator`() {
         val (result1, result2) = twiceCompile(
             SourceFile.kotlin(
                 "source.kt",
@@ -748,7 +748,7 @@ public class KtormKspTest {
                 )
                 
                 @KtormKspConfig(
-                    defaultGenerator = DefaultGenerator(
+                    extension = ExtensionGenerator(
                         enableSequenceOf = false, 
                         enableClassEntitySequenceAddFun = true,
                         enableClassEntitySequenceUpdateFun = false
@@ -767,7 +767,7 @@ public class KtormKspTest {
     }
 
     @Test
-    public fun `enable sequence update function for defaultGenerator`() {
+    public fun `enable sequence update function for extensionGenerator`() {
         val (result1, result2) = twiceCompile(
             SourceFile.kotlin(
                 "source.kt",
@@ -783,7 +783,7 @@ public class KtormKspTest {
                 )
                 
                 @KtormKspConfig(
-                    defaultGenerator = DefaultGenerator(
+                    extension = ExtensionGenerator(
                         enableSequenceOf = false, 
                         enableClassEntitySequenceAddFun = false,
                         enableClassEntitySequenceUpdateFun = true

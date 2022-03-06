@@ -16,7 +16,7 @@ public data class CodeGenerateConfig(
     public val configDependencyFile: KSFile?,
     public val namingStrategy: ClassName?,
     public val localNamingStrategy: NamingStrategy?,
-    public val defaultGenerator: DefaultGeneratorConfig
+    public val extensionGenerator: ExtensionGeneratorConfig
 ) {
     public class Builder {
         public var allowReflectionCreateEntity: Boolean = true
@@ -25,7 +25,7 @@ public data class CodeGenerateConfig(
         public var configDependencyFile: KSFile? = null
         public var namingStrategy: ClassName? = null
         public var localNamingStrategy: NamingStrategy? = null
-        public var defaultGenerator: DefaultGeneratorConfig = DefaultGeneratorConfig()
+        public var extension: ExtensionGeneratorConfig = ExtensionGeneratorConfig()
 
         public fun build(): CodeGenerateConfig {
             return CodeGenerateConfig(
@@ -35,13 +35,13 @@ public data class CodeGenerateConfig(
                 configDependencyFile,
                 namingStrategy,
                 localNamingStrategy,
-                defaultGenerator
+                extension
             )
         }
     }
 }
 
-public data class DefaultGeneratorConfig (
+public data class ExtensionGeneratorConfig (
     val enableSequenceOf: Boolean = true,
     val enableClassEntitySequenceAddFun: Boolean = true,
     val enableClassEntitySequenceUpdateFun: Boolean = true

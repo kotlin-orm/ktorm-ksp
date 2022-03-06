@@ -224,26 +224,30 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
                 } else {
                     // Create instance with code when construct has no default value parameter
                     if (nonConstructorParameterNames.isEmpty()) {
-                        add(" return %T(", table.entityClassName)
+                        addStatement(" return %T(", table.entityClassName)
                     } else {
-                        add("val instance = %T(", table.entityClassName)
+                        addStatement("val instance = %T(", table.entityClassName)
                     }
                     logger.info("constructorParameter:${constructorParameters.map { it.name!!.asString() }}")
-                    for (parameter in constructorParameters) {
-                        val column =
-                            table.columns.firstOrNull { it.entityPropertyName.simpleName == parameter.name!!.asString() }
-                                ?: error("Construct parameter not exists in tableDefinition: ${parameter.name!!.asString()}, " +
-                                        "If the parameter is not a sql column, add a default value. If the parameter is a sql column, " +
-                                        "please remove the Ignore annotation or ignoreColumns in the Table annotation to remove the parameter")
+                    withIndent {
+                        for (parameter in constructorParameters) {
+                            val column =
+                                table.columns.firstOrNull { it.entityPropertyName.simpleName == parameter.name!!.asString() }
+                                    ?: error(
+                                        "Construct parameter not exists in tableDefinition: ${parameter.name!!.asString()}, " +
+                                                "If the parameter is not a sql column, add a default value. If the parameter is a sql column, " +
+                                                "please remove the Ignore annotation or ignoreColumns in the Table annotation to remove the parameter"
+                                    )
 
-                        val notNullOperator = if (column.isNullable) "" else "!!"
-                        addStatement(
-                            "%L = %L[%M]%L,",
-                            parameter.name!!.asString(),
-                            row,
-                            column.tablePropertyName,
-                            notNullOperator
-                        )
+                            val notNullOperator = if (column.isNullable) "" else "!!"
+                            addStatement(
+                                "%L = %L[%M]%L,",
+                                parameter.name!!.asString(),
+                                row,
+                                column.tablePropertyName,
+                                notNullOperator
+                            )
+                        }
                     }
                     addStatement(")")
                 }
@@ -330,10 +334,10 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
                     addNamed(
                         """
                                 assignments.add(
-                                    %columnAssignmentExpr:T(
-                                        column = %columnExpr:T(null, %table:T.%tableProperty:L.name, %table:T.%tableProperty:L.sqlType),
-                                        expression = %argumentExpr:T(entity.%entityProperty:L, %table:T.%tableProperty:L.sqlType)
-                                    )
+                                  %columnAssignmentExpr:T(
+                                    column = %columnExpr:T(null, %table:T.%tableProperty:L.name, %table:T.%tableProperty:L.sqlType),
+                                    expression = %argumentExpr:T(entity.%entityProperty:L, %table:T.%tableProperty:L.sqlType)
+                                  )
                                 )
                                 
                             """.trimIndent(),
@@ -352,8 +356,8 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
                 addNamed(
                     """
                         val expression = %insertExpr:T(
-                            table = %tableExpr:T(%table:T.tableName, null, %table:T.catalog, %table:T.schema),
-                            assignments = assignments
+                          table = %tableExpr:T(%table:T.tableName, null, %table:T.catalog, %table:T.schema),
+                          assignments = assignments
                         )
                         
                     """.trimIndent(), params
@@ -368,13 +372,13 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
                         """
                         val (effects, rowSet) = database.executeUpdateAndRetrieveKeys(expression)
                         if (rowSet.next()) {
-                            val generatedKey = %M.sqlType.getResult(rowSet, 1)
-                            if (generatedKey != null) {
-                                if (database.logger.isDebugEnabled()) {
-                                    database.logger.debug("Generated Key: ${'$'}generatedKey")
-                                }
-                                entity.%L = generatedKey
+                          val generatedKey = %M.sqlType.getResult(rowSet, 1)
+                          if (generatedKey != null) {
+                            if (database.logger.isDebugEnabled()) {
+                              database.logger.debug("Generated Key: ${'$'}generatedKey")
                             }
+                            entity.%L = generatedKey
+                          }
                         }
                         return effects
                         
@@ -412,44 +416,46 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
             .addParameter("entity", table.entityClassName)
             .returns(Int::class.asClassName())
             .addCode(buildCodeBlock {
-                beginControlFlow("return this.database.%M(%T)", updateFun, table.tableClassName)
-                for (column in table.columns) {
-                    if (!column.isPrimaryKey) {
-                        addStatement(
-                            "set(%M,entity.%L)",
-                            column.tablePropertyName,
-                            column.entityPropertyName.simpleName
-                        )
-                    }
-                }
-                beginControlFlow("where")
-                primaryKeyColumns.forEachIndexed { index, column ->
-                    if (index == 0) {
-                        val conditionTemperate = if (primaryKeyColumns.size == 1) {
-                            "%M %M entity.%L%L"
-                        } else {
-                            "(%M %M entity.%L%L)"
+                add("return·this.database.%M(%T)·{\n", updateFun, table.tableClassName)
+                withIndent(3) {
+                    for (column in table.columns) {
+                        if (!column.isPrimaryKey) {
+                            addStatement(
+                                "set(%M,·entity.%L)",
+                                column.tablePropertyName,
+                                column.entityPropertyName.simpleName
+                            )
                         }
-                        addStatement(
-                            conditionTemperate,
-                            column.tablePropertyName,
-                            eqFun,
-                            column.entityPropertyName.simpleName,
-                            if (column.isNullable) "!!" else ""
-                        )
-                    } else {
-                        addStatement(
-                            ".%M(%M %M entity.%L%L)",
-                            andFun,
-                            column.tablePropertyName,
-                            eqFun,
-                            column.entityPropertyName.simpleName,
-                            if (column.isNullable) "!!" else ""
-                        )
                     }
+                    beginControlFlow("where")
+                    primaryKeyColumns.forEachIndexed { index, column ->
+                        if (index == 0) {
+                            val conditionTemperate = if (primaryKeyColumns.size == 1) {
+                                "%M·%M·entity.%L%L"
+                            } else {
+                                "(%M·%M·entity.%L%L)"
+                            }
+                            addStatement(
+                                conditionTemperate,
+                                column.tablePropertyName,
+                                eqFun,
+                                column.entityPropertyName.simpleName,
+                                if (column.isNullable) "!!" else ""
+                            )
+                        } else {
+                            addStatement(
+                                ".%M(%M·%M·entity.%L%L)",
+                                andFun,
+                                column.tablePropertyName,
+                                eqFun,
+                                column.entityPropertyName.simpleName,
+                                if (column.isNullable) "!!" else ""
+                            )
+                        }
+                    }
+                    endControlFlow()
                 }
-                endControlFlow()
-                endControlFlow()
+                add("    }")
             })
             .build()
             .run(emitter)
