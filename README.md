@@ -38,20 +38,20 @@ public data class Student(
 auto generate code ▼
 
 ```kotlin
-public object Students : BaseTable<Student>(
-    tableName = "Student", alias = "", catalog = "",
-    schema = "", entityClass = Student::class
-) {
+public object Students : BaseTable<Student>(tableName="Student",entityClass=Student::class,) {
+  public val id: Column<Int> = int("id").primaryKey()
 
-    public val id: Column<Int> = int("id").primaryKey()
+  public val name: Column<String> = varchar("name")
 
-    public val name: Column<String> = varchar("name")
+  public val age: Column<Int> = int("age")
 
-    public val age: Column<Int> = int("age")
-
-    public override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean): Student {
-        return Student(id = row[id], name = row[name]!!, age = row[age]!!,)
-    }
+  public override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean): Student {
+    return Student(
+      id = row[id],
+      name = row[name]!!,
+      age = row[age]!!,
+    )
+  }
 }
 
 public fun EntitySequence<Student, Students>.add(entity: Student): Int { /* omit code */ }
