@@ -224,7 +224,7 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
                 } else {
                     // Create instance with code when construct has no default value parameter
                     if (nonConstructorParameterNames.isEmpty()) {
-                        addStatement(" return %T(", table.entityClassName)
+                        addStatement(" return·%T(", table.entityClassName)
                     } else {
                         addStatement("val instance = %T(", table.entityClassName)
                     }
@@ -241,7 +241,7 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
 
                             val notNullOperator = if (column.isNullable) "" else "!!"
                             addStatement(
-                                "%L = %L[%M]%L,",
+                                "%L·=·%L[%M]%L,",
                                 parameter.name!!.asString(),
                                 row,
                                 column.tablePropertyName,
@@ -249,7 +249,7 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
                             )
                         }
                     }
-                    addStatement(")")
+                    add(")")
                 }
                 context.logger.info("constructorParameter:${constructorParameters.toString()}")
                 if (nonConstructorParameterNames.isNotEmpty()) {
@@ -261,7 +261,7 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
                         }
                         val notNullOperator = if (column.isNullable) "" else "!!"
                         addStatement(
-                            "instance.%L = %L[%M]%L",
+                            "instance.%L·=·%L[%M]%L",
                             property,
                             row,
                             column.tablePropertyName,
@@ -290,7 +290,7 @@ public class SequencePropertyGenerator : TopLevelPropertyGenerator {
             .receiver(Database::class.asClassName())
             .getter(
                 FunSpec.getterBuilder()
-                    .addStatement("return this.%M(%T)", sequenceOf, table.tableClassName)
+                    .addStatement("return·this.%M(%T)", sequenceOf, table.tableClassName)
                     .build()
             )
             .build()
@@ -335,8 +335,8 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
                         """
                                 assignments.add(
                                   %columnAssignmentExpr:T(
-                                    column = %columnExpr:T(null, %table:T.%tableProperty:L.name, %table:T.%tableProperty:L.sqlType),
-                                    expression = %argumentExpr:T(entity.%entityProperty:L, %table:T.%tableProperty:L.sqlType)
+                                    column = %columnExpr:T(null, %tableProperty:L.name, %tableProperty:L.sqlType),
+                                    expression = %argumentExpr:T(entity.%entityProperty:L, %tableProperty:L.sqlType)
                                   )
                                 )
                                 
