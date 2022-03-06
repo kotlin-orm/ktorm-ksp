@@ -70,5 +70,6 @@ public class TableFileGenerator(config: CodeGenerateConfig, logger: KSPLogger) {
     private fun generateFile(context: TableGenerateContext): FileSpec.Builder {
         val table = context.table
         return FileSpec.builder(table.tableClassName.packageName, table.tableClassName.simpleName)
+            .addComment("auto-generated code, don't modify it")
     }
 }
