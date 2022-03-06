@@ -1,10 +1,11 @@
 package org.ktorm.ksp.example
 
+import org.ktorm.ksp.api.CamelCaseToLowerCaseUnderscoresNamingStrategy
 import org.ktorm.ksp.api.KtormKspConfig
 
 @KtormKspConfig(
-    namingStrategy = MyNamingStrategy::class,
-    singleTypeConverters = [LocationWrapperConverter::class]
+    namingStrategy = CamelCaseToLowerCaseUnderscoresNamingStrategy::class,
+            singleTypeConverters = [LocationWrapperConverter::class]
 )
 public class KtormConfig
 
