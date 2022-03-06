@@ -13,6 +13,35 @@ import java.sql.Timestamp
 import java.time.*
 import java.util.*
 
+/**
+ *
+ * default support type
+ * +──────────────────────────+────────────────+────────────────────────+──────────────────+
+ * | Kotlin Type              | Function Name  | Underlying SQL Type    | JDBC Type Code   |
+ * +──────────────────────────+────────────────+────────────────────────+──────────────────+
+ * | kotlin.Boolean           | boolean        | boolean                | Types.BOOLEAN    |
+ * | kotlin.Int               | int            | int                    | Types.INTEGER    |
+ * | kotlin.Short             | short          | smallint               | Types.SMALLINT   |
+ * | kotlin.Long              | long           | bigint                 | Types.BIGINT     |
+ * | kotlin.Float             | float          | float                  | Types.FLOAT      |
+ * | kotlin.Double            | double         | double                 | Types.DOUBLE     |
+ * | kotlin.BigDecimal        | decimal        | decimal                | Types.DECIMAL    |
+ * | kotlin.String            | varchar        | varchar                | Types.VARCHAR    |
+ * | java.sql.Date            | jdbcDate       | date                   | Types.DATE       |
+ * | java.sql.Time            | jdbcTime       | time                   | Types.TIME       |
+ * | java.sql.Timestamp       | jdbcTimestamp  | timestamp              | Types.TIMESTAMP  |
+ * | java.time.LocalDateTime  | datetime       | datetime               | Types.TIMESTAMP  |
+ * | java.time.LocalDate      | date           | date                   | Types.DATE       |
+ * | java.time.LocalTime      | time           | time                   | Types.TIME       |
+ * | java.time.MonthDay       | monthDay       | varchar                | Types.VARCHAR    |
+ * | java.time.YearMonth      | yearMonth      | varchar                | Types.VARCHAR    |
+ * | java.time.Year           | year           | int                    | Types.INTEGER    |
+ * | java.time.Instant        | timestamp      | timestamp              | Types.TIMESTAMP  |
+ * | java.util.UUID           | uuid           | uuid                   | Types.OTHER      |
+ * | kotlin.ByteArray         | bytes          | bytes                  | Types.BINARY     |
+ * | kotlin.Enum              | enum           | enum                   | Types.VARCHAR    |
+ * +──────────────────────────+────────────────+────────────────────────+──────────────────+
+ */
 public open class ColumnInitializerGenerator(
     config: CodeGenerateConfig,
     private val logger: KSPLogger

@@ -49,8 +49,6 @@ public fun EntitySequence<Student, Students>.update(entity: Student):Int { /*此
 
 public val Database.students: EntitySequence<Student, Students> get() = this.sequenceOf(Students)
 ```
-```
-
 
 ### 快速入门
 

@@ -117,9 +117,9 @@ public class KtormProcessor(
             val argumentMap = kspConfigAnnotation.arguments.associateBy { it.name!!.asString() }
             configBuilder.allowReflectionCreateEntity = kspConfig.allowReflectionCreateClassEntity
             configBuilder.defaultGenerator = DefaultGeneratorConfig(
-                kspConfig.defaultGenerator.enableSequenceOf,
-                kspConfig.defaultGenerator.enableClassEntitySequenceAddFun,
-                kspConfig.defaultGenerator.enableClassEntitySequenceUpdateFun,
+                kspConfig.extension.enableSequenceOf,
+                kspConfig.extension.enableClassEntitySequenceAddFun,
+                kspConfig.extension.enableClassEntitySequenceUpdateFun,
             )
             //namingStrategy
             val namingStrategyType = argumentMap[KtormKspConfig::namingStrategy.name]!!.value as KSType

@@ -19,25 +19,41 @@ import org.ktorm.schema.BaseTable
  *
  * @see BaseTable
  * @see org.ktorm.schema.Table
- *
- * @param tableName Specify the table tableName, corresponding to the [BaseTable.tableName] property. By default,
- * the class name of the entity class will be used as the table name, or you can use [KtormKspConfig] The
- * [NamingStrategy] configured in automatically maps table names. But [tableName] in this annotation has the
- * highest priority
- * @param tableClassName Specifies the class name of the generated table class. By default, the noun plural is
- * converted from the class name of the entity class.
- * @param alias Specify the table alias, corresponding to the [BaseTable.alias] property
- * @param catalog Specify the table catalog, corresponding to the [BaseTable.catalog] property
- * @param schema Specify the table schema, corresponding to the [BaseTable.schema] property
- * @param ignoreColumns Specifies to ignore properties that do not generate column definitions.
  */
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.SOURCE)
 public annotation class Table(
+
+    /**
+     * Table names in SQL, Corresponds to [org.ktorm.schema.BaseTable.tableName] property, If the value is an
+     * empty string, the default value will be used. The [KtormKspConfig.namingStrategy] property can affect the
+     * default table name generation rules, but the [tableName] property has the highest priority
+     */
     val tableName: String = "",
+
+    /**
+     * Specifies the class name of the generated table class. By default, the noun plural is converted from
+     * the class name of the entity class.
+     */
     val tableClassName: String = "",
+
+    /**
+     * Specify the table alias, corresponding to the [BaseTable.alias] property
+     */
     val alias: String = "",
+
+    /**
+     * Specify the table catalog, corresponding to the [BaseTable.catalog] property
+     */
     val catalog: String = "",
+
+    /**
+     * Specify the table schema, corresponding to the [BaseTable.schema] property
+     */
     val schema: String = "",
+
+    /**
+     * Specifies to ignore properties that do not generate column definitions.
+     */
     val ignoreColumns: Array<String> = []
 )
