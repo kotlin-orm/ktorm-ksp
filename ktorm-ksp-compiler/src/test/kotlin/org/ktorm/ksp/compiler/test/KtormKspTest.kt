@@ -1064,6 +1064,26 @@ public class KtormKspTest {
         }
     }
 
+    @Test
+    public fun `multi KtormKspConfig annotation`() {
+        val result = compile(
+            SourceFile.kotlin(
+                "source.kt",
+                """
+                import org.ktorm.ksp.api.KtormKspConfig
+                    
+                @KtormKspConfig
+                class KtormConfig1
+
+                @KtormKspConfig
+                class KtormConfig2
+                """,
+            )
+        )
+        assertThat(result.exitCode).isEqualTo(ExitCode.COMPILATION_ERROR)
+        assertThat(result.messages).contains("@KtormKspConfig can only be added to a class")
+    }
+
     private fun createCompiler(vararg sourceFiles: SourceFile, useKsp: Boolean = true): KotlinCompilation {
         return KotlinCompilation().apply {
             workingDir = temporaryFolder.root
