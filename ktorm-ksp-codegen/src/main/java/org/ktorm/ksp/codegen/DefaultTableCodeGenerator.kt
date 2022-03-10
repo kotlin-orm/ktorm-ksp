@@ -329,13 +329,13 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
                         "argumentExpr" to argumentExpressionType,
                         "table" to table.tableClassName,
                         "entityProperty" to column.entityPropertyName.simpleName,
-                        "tableProperty" to column.tablePropertyName.simpleName
+                        "tableProperty" to column.tablePropertyName
                     )
                     addNamed(
                         """
                                 assignments.add(
                                   %columnAssignmentExpr:T(
-                                    column = %columnExpr:T(null, %tableProperty:L.name, %tableProperty:L.sqlType),
+                                    column = %columnExpr:T(null, %tableProperty:M.name, %tableProperty:L.sqlType),
                                     expression = %argumentExpr:T(entity.%entityProperty:L, %tableProperty:L.sqlType)
                                   )
                                 )
