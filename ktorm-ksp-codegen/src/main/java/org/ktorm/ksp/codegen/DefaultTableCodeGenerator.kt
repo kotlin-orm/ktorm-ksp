@@ -202,7 +202,7 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
                                 error("not found column definition: $parameterName")
                             }
                         beginControlFlow("%S -> ", parameterName)
-                        addStatement("val value = %L[%M]", row, column.tablePropertyName)
+                        addStatement("val value = %L[this.%L]", row, column.tablePropertyName.simpleName)
                         // hasDefault
                         if (parameter.hasDefault) {
                             beginControlFlow("if (value != null)")
@@ -241,15 +241,15 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
 
                             val notNullOperator = if (column.isNullable) "" else "!!"
                             addStatement(
-                                "%L·=·%L[%M]%L,",
+                                "%L·=·%L[this.%L]%L,",
                                 parameter.name!!.asString(),
                                 row,
-                                column.tablePropertyName,
+                                column.tablePropertyName.simpleName,
                                 notNullOperator
                             )
                         }
                     }
-                    add(")")
+                    addStatement(")")
                 }
                 context.logger.info("constructorParameter:${constructorParameters.toString()}")
                 if (nonConstructorParameterNames.isNotEmpty()) {
@@ -329,14 +329,14 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
                         "argumentExpr" to argumentExpressionType,
                         "table" to table.tableClassName,
                         "entityProperty" to column.entityPropertyName.simpleName,
-                        "tableProperty" to column.tablePropertyName
+                        "tableProperty" to column.tablePropertyName.simpleName
                     )
                     addNamed(
                         """
                                 assignments.add(
                                   %columnAssignmentExpr:T(
-                                    column = %columnExpr:T(null, %tableProperty:M.name, %tableProperty:L.sqlType),
-                                    expression = %argumentExpr:T(entity.%entityProperty:L, %tableProperty:L.sqlType)
+                                    column = %columnExpr:T(null, %table:T.%tableProperty:L.name, %table:T.%tableProperty:L.sqlType),
+                                    expression = %argumentExpr:T(entity.%entityProperty:L, %table:T.%tableProperty:L.sqlType)
                                   )
                                 )
                                 
@@ -372,7 +372,7 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
                         """
                         val (effects, rowSet) = database.executeUpdateAndRetrieveKeys(expression)
                         if (rowSet.next()) {
-                          val generatedKey = %M.sqlType.getResult(rowSet, 1)
+                          val generatedKey = %T.%L.sqlType.getResult(rowSet, 1)
                           if (generatedKey != null) {
                             if (database.logger.isDebugEnabled()) {
                               database.logger.debug("Generated Key: ${'$'}generatedKey")
@@ -382,7 +382,10 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
                         }
                         return effects
                         
-                    """.trimIndent(), primaryKey.tablePropertyName, primaryKey.entityPropertyName.simpleName
+                    """.trimIndent(),
+                        table.tableClassName,
+                        primaryKey.tablePropertyName.simpleName,
+                        primaryKey.entityPropertyName.simpleName
                     )
                     if (primaryKey.isNullable) {
                         endControlFlow()
@@ -421,8 +424,9 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
                     for (column in table.columns) {
                         if (!column.isPrimaryKey) {
                             addStatement(
-                                "set(%M,·entity.%L)",
-                                column.tablePropertyName,
+                                "set(%T.%L,·entity.%L)",
+                                column.tableDefinition.tableClassName,
+                                column.tablePropertyName.simpleName,
                                 column.entityPropertyName.simpleName
                             )
                         }
@@ -431,22 +435,24 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
                     primaryKeyColumns.forEachIndexed { index, column ->
                         if (index == 0) {
                             val conditionTemperate = if (primaryKeyColumns.size == 1) {
-                                "%M·%M·entity.%L%L"
+                                "%T.%L·%M·entity.%L%L"
                             } else {
-                                "(%M·%M·entity.%L%L)"
+                                "(%T·%L·entity.%L%L)"
                             }
                             addStatement(
                                 conditionTemperate,
-                                column.tablePropertyName,
+                                column.tableDefinition.tableClassName,
+                                column.tablePropertyName.simpleName,
                                 eqFun,
                                 column.entityPropertyName.simpleName,
                                 if (column.isNullable) "!!" else ""
                             )
                         } else {
                             addStatement(
-                                ".%M(%M·%M·entity.%L%L)",
+                                ".%M(%T.%L·%M·entity.%L%L)",
                                 andFun,
-                                column.tablePropertyName,
+                                column.tableDefinition.tableClassName,
+                                column.tablePropertyName.simpleName,
                                 eqFun,
                                 column.entityPropertyName.simpleName,
                                 if (column.isNullable) "!!" else ""
