@@ -263,7 +263,9 @@ kotlin.Enum  | enum | enum | Types.VARCHAR
 
 #### 如何使用类型转换器
 
-首先需要定义一个单例，并且实现上述任意一个转换器类型接口。 然后可以通过全局配置或者列配置使用类型转换器。
+首先需要定义一个单例，并且实现上述任意一个转换器类型接口。 然后可以通过全局配置或者列配置使用类型转换器，转换器的优先级如下:
+
+指定列配置 > 全局配置 > 默认的类型转换行为
 
 ##### 全局配置使用类型转换器
 
@@ -272,8 +274,6 @@ kotlin.Enum  | enum | enum | Types.VARCHAR
 - singleTypeConverters: 接收SingleTypeConverter的类型列表，当有任意类型符合SingleTypeConverter支持的类型时，就会自动使用该转换器
 
 - enumConverter: 接收一个EnumConverter的类型，所有的枚举类型会自动使用该转换器。
-
-通过此方式可以覆盖上诉表格中的默认类型转换行为
 
 代码示例:
 
@@ -326,24 +326,47 @@ public object Users : BaseTable<User>(tableName = "User", entityClass = User::cl
 
 ##### 指定列使用类型转换器
 
-通过列配置@Column中的converter属性，可以使用任意类型的转换器，通过此方式配置拥有最高的优先级，会覆盖全局配置的类型转换器。
+通过列配置@Column中的converter属性，可以使用任意类型的转换器.
 
 代码示例:
 
 ```kotlin
+//实体定义
 @Table
 data class User(
     @PrimaryKey
     var id: Int,
-    var username: String,
+    var username: Username,
     var age: Int,
-    @org.ktorm.ksp.api.Column(converter = IntEnumConverter::class)
     var gender: Gender
 )
 
 enum class Gender {
     MALE,
     FEMALE
+}
+
+data class Username(
+    val firstName: String,
+    val lastName: String
+)
+
+//类型转换器
+object UsernameConverter : SingleTypeConverter<Username> {
+    public override fun convert(
+        table: BaseTable<*>,
+        columnName: String,
+        propertyType: KClass<Username>
+    ): Column<Username> {
+        return with(table) {
+            varchar(columnName).transform({
+                val spilt = it.split("#")
+                Username(spilt[0], spilt[1])
+            }, {
+                it.firstName + "#" + it.lastName
+            })
+        }
+    }
 }
 
 object IntEnumConverter : EnumConverter {
@@ -354,17 +377,24 @@ object IntEnumConverter : EnumConverter {
         }
     }
 }
+
+//全局配置
+@KtormKspConfig(
+    singleTypeConverters = [UsernameConverter::class],
+    enumConverter = IntEnumConverter::class
+)
+class KtormConfig
 ```
 
 生成代码
 
 ```kotlin
-public object Users : BaseTable<User>(tableName="User",entityClass=User::class) {
-  public val id: Column<Int> = int("id").primaryKey()
-  public val username: Column<String> = varchar("username")
-  public val age: Column<Int> = int("age")
-  public val gender: Column<Gender> = IntEnumConverter.convert(this,"gender",Gender::class)
-  // ...
+public object Users : BaseTable<User>(tableName = "User", entityClass = User::class) {
+    public val id: Column<Int> = int("id").primaryKey()
+    public val username: Column<Username> = UsernameConverter.convert(this, "username", Username::class)
+    public val age: Column<Int> = int("age")
+    public val gender: Column<Gender> = IntEnumConverter.convert(this, "gender", Gender::class)
+    // ...
 }
 ```
 
