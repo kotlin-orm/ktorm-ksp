@@ -14,8 +14,6 @@ private val batchInsertFun = MemberName("org.ktorm.dsl", "batchInsert", true)
 private val batchUpdateFun = MemberName("org.ktorm.dsl", "batchUpdate", true)
 private val eqFun = MemberName("org.ktorm.dsl", "eq", true)
 
-// todo batch fun not support reference column
-
 public class SequenceAddAllFunctionGenerator : TopLevelFunctionGenerator {
     override fun generate(context: TableGenerateContext, emitter: (FunSpec) -> Unit) {
         val table = context.table
@@ -32,15 +30,17 @@ public class SequenceAddAllFunctionGenerator : TopLevelFunctionGenerator {
                         if (column.isReferences) {
                             val primaryKey = column.referencesColumn!!
                             addStatement(
-                                "set(%M,·entity.%L.%L)",
-                                column.tablePropertyName,
+                                "set(%T.%L,·entity.%L.%L)",
+                                table.tableClassName,
+                                column.tablePropertyName.simpleName,
                                 column.entityPropertyName.simpleName,
                                 primaryKey.entityPropertyName.simpleName
                             )
                         } else {
                             addStatement(
-                                "set(%M,·entity.%L)",
-                                column.tablePropertyName,
+                                "set(%T.%L,·entity.%L)",
+                                table.tableClassName,
+                                column.tablePropertyName.simpleName,
                                 column.entityPropertyName.simpleName
                             )
                         }
@@ -79,15 +79,17 @@ public class SequenceUpdateAllFunctionGenerator : TopLevelFunctionGenerator {
                                 if (column.isReferences) {
                                     val primaryKey = column.referencesColumn!!
                                     addStatement(
-                                        "set(%M,·entity.%L.%L)",
-                                        column.tablePropertyName,
+                                        "set(%T.%L,·entity.%L.%L)",
+                                        table.tableClassName,
+                                        column.tablePropertyName.simpleName,
                                         column.entityPropertyName.simpleName,
                                         primaryKey.entityPropertyName.simpleName
                                     )
                                 } else {
                                     addStatement(
-                                        "set(%M,·entity.%L)",
-                                        column.tablePropertyName,
+                                        "set(%T.%L,·entity.%L)",
+                                        table.tableClassName,
+                                        column.tablePropertyName.simpleName,
                                         column.entityPropertyName.simpleName
                                     )
                                 }
@@ -97,22 +99,22 @@ public class SequenceUpdateAllFunctionGenerator : TopLevelFunctionGenerator {
                         primaryKeyColumns.forEachIndexed { index, column ->
                             if (index == 0) {
                                 val conditionTemperate = if (primaryKeyColumns.size == 1) {
-                                    "it.%M·%M·entity.%L%L"
+                                    "it.%L·%M·entity.%L%L"
                                 } else {
-                                    "(it.%M·%M·entity.%L%L)"
+                                    "(it.%L·%M·entity.%L%L)"
                                 }
                                 addStatement(
                                     conditionTemperate,
-                                    column.tablePropertyName,
+                                    column.tablePropertyName.simpleName,
                                     eqFun,
                                     column.entityPropertyName.simpleName,
                                     if (column.isNullable) "!!" else ""
                                 )
                             } else {
                                 addStatement(
-                                    ".%M(it.%M·%M·entity.%L%L)",
+                                    ".%M(it.%L·%M·entity.%L%L)",
                                     andFun,
-                                    column.tablePropertyName,
+                                    column.tablePropertyName.simpleName,
                                     eqFun,
                                     column.entityPropertyName.simpleName,
                                     if (column.isNullable) "!!" else ""
