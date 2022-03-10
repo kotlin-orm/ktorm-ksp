@@ -560,13 +560,17 @@ public class KtormKspTest {
                 )
                
                 @KtormKspConfig(
-                    namingStrategy = LowerCaseCamelCaseToUnderscoresNamingStrategy::class
+                    namingStrategy = CamelCaseToLowerCaseUnderscoresNamingStrategy::class
                 )
                 class KtormConfig
                 
                 """,
             )
-        )
+        ) {
+            it.lineSequence().forEachIndexed { index, s ->
+                println("${index+1} $s")
+            }
+        }
         assertThat(result1.exitCode).isEqualTo(ExitCode.OK)
         assertThat(result2.exitCode).isEqualTo(ExitCode.OK)
         val baseTable = result2.getBaseTable("UserProfiles")
@@ -830,7 +834,7 @@ public class KtormKspTest {
                     var hireDate: LocalDate
                 }
                 
-                @KtormKspConfig(namingStrategy = LowerCaseCamelCaseToUnderscoresNamingStrategy::class)
+                @KtormKspConfig(namingStrategy = CamelCaseToLowerCaseUnderscoresNamingStrategy::class)
                 class KtormConfig
 
                 object TestBridge {
@@ -884,7 +888,7 @@ public class KtormKspTest {
                     var age: Int,
                 )
 
-                @KtormKspConfig(namingStrategy = LowerCaseCamelCaseToUnderscoresNamingStrategy::class)
+                @KtormKspConfig(namingStrategy = CamelCaseToLowerCaseUnderscoresNamingStrategy::class)
                 class KtormConfig
 
                 object TestBridge {
@@ -1025,7 +1029,7 @@ public class KtormKspTest {
                     var age: Int,
                 )
 
-                @KtormKspConfig(namingStrategy = LowerCaseCamelCaseToUnderscoresNamingStrategy::class)
+                @KtormKspConfig(namingStrategy = CamelCaseToLowerCaseUnderscoresNamingStrategy::class)
                 class KtormConfig
 
                 object TestBridge {
