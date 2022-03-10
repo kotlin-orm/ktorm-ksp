@@ -457,6 +457,7 @@ public class KtormKspTest {
                     var id: Int,
                     var username: String,
                     var age: Int,
+                    @org.ktorm.ksp.api.Column(converter = IntEnumConverter::class)
                     var gender: Gender
                 )
                 
@@ -464,11 +465,6 @@ public class KtormKspTest {
                     MALE,
                     FEMALE
                 }               
-
-                @KtormKspConfig(
-                    enumConverter = IntEnumConverter::class
-                )
-                class KtormConfig
 
                 object IntEnumConverter: EnumConverter {
                     override fun <E : Enum<E>> convert(table: BaseTable<*>, columnName: String, propertyType: KClass<E>): Column<E>{
@@ -481,6 +477,7 @@ public class KtormKspTest {
                 """,
             )
         ) {
+            println(it)
             assertThat(it).contains("IntEnumConverter.convert")
         }
         assertThat(result1.exitCode).isEqualTo(ExitCode.OK)
@@ -568,7 +565,7 @@ public class KtormKspTest {
             )
         ) {
             it.lineSequence().forEachIndexed { index, s ->
-                println("${index+1} $s")
+                println("${index + 1} $s")
             }
         }
         assertThat(result1.exitCode).isEqualTo(ExitCode.OK)
