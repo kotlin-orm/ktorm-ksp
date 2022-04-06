@@ -12,9 +12,9 @@
 
 # 特性
 
-- 只需编写实体类，自动生成相应的Table对象。支持基于Entity接口定义的类，也支持普通的class/data class定义的实体
+- 只需编写实体类，自动生成相应的Table对象。支持基于Entity接口/[任意class](https://www.ktorm.org/zh-cn/define-entities-as-any-kind-of-classes.html) 定义的实体类
 
-- 对class实体类更好的支持，默认实现doCreateEntity方法，以及实体序列的新增/更新方法
+- 让[任意class](https://www.ktorm.org/zh-cn/define-entities-as-any-kind-of-classes.html) 实体类更好用。默认自动实现doCreateEntity方法，以及实体序列的新增/更新方法
 
 - 可扩展的代码生成逻辑。通过SPI机制，只需实现指定的接口，即可编写自己所需的自动生成逻辑。
 
@@ -73,7 +73,7 @@ dependencies {
 }
 ```
 
-为了让idea识别生成的代码 还需要在build.gradle中添加以下配置
+为了让idea识别生成的代码 还需要在build.gradle中添加以下配置（否则你将会看到一堆红线警告）
 
 ```groovy
 kotlin {
@@ -86,9 +86,7 @@ kotlin {
 
 ### 实体定义
 
-#### class 实体类定义
-
-声明一个data class的实体类
+#### 任意class实体类定义
 
 ```kotlin
 @Table
@@ -100,7 +98,7 @@ public data class Student(
 )
 ```
 
-运行项目或者gradle build命令, 将会在项目下的 build/generated/ksp/main/kotlin 生成表定义以及相关的扩展，下面是生成的代码
+运行项目或者gradle build命令, 将会在项目下的 build/generated/ksp/main/kotlin 生成相应的BaseTable类以及相的扩展
 
 ```kotlin
 public object Students : BaseTable<Student>(tableName = "Student", entityClass = Student::class) {
@@ -120,9 +118,7 @@ public val Database.students: EntitySequence<Student, Students> get() = this.seq
 val users = database.users.toList()
 ```
 
-#### interface 实体类定义
-
-基于Entity接口定义的实体类，在使用上和class实体没有太大区别
+#### 基于Entity接口的实体类定义
 
 ```kotlin
 @Table
@@ -144,21 +140,89 @@ public object Students : Table<Student>(tableName = "Student", entityClass = Stu
 public val Database.students: EntitySequence<Student, Students> get() = this.sequenceOf(Students)
 ```
 
-与entity实体生成的表不同的地方在于，表继承了Table类而不是BaseTable类，因此无需实现doCreateEntity方法. 也因此无需生成EntitySequence的add update扩展方法（因为已经有了）
+与entity实体生成的表不同的地方在于，表继承了Table类而不是BaseTable类，因此无需实现doCreateEntity方法. 也因此无需生成EntitySequence的add update扩展方法（因为已经存在了）
 
 ```kotlin
 val users = database.users.toList()
 ```
+#### 表定义
 
-#### 命名风格
+将@Table注解添加到实体类上，将会自动生成相应的Table类。
 
-在默认情况下，生成表类中的表名，取实体类类名。列名取对应实体类中的属性名称。 有两种方式可以修改生成的名称，第一种方式是单独配置名称:
+@Table的参数如下：
 
-表名配置：在实体类上的@Table注解中赋值tableName属性
+- tableName
+  
+  指定BaseTable.tableName的参数值
 
-列名配置：在属性上添加@Column注解并赋值columnName属性
+- tableClassName
+  
+  指定生成表类型的类型名称，默认取实体类的名词复数形式。
 
-例如：
+- alias
+
+  指定BaseTable.alias的参数值
+
+- catalog
+
+  指定BaseTable.catalog的参数值
+
+- schema
+
+  指定BaseTable.schema的参数值
+
+- ignoreColumns
+
+  指定要忽略的属性名称列表，被忽略的属性将不会在生成的Table类中，生成对应的列定义。
+
+#### 主键定义
+
+在实体类属性添加@PrimaryKey注解，指定属性为主键。
+
+#### 列定义
+
+在实体类属性添加@Column注解，可配置列定义的生成选项。
+
+@Column的参数如下：
+
+- columnName
+
+  指定SQL中的列名
+
+- converter
+
+  指定列转换器，关于转换器请参考文档下方中的类型转换器说明
+
+- propertyName
+
+  指定在生成表中，对应列定义的属性名称。
+
+- isReferences
+
+  指定此属性是否为引用列，只有基于Entity接口的实体类，可以赋值为true。当此值为true时，生成的列定义将会自动调用references方法
+
+```kotlin
+public object Employees: Table<Employee>(tableName="Employee",alias="",catalog="",schema="",
+  entityClass=Employee::class) {
+  public val id: Column<Int> = int("id").bindTo { it.id }.primaryKey()
+  public val name: Column<String> = varchar("name").bindTo { it.name }
+  public val department: Column<Int> = int("department_id").references(Departments) { it.department }
+}
+ ```
+
+#### 忽略指定属性 
+
+在实体类属性添加@Ignore注解，生成的表类中不会包含此属性的列定义。也可以在@Table中的ignoreColumns参数指定要忽略的属性。
+
+### 命名风格
+
+在默认情况下，生成表类中的表名，取实体类类名。列名取对应实体类中的属性名称。 有两种方式修改生成的名称：命名单独配置、全局命名风格配置
+
+#### 命名单独配置
+
+表名配置：在实体类上的@Table注解中赋值tableName参数
+
+列名配置：在属性上添加@Column注解并赋值columnName参数
 
 ```kotlin
 @Table(tableName = "t_student")
@@ -172,7 +236,7 @@ public interface Student : Entity<Student> {
 }
 ```
 
-生成的表定义代码如下
+生成代码：
 
 ```kotlin
 public object Students : Table<Student>(tableName = "t_student", entityClass = Student::class) {
@@ -182,11 +246,11 @@ public object Students : Table<Student>(tableName = "t_student", entityClass = S
 }
 ```
 
-通过这种方式配置的表名/列名拥有最高优先级，不受下面的第二种方式配置影响。
+通过这种方式配置的表名/列名拥有最高优先级，不受全局命名风格配置影响。
 
-第二种方式是全局配置命名风格策略：
+#### 全局命名风格配置
 
-在任意类上添加@KtormKspConfig注解配置（注意项目中只能声明一次此注解）并赋值namingStrategy属性，此属性需要一个实现NamingStrategy接口的**单例对象**,
+在任意类上添加@KtormKspConfig注解配置（注意项目中只能声明一次此注解）并赋值namingStrategy参数，此属性需要一个实现NamingStrategy接口的**单例对象**,
 在ktorm-ksp中自带了驼峰转小写下划线风格的命名风格策略： CamelCaseToLowerCaseUnderscoresNamingStrategy
 
 ```kotlin
@@ -204,7 +268,7 @@ public interface Student : Entity<Student> {
 }
 ```
 
-生成代码如下
+生成代码：
 
 ```kotlin
 public object StudentProfiles :
@@ -263,72 +327,13 @@ kotlin.Enum  | enum | enum | Types.VARCHAR
 
 #### 如何使用类型转换器
 
-首先需要定义一个单例，并且实现上述任意一个转换器类型接口。 然后可以通过全局配置或者列配置使用类型转换器，转换器的优先级如下:
+首先需要定义一个单例，并且实现上述任意一个转换器类型接口。 然后可以通过'全局配置'或者'列配置'使用类型转换器，转换器的优先级如下:
 
-指定列配置 > 全局配置 > 默认的类型转换行为
+列配置 > 全局配置 > 默认的类型转换行为
 
-##### 全局配置使用类型转换器
+#### 列配置使用类型转换器
 
-类型转换器可以添加到全局配置@KtormKspConfig中的singleTypeConverters和enumConverter属性
-
-- singleTypeConverters: 接收SingleTypeConverter的类型列表，当有任意类型符合SingleTypeConverter支持的类型时，就会自动使用该转换器
-
-- enumConverter: 接收一个EnumConverter的类型，所有的枚举类型会自动使用该转换器。
-
-代码示例:
-
-```kotlin
-@Table
-data class User(
-    @PrimaryKey
-    var id: Int,
-    var username: Username,
-    var age: Int
-)
-
-data class Username(
-    val firstName: String,
-    val lastName: String
-)
-
-@KtormKspConfig(singleTypeConverters = [UsernameConverter::class])
-class KtormConfig
-
-object UsernameConverter : SingleTypeConverter<Username> {
-    public override fun convert(
-        table: BaseTable<*>,
-        columnName: String,
-        propertyType: KClass<Username>
-    ): Column<Username> {
-        return with(table) {
-            varchar(columnName).transform({
-                val spilt = it.split("#")
-                Username(spilt[0], spilt[1])
-            }, {
-                it.firstName + "#" + it.lastName
-            })
-        }
-    }
-}
-```
-
-生成代码如下
-
-```kotlin
-public object Users : BaseTable<User>(tableName = "User", entityClass = User::class) {
-    public val id: Column<Int> = int("id").primaryKey()
-    public val username: Column<Username> = UsernameConverter.convert(this, "username", Username::class)
-    public val age: Column<Int> = int("age")
-    public val gender: Column<Gender> = IntEnumConverter.convert(this, "gender", Gender::class)
-    // ...
-}
-```
-
-##### 指定列使用类型转换器
-
-通过列配置@Column中的converter属性，可以使用任意类型的转换器.
-
-代码示例:
+通过@Column中的converter属性，可以使用任意类型的转换器.
 
 ```kotlin
 //实体定义
@@ -387,6 +392,61 @@ class KtormConfig
 ```
 
 生成代码
+
+```kotlin
+public object Users : BaseTable<User>(tableName = "User", entityClass = User::class) {
+    public val id: Column<Int> = int("id").primaryKey()
+    public val username: Column<Username> = UsernameConverter.convert(this, "username", Username::class)
+    public val age: Column<Int> = int("age")
+    public val gender: Column<Gender> = IntEnumConverter.convert(this, "gender", Gender::class)
+    // ...
+}
+```
+
+#### 全局配置使用类型转换器
+
+类型转换器可以添加到全局配置@KtormKspConfig中的singleTypeConverters和enumConverter参数
+
+- singleTypeConverters: 接收SingleTypeConverter的类型数组，当有SingleTypeConverter支持类型的属性时，会自动使用对应的转换器
+
+- enumConverter: 接收一个EnumConverter的类型，所有的枚举类型会自动使用该转换器。
+
+```kotlin
+@Table
+data class User(
+    @PrimaryKey
+    var id: Int,
+    var username: Username,
+    var age: Int
+)
+
+data class Username(
+    val firstName: String,
+    val lastName: String
+)
+
+@KtormKspConfig(singleTypeConverters = [UsernameConverter::class])
+class KtormConfig
+
+object UsernameConverter : SingleTypeConverter<Username> {
+    public override fun convert(
+        table: BaseTable<*>,
+        columnName: String,
+        propertyType: KClass<Username>
+    ): Column<Username> {
+        return with(table) {
+            varchar(columnName).transform({
+                val spilt = it.split("#")
+                Username(spilt[0], spilt[1])
+            }, {
+                it.firstName + "#" + it.lastName
+            })
+        }
+    }
+}
+```
+
+生成代码：
 
 ```kotlin
 public object Users : BaseTable<User>(tableName = "User", entityClass = User::class) {
