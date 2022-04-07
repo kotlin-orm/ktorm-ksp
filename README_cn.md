@@ -214,6 +214,10 @@ public object Employees: Table<Employee>(tableName="Employee",alias="",catalog="
 
 在实体类属性添加@Ignore注解，生成的表类中不会包含此属性的列定义。也可以在@Table中的ignoreColumns参数指定要忽略的属性。
 
+### 全局配置
+
+...
+
 ### 命名风格
 
 在默认情况下，生成表类中的表名，取实体类类名。列名取对应实体类中的属性名称。 有两种方式修改生成的名称：命名单独配置、全局命名风格配置
@@ -460,12 +464,66 @@ public object Users : BaseTable<User>(tableName = "User", entityClass = User::cl
 
 ### 方法/属性生成器
 
-...
+ktorm-ksp生成的表类代码由多个代码生成器进行生成，这些生成器都是可自定义扩展的。
+ 
+- 表类型生成器 TableTypeGenerator
 
-#### 默认方法/属性生成器
+  表类型声明生成，只允许存在一个，自定义实现会覆盖默认实现。
+ 
+- 表属性生成器 TablePropertyGenerator
 
-...
+  表类属性声明生成，只允许存在一个，自定义实现会覆盖默认实现。
 
-#### 自定义方法/属性生成器
+- 表方法生成器 TableFunctionGenerator
 
-...
+  表类方法生成，只允许存在一个，自定义实现会覆盖默认实现。
+ 
+- 顶级属性生成器 TopLevelPropertyGenerator
+  
+  顶级属性生成，一般用于生成扩展属性，允许存在多个。
+
+- 顶级方法生成器 TopLevelFunctionGenerator
+  
+  顶级方法生成，一般用于生成扩展方法，允许存在多个。
+
+#### 自定义生成器原理
+
+ktorm-ksp通过[SPI](https://docs.oracle.com/javase/tutorial/sound/SPI-intro.html) 机制实现生成器的自定义扩展，模块依赖关系如下（经过简化）：
+
+![ext_dependency graph](image/ext_dependency_graph.png)
+
+ktorm-ksp-compiler模块通过SPI自动加载your-ext-module中定义的生成器，并使用它参与生成代码，从而达到自定义生成器的目的。
+
+#### 自定义生成器的步骤
+
+（请参考此[模块](https://github.com/kotlin-orm/ktorm-ksp/tree/master/ktorm-ksp-ext/ktorm-ksp-ext-sequence-batch) 的代码实现）
+
+新建实现生成器的module（对应上图中的your-ext-module），在build.gradle.kts添加依赖
+```groovy
+dependencies {
+  implementation 'org.ktorm:ktorm-ksp-codegen:${ktorm-ksp.version}'
+}
+```
+新建生成器类，实现任意一个生成器接口。
+```kotlin
+public class SequenceAddAllFunctionGenerator : TopLevelFunctionGenerator {
+    // 忽略具体实现
+}
+public class SequenceUpdateAllFunctionGenerator : TopLevelFunctionGenerator {
+    // 忽略具体实现
+}
+```
+在resources/META-INF/services目录下新建文件，文件名为生成器接口的全限定类名（org.ktorm.ksp.codegen.TopLevelFunctionGenerator）并中文件中新增自定义的生成器的全限定类名，多个类以换行分割。
+```
+org.ktorm.ksp.ext.SequenceAddAllFunctionGenerator
+org.ktorm.ksp.ext.SequenceUpdateAllFunctionGenerator
+```
+在使用需要生成代码的模块（对应上图中的your-app-module）中，添加以下依赖
+```groovy
+dependencies {
+  implementation 'org.ktorm:ktorm-ksp-api:${ktorm-ksp.version}'
+  ksp 'org.ktorm:ktorm-ksp-compile:${ktorm-ksp.version}'
+  ksp project(':your-ext-module')
+}
+```
+构建项目，你将看到通过自定义生成器生成的代码。
