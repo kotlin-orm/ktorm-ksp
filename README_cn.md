@@ -330,8 +330,10 @@ kotlin.Enum  | enum | enum | Types.VARCHAR
 data class User(
     @PrimaryKey
     var id: Int,
+    @Column(converter = UsernameConverter::class)
     var username: Username,
     var age: Int,
+    @Column(converter = IntEnumConverter::class)
     var gender: Gender
 )
 
@@ -371,13 +373,6 @@ object IntEnumConverter : EnumConverter {
         }
     }
 }
-
-//全局配置
-@KtormKspConfig(
-    singleTypeConverters = [UsernameConverter::class],
-    enumConverter = IntEnumConverter::class
-)
-class KtormConfig
 ```
 
 生成代码
@@ -406,7 +401,8 @@ data class User(
     @PrimaryKey
     var id: Int,
     var username: Username,
-    var age: Int
+    var age: Int,
+    var gender: Gender
 )
 
 data class Username(
@@ -414,7 +410,10 @@ data class Username(
     val lastName: String
 )
 
-@KtormKspConfig(singleTypeConverters = [UsernameConverter::class])
+@KtormKspConfig(
+  singleTypeConverters = [UsernameConverter::class],
+  enumConverter = IntEnumConverter::class
+)
 class KtormConfig
 
 object UsernameConverter : SingleTypeConverter<Username> {
@@ -432,6 +431,15 @@ object UsernameConverter : SingleTypeConverter<Username> {
             })
         }
     }
+}
+
+object IntEnumConverter : EnumConverter {
+  override fun <E : Enum<E>> convert(table: BaseTable<*>, columnName: String, propertyType: KClass<E>): Column<E> {
+    val values = propertyType.java.enumConstants
+    return with(table) {
+      int(columnName).transform({ values[it] }, { it.ordinal })
+    }
+  }
 }
 ```
 
