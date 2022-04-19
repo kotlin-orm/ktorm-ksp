@@ -151,29 +151,14 @@ val users = database.users.toList()
 
 @Table的参数如下：
 
-- tableName
-  
-  指定BaseTable.tableName的参数值
-
-- tableClassName
-  
-  指定生成表类型的类型名称，默认取实体类的名词复数形式。
-
-- alias
-
-  指定BaseTable.alias的参数值
-
-- catalog
-
-  指定BaseTable.catalog的参数值
-
-- schema
-
-  指定BaseTable.schema的参数值
-
-- ignoreColumns
-
-  指定要忽略的属性名称列表，被忽略的属性将不会在生成的Table类中，生成对应的列定义。
+| 参数            |   说明   
+|----------|:----------:|
+tableName | 指定BaseTable.tableName的参数值
+tableClassName | 指定生成表类型的类型名称，默认取实体类的名词复数形式
+alias | 指定BaseTable.alias的参数值
+catalog | 指定BaseTable.catalog的参数值
+schema | 指定BaseTable.schema的参数值
+ignoreColumns | 指定要忽略的属性名称列表，被忽略的属性将不会在生成的Table类中，生成对应的列定义
 
 #### 主键定义
 
@@ -185,30 +170,12 @@ val users = database.users.toList()
 
 @Column的参数如下：
 
-- columnName
-
-  指定SQL中的列名
-
-- converter
-
-  指定列转换器，关于转换器请参考文档下方中的类型转换器说明
-
-- propertyName
-
-  指定在生成表中，对应列定义的属性名称。
-
-- isReferences
-
-  指定此属性是否为引用列，只有基于Entity接口的实体类，可以赋值为true。当此值为true时，生成的列定义将会自动调用references方法
-
-```kotlin
-public object Employees: Table<Employee>(tableName="Employee",alias="",catalog="",schema="",
-  entityClass=Employee::class) {
-  public val id: Column<Int> = int("id").bindTo { it.id }.primaryKey()
-  public val name: Column<String> = varchar("name").bindTo { it.name }
-  public val department: Column<Int> = int("department_id").references(Departments) { it.department }
-}
- ```
+| 参数            |   说明
+|----------|:----------:|
+columnName | 指定SQL中的列名
+converter | 指定列转换器，关于转换器请参考文档下方中的类型转换器说明
+propertyName | 指定在生成表类中，对应列定义的属性名称。
+isReferences | 指定此属性是否为引用列，只有基于Entity接口的实体类，可以赋值为true。当此值为true时，生成的列定义将会自动调用references方法
 
 #### 忽略指定属性 
 
@@ -218,32 +185,27 @@ public object Employees: Table<Employee>(tableName="Employee",alias="",catalog="
 
 在任意类上添加@KtormKspConfig注解，可以进行全局配置（只能添加一次此注解），注解参数如下
 
-- allowReflectionCreateClassEntity
+| 参数            |   说明
+|----------|:----------:|
+allowReflectionCreateClassEntity | 是否允许在doCreateEntity方法中通过反射创建'任意class实体类'的实例对象。如果为true，那么当实体类构造参数存在默认值参数时，会使用反射进行创建实例 （反射意味着带来了轻微的性能损耗，尽管大部分情况下这个损耗可以忽略不计）。如果如果为false，那么会直接构造方法创建实例，构造中的默认值参数的默认值，将无法生效
+enumConverter | 全局枚举转换器，实体类中的枚举类型属性会自动使用该转换器。关于转换器请参考下文类型转换器的说明
+singleTypeConverters | 全局单类型转换器，实体类中的对应类型的属性会自动使用该转换器。关于转换器请参考下文类型转换器的说明
+namingStrategy | 全局命名风格配置。关于命名风格请参考下文命名风格的说明
+extension | 扩展方法/属性的生成选项（具体的扩展说明请参考下文方法/属性生成器的相关说明）
 
-是否允许在doCreateEntity方法中通过反射创建'任意class实体类'的实例对象。如果为true，那么当实体类构造参数存在默认值参数时，
-会使用反射进行创建实例 （反射意味着带来了轻微的性能损耗，尽管大部分情况下这个损耗可以忽略不计）。如果如果为false，那么
-会直接构造方法创建实例，构造中的默认值参数的默认值，将无法生效。
+extension参数说明
 
-- enumConverter
-  
-全局枚举转换器，实体类中的枚举类型属性会自动使用该转换器。关于转换器请参考下文类型转换器的说明。
-
-- singleTypeConverters
-
-全局单类型转换器，实体类中的对应类型的属性会自动使用该转换器。关于转换器请参考下文类型转换器的说明。
-
-- namingStrategy
-
-全局命名风格配置。关于命名风格请参考下文命名风格的说明。
-
-- extension  扩展方法/属性的生成选项，有以下可配置项（具体的扩展说明请参考下文方法/属性生成器的相关说明）
-  - enableSequenceOf  是否生成实体序列扩展
-  - enableClassEntitySequenceAddFun  是否生成实体序列添加方法扩展
-  - enableClassEntitySequenceUpdateFun  是否生成实体序列更新方法扩展
+| 参数            |   说明
+|----------|:----------:|
+enableSequenceOf | 是否生成实体序列扩展
+enableClassEntitySequenceAddFun | 是否生成实体序列添加方法扩展
+enableClassEntitySequenceUpdateFun | 是否生成实体序列更新方法扩展
 
 ### 命名风格
 
-在默认情况下，生成表类中的表名，取实体类类名。列名取对应实体类中的属性名称。 有两种方式修改生成的名称：命名单独配置、全局命名风格配置
+在默认情况下，生成表类中的表名，取实体类类名。列名取对应实体类中的属性名称。 
+
+可以通过全局配置、单独配置修改生成的名称。
 
 #### 命名单独配置
 
