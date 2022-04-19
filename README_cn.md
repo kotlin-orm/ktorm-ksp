@@ -551,10 +551,15 @@ dependencies {
 ```
 构建项目，你将看到通过自定义生成器生成的代码。
 
-#### 默认使用的顶级属性/方法生成器
-  
-...
+#### 可用的生成器扩展
 
-#### 其他可用的生成器
+- [ktorm-ksp-ext-sequence-batch](ktorm-ksp-ext/ktorm-ksp-ext-sequence-batch)
 
-...
+针对任意class实体序列生成批量添加，批量更新的方法。依赖：
+
+```groovy
+ksp 'org.ktorm:ktorm-ksp-ext-sequence-batch:${ktorm-ksp.version}'
+```
+
+
+
