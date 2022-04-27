@@ -58,6 +58,25 @@ public fun EntitySequence<Student, Students>.update(entity: Student): Int { /*�
 public val Database.students: EntitySequence<Student, Students> get() = this.sequenceOf(Students)
 ```
 
+- [快速入门](#快速入门)
+- [实体定义](#实体定义)
+  - [任意class实体类定义](#任意class实体类定义)
+  - [基于Entity接口的实体类定义](#基于Entity接口的实体类定义)
+  - [表定义](#表定义)
+  - [主键定义](#主键定义)
+  - [列定义](#列定义)
+  - [忽略指定属性](#忽略指定属性)
+- [全局配置](#全局配置)
+- [命名风格](#命名风格)
+  - [命名单独配置](#命名单独配置)
+  - [全局命名风格配置](#全局命名风格配置)
+- [类型转换器](#类型转换器)
+  - [列配置使用类型转换器](#列配置使用类型转换器)
+  - [全局配置使用类型转换器](#全局配置使用类型转换器)
+- [方法/属性生成器](#方法属性生成器)
+  - [自定义生成器的步骤](#自定义生成器的步骤)
+  - [可用的生成器扩展](#可用的生成器扩展)
+
 ### 快速入门
 
 在build.gradle中添加依赖
@@ -533,3 +552,4 @@ ksp 'org.ktorm:ktorm-ksp-ext-sequence-batch:${ktorm-ksp.version}'
 
 
 
+``
