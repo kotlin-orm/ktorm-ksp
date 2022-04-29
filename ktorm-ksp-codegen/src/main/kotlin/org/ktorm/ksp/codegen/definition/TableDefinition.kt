@@ -75,10 +75,10 @@ public enum class KtormEntityType(
     /**
      * Interface entity of inherited [Entity], whose table must be a subclass of [Table]
      */
-    INTERFACE(Table::class),
+    ENTITY_INTERFACE(Table::class),
 
     /**
-     * Entity of any Class whose table must be a subclass of [BaseTable]
+     * Entity of any kind of class whose table must be a subclass of [BaseTable]
      */
-    CLASS(BaseTable::class)
+    ANY_KIND_CLASS(BaseTable::class)
 }

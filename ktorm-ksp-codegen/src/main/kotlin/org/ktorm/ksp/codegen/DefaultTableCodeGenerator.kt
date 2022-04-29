@@ -16,8 +16,8 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
 
     override fun generate(context: TableGenerateContext, emitter: (TypeSpec.Builder) -> Unit) {
         when (context.table.ktormEntityType) {
-            KtormEntityType.INTERFACE -> generateInterfaceEntity(context, emitter)
-            KtormEntityType.CLASS -> generateClassEntity(context, emitter)
+            KtormEntityType.ENTITY_INTERFACE -> generateEntityInterfaceEntity(context, emitter)
+            KtormEntityType.ANY_KIND_CLASS -> generateAnyKindClassEntity(context, emitter)
         }
     }
 
@@ -49,7 +49,7 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
     }
 
 
-    public open fun generateInterfaceEntity(context: TableGenerateContext, emitter: (TypeSpec.Builder) -> Unit) {
+    public open fun generateEntityInterfaceEntity(context: TableGenerateContext, emitter: (TypeSpec.Builder) -> Unit) {
         val table = context.table
         TypeSpec.objectBuilder(table.tableClassName)
             .superclass(Table::class.asClassName().parameterizedBy(table.entityClassName))
@@ -59,7 +59,7 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
             .run(emitter)
     }
 
-    public open fun generateClassEntity(context: TableGenerateContext, emitter: (TypeSpec.Builder) -> Unit) {
+    public open fun generateAnyKindClassEntity(context: TableGenerateContext, emitter: (TypeSpec.Builder) -> Unit) {
         val table = context.table
         TypeSpec.objectBuilder(table.tableClassName)
             .superclass(BaseTable::class.asClassName().parameterizedBy(table.entityClassName))
@@ -79,12 +79,12 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
 
     override fun generate(context: TableGenerateContext, emitter: (PropertySpec) -> Unit) {
         when (context.table.ktormEntityType) {
-            KtormEntityType.INTERFACE -> generateInterfaceEntity(context, emitter)
-            KtormEntityType.CLASS -> generateClassEntity(context, emitter)
+            KtormEntityType.ENTITY_INTERFACE -> generateEntityInterfaceEntity(context, emitter)
+            KtormEntityType.ANY_KIND_CLASS -> generateAnyKindClassEntity(context, emitter)
         }
     }
 
-    protected open fun generateInterfaceEntity(context: TableGenerateContext, emitter: (PropertySpec) -> Unit) {
+    protected open fun generateEntityInterfaceEntity(context: TableGenerateContext, emitter: (PropertySpec) -> Unit) {
         val (table, config, columnInitializerGenerator, _, dependencyFiles) = context
         table.columns
             .asSequence()
@@ -127,7 +127,7 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
             .forEach(emitter)
     }
 
-    protected open fun generateClassEntity(context: TableGenerateContext, emitter: (PropertySpec) -> Unit) {
+    protected open fun generateAnyKindClassEntity(context: TableGenerateContext, emitter: (PropertySpec) -> Unit) {
         val (table, config, columnInitializerGenerator, _, dependencyFiles) = context
         table.columns
             .asSequence()
@@ -158,7 +158,7 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
     }
 
     override fun generate(context: TableGenerateContext, emitter: (FunSpec) -> Unit) {
-        if (context.table.ktormEntityType != KtormEntityType.CLASS) {
+        if (context.table.ktormEntityType != KtormEntityType.ANY_KIND_CLASS) {
             return
         }
         val (table, config, _, logger, _) = context
@@ -309,7 +309,7 @@ private val insertExpressionType = InsertExpression::class.asClassName()
 public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
 
     override fun generate(context: TableGenerateContext, emitter: (FunSpec) -> Unit) {
-        if (context.table.ktormEntityType != KtormEntityType.CLASS) {
+        if (context.table.ktormEntityType != KtormEntityType.ANY_KIND_CLASS) {
             return
         }
         val table = context.table
@@ -405,7 +405,7 @@ private val andFun = MemberName("org.ktorm.dsl", "and", true)
 
 public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
     override fun generate(context: TableGenerateContext, emitter: (FunSpec) -> Unit) {
-        if (context.table.ktormEntityType != KtormEntityType.CLASS) {
+        if (context.table.ktormEntityType != KtormEntityType.ANY_KIND_CLASS) {
             return
         }
         val table = context.table

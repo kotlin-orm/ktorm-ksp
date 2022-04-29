@@ -79,13 +79,13 @@ public class KtormProcessor(
             .flatMap { it.columns }
             .filter { it.isReferences }
             .forEach {
-                if (it.tableDefinition.ktormEntityType != KtormEntityType.INTERFACE) {
+                if (it.tableDefinition.ktormEntityType != KtormEntityType.ENTITY_INTERFACE) {
                     error("Wrong references column: ${it.tablePropertyName.canonicalName}, References Column are only allowed for interface entity type")
                 }
                 val table = entityClassMap[it.propertyClassName]
                     ?: error("Wrong references column: ${it.tablePropertyName.canonicalName} , Type ${it.propertyClassName} " +
                             "is not an entity type, please check if a @Table annotation is added to type ${it.propertyClassName}")
-                if (table.ktormEntityType != KtormEntityType.INTERFACE) {
+                if (table.ktormEntityType != KtormEntityType.ENTITY_INTERFACE) {
                     error("Wrong references column: ${it.tablePropertyName.canonicalName}. Type ${it.propertyClassName} is not an interface entity type, " +
                             "References column must be interface entity type")
                 }
@@ -189,9 +189,9 @@ public class KtormProcessor(
                     val entityQualifiedName = Entity::class.qualifiedName
                     classDeclaration.findSuperTypeReference(entityQualifiedName!!)
                         ?: error("wrong entity class declaration: ${entityClassName.canonicalName}, Entity of interface type must inherit [${entityQualifiedName}]")
-                    KtormEntityType.INTERFACE
+                    KtormEntityType.ENTITY_INTERFACE
                 }
-                ClassKind.CLASS -> KtormEntityType.CLASS
+                ClassKind.CLASS -> KtormEntityType.ANY_KIND_CLASS
                 else -> error("wrong entity class declaration: ${entityClassName.canonicalName}, classKind must to be Interface or Class")
             }
             val table = classDeclaration.getAnnotationsByType(Table::class).first()
@@ -222,7 +222,7 @@ public class KtormProcessor(
                     val propertyKSType = ksProperty.type.resolve()
                     val propertyName = ksProperty.simpleName.asString()
                     if (ksProperty.isAnnotationPresent(Ignore::class) || propertyName in table.ignoreColumns
-                        || (tableDef.ktormEntityType == KtormEntityType.INTERFACE && propertyName in ignoreInterfaceEntityProperties)
+                        || (tableDef.ktormEntityType == KtormEntityType.ENTITY_INTERFACE && propertyName in ignoreInterfaceEntityProperties)
                     ) {
                         logger.info("ignore column: ${tableDef.entityClassName.canonicalName}.$propertyName")
                         return@forEach
