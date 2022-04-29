@@ -567,18 +567,38 @@ Generate the following extension function:
 
 ```kotlin
 /**
- * Insert the entity into the database, and try to get the auto-incrementing primary key value and assign it to the entity property.
- * @return Number of rows affected
+ * Batch insert entities into the database, this method will not get the auto-incrementing primary key
+ * @param entities List of entities to insert
+ * @return the effected row counts for each sub-operation.
  */
-public fun EntitySequence<Customer, Customers>.add(entity: Customer): Int {
-    // Ignore code
-}
+public fun EntitySequence<Customer, Customers>.addAll(entities: Iterable<Customer>): IntArray =
+  this.database.batchInsert(Customers) {
+    for (entity in entities) {
+      item {
+        set(Customers.id, entity.id)
+        set(Customers.name, entity.name)
+        set(Customers.email, entity.email)
+        set(Customers.phoneNumber, entity.phoneNumber)
+      }
+    }
+  }
 
 /**
- * Update entity by primary  key
- * @return Number of rows affected
+ * Batch update based on entity primary key
+ * @param entities List of entities to update
+ * @return the effected row counts for each sub-operation.
  */
-public fun EntitySequence<Customer, Customers>.update(entity: Customer): Int {
-    // Ignore code
-}
+public fun EntitySequence<Customer, Customers>.updateAll(entities: Iterable<Customer>): IntArray =
+  this.database.batchUpdate(Customers) {
+    for (entity in entities) {
+      item {
+        set(Customers.name, entity.name)
+        set(Customers.email, entity.email)
+        set(Customers.phoneNumber, entity.phoneNumber)
+        where {
+          it.id eq entity.id!!
+        }
+      }
+    }
+  }
 ```
