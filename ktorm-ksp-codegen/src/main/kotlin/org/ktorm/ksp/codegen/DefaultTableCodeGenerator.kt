@@ -157,6 +157,9 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
         private val primaryConstructor = MemberName("kotlin.reflect.full", "primaryConstructor", true)
     }
 
+    /**
+     * Generate doCreateEntity function for entity of any kind of class
+     */
     override fun generate(context: TableGenerateContext, emitter: (FunSpec) -> Unit) {
         if (context.table.ktormEntityType != KtormEntityType.ANY_KIND_CLASS) {
             return
@@ -277,6 +280,14 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
 
 }
 
+/**
+ * Generate entity sequence extend property to [Database].
+ * e.g:
+ * ```kotlin
+ * public val Database.customers: EntitySequence<Customer, Customers>
+ *      get() = this.sequenceOf(Customers)
+ * ```
+ */
 public class SequencePropertyGenerator : TopLevelPropertyGenerator {
     override fun generate(context: TableGenerateContext, emitter: (PropertySpec) -> Unit) {
         val table = context.table
@@ -306,6 +317,15 @@ private val argumentExpressionType = ArgumentExpression::class.asClassName()
 private val tableExpressionType = TableExpression::class.asClassName()
 private val insertExpressionType = InsertExpression::class.asClassName()
 
+/**
+ * Generate add extend function to [EntitySequence].
+ * e.g:
+ * ```kotlin
+ * public fun EntitySequence<Customer, Customers>.add(entity: Customer): Int {
+ *      // Ignore code
+ * }
+ * ```
+ */
 public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
 
     override fun generate(context: TableGenerateContext, emitter: (FunSpec) -> Unit) {
@@ -313,6 +333,7 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
             return
         }
         val table = context.table
+        val kdocBuilder = StringBuilder("Insert entity into database")
         FunSpec.builder("add")
             .receiver(EntitySequence::class.asClassName().parameterizedBy(table.entityClassName, table.tableClassName))
             .addParameter("entity", table.entityClassName)
@@ -365,6 +386,7 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
                 val primaryKeys = table.columns.filter { it.isPrimaryKey }
                 if (primaryKeys.isNotEmpty() && primaryKeys.first().isMutable) {
                     val primaryKey = primaryKeys.first()
+                    kdocBuilder.append(", And try to get the auto-incrementing primary key and assign it to the ${primaryKey.entityPropertyName.simpleName} property")
                     if (primaryKey.isNullable) {
                         beginControlFlow("if (entity.%L == null)", primaryKey.entityPropertyName.simpleName)
                     }
@@ -394,7 +416,10 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
                 } else {
                     addStatement("return database.executeUpdate(expression)")
                 }
+                kdocBuilder.appendLine()
+                kdocBuilder.append("@return the effected row count.")
             })
+            .addKdoc(kdocBuilder.toString())
             .build()
             .run(emitter)
     }
@@ -403,6 +428,15 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
 
 private val andFun = MemberName("org.ktorm.dsl", "and", true)
 
+/**
+ * Generate update extend function to [EntitySequence].
+ * e.g:
+ * ```kotlin
+ * public fun EntitySequence<Customer, Customers>.update(entity: Customer): Int {
+ *      // Ignore code
+ * }
+ * ```
+ */
 public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
     override fun generate(context: TableGenerateContext, emitter: (FunSpec) -> Unit) {
         if (context.table.ktormEntityType != KtormEntityType.ANY_KIND_CLASS) {
@@ -418,6 +452,10 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
             .receiver(EntitySequence::class.asClassName().parameterizedBy(table.entityClassName, table.tableClassName))
             .addParameter("entity", table.entityClassName)
             .returns(Int::class.asClassName())
+            .addKdoc("""
+                Update entity by primary key
+                @return the effected row count. 
+            """.trimIndent())
             .addCode(buildCodeBlock {
                 add("return·this.database.%M(%T)·{\n", updateFun, table.tableClassName)
                 withIndent(3) {

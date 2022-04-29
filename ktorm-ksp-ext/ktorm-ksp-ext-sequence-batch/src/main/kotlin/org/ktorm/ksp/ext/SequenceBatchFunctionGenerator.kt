@@ -18,6 +18,10 @@ public class SequenceAddAllFunctionGenerator : TopLevelFunctionGenerator {
     override fun generate(context: TableGenerateContext, emitter: (FunSpec) -> Unit) {
         val table = context.table
         FunSpec.builder("addAll")
+            .addKdoc("""
+                Batch insert entities into the database, this method will not get the auto-incrementing primary key
+                @return the effected row counts for each sub-operation.
+            """.trimIndent())
             .receiver(EntitySequence::class.asClassName().parameterizedBy(table.entityClassName, table.tableClassName))
             .addParameter("entities", Iterable::class.asClassName().parameterizedBy(table.entityClassName))
             .returns(IntArray::class.asClassName())
@@ -66,6 +70,10 @@ public class SequenceUpdateAllFunctionGenerator : TopLevelFunctionGenerator {
             return
         }
         FunSpec.builder("updateAll")
+            .addKdoc("""
+                Batch update based on entity primary key
+                @return the effected row counts for each sub-operation.
+            """.trimIndent())
             .receiver(EntitySequence::class.asClassName().parameterizedBy(table.entityClassName, table.tableClassName))
             .addParameter("entities", Iterable::class.asClassName().parameterizedBy(table.entityClassName))
             .returns(IntArray::class.asClassName())
