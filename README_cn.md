@@ -554,18 +554,38 @@ ksp 'org.ktorm:ktorm-ksp-ext-sequence-batch:${ktorm-ksp.version}'
 
 ```kotlin
 /**
- * 插入实体到数据库中, 并尝试获取自增主键值，将其赋值到实体属性中.
- * @return 返回影响的行数
+ * 批量插入实体到数据库, 此方法不会获取自增主键
+ * @param entities 要插入的实体列表 
+ * @return 每个子操作影响的行数
  */
-public fun EntitySequence<Customer, Customers>.add(entity: Customer): Int {
-    // 忽略具体代码实现
-}
+public fun EntitySequence<Customer, Customers>.addAll(entities: Iterable<Customer>): IntArray =
+  this.database.batchInsert(Customers) {
+    for (entity in entities) {
+      item {
+        set(Customers.id, entity.id)
+        set(Customers.name, entity.name)
+        set(Customers.email, entity.email)
+        set(Customers.phoneNumber, entity.phoneNumber)
+      }
+    }
+  }
 
 /**
- * 根据主键更新实体
- * @return 返回影响的行数
+ * 根据实体主键批量更新
+ * @param entities 要更新的实体列表
+ * @return 每个子操作影响的行数
  */
-public fun EntitySequence<Customer, Customers>.update(entity: Customer): Int {
-    // 忽略具体代码实现
-}
+public fun EntitySequence<Customer, Customers>.updateAll(entities: Iterable<Customer>): IntArray =
+  this.database.batchUpdate(Customers) {
+    for (entity in entities) {
+      item {
+        set(Customers.name, entity.name)
+        set(Customers.email, entity.email)
+        set(Customers.phoneNumber, entity.phoneNumber)
+        where {
+          it.id eq entity.id!!
+        }
+      }
+    }
+  }
 ```
