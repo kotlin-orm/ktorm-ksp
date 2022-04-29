@@ -63,24 +63,24 @@ public fun EntitySequence<Student, Students>.update(entity: Student): Int { /*Ig
 public val Database.students: EntitySequence<Student, Students> get() = this.sequenceOf(Students)
 ```
 
-- [Quick Start](#Quick Start)
-- [Define Entities](#Define Entities)
-  - [Define Entities Of Any Kind Of Class](#Define Entities Of Any Kind Of Class)
-  - [Define Entities Based On The Entity Interface](#Define Entities Based On The Entity Interface)
-  - [Define Table Schema](#Define Table Schema)
-  - [Define Primary Key](#Define Primary Key)
-  - [Define Table Column](#Define Table Column)
-  - [Ignore The Specified Properties](#Ignore The Specified Properties)
-- [Global Configuration](#Global Configuration)
-- [Naming Style](#Naming Style)
-  - [Single Naming Configuration](#Type Converter)
-  - [Global Naming Configuration](#Global Naming Configuration)
-- [Type Converter](#Type Converter)
-  - [Use Type Converter in Column](#Use Type Converter in Column)
-  - [Use Type Converter in Global Configuration](#Use Type Converter in Global Configuration)
-- [Function And Property Generator](#Function or Property Generator)
-  - [Steps To Customize The Generator](#Steps To Customize The Generator)
-  - [Available Generator Extensions](#Available Generator Extensions)
+- [Quick Start](#quick-start)
+- [Define Entities](#define-entities)
+  - [Define Entities Of Any Kind Of Class](#define-entities-of-any-kind-of-class)
+  - [Define Entities Based On The Entity Interface](#define-entities-based-on-the-entity-interface)
+  - [Define Table Schema](#define-table-schema)
+  - [Define Primary Key](#define-primary-key)
+  - [Define Table Column](#define-table-column)
+  - [Ignore The Specified Properties](#ignore-the-specified-properties)
+- [Global Configuration](#global-configuration)
+- [Naming Style](#naming-style)
+  - [Single Naming Configuration](#type-converter)
+  - [Global Naming Configuration](#global-naming-configuration)
+- [Type Converter](#type-converter)
+  - [Use Type Converter in Column](#use-type-converter-in-column)
+  - [Use Type Converter in Global Configuration](#use-type-converter-in-global-configuration)
+- [Function And Property Generator](#function-and-property-generator)
+  - [Steps To Customize The Generator](#steps-to-customize-the-generator)
+  - [Available Generator Extensions](#available-generator-extensions)
 
 ### Quick Start
 
@@ -111,7 +111,7 @@ kotlin {
 
 ### Define Entities
 
-#### Define entities of any kind of class
+#### Define Entities Of Any Kind Of Class
 
 ```kotlin
 @Table
