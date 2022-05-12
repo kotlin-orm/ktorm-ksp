@@ -4,7 +4,7 @@ plugins {
 
 dependencies {
     api(kotlin("stdlib"))
-    compileOnly(libs.ktorm.core)
+    api(libs.ktorm.core)
 }
 
 configureMavenPublishing()
