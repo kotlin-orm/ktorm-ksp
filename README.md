@@ -93,7 +93,7 @@ plugins {
 
 dependencies {
     implementation 'org.ktorm:ktorm-ksp-api:${ktorm-ksp.version}'
-    ksp 'org.ktorm:ktorm-ksp-compile:${ktorm-ksp.version}'
+    ksp 'org.ktorm:ktorm-ksp-compiler:${ktorm-ksp.version}'
 }
 ```
 
