@@ -11,7 +11,7 @@ buildscript {
 
 allprojects {
     group = "org.ktorm"
-    version = "0.0.1"
+    version = "1.0"
 
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
         kotlinOptions.jvmTarget = "1.8"
