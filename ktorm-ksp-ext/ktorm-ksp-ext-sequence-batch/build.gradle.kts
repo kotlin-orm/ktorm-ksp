@@ -5,3 +5,5 @@ plugins {
 dependencies {
     api(project(":ktorm-ksp-codegen"))
 }
+
+configureMavenPublishing()

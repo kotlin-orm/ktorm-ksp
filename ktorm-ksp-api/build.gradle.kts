@@ -6,3 +6,5 @@ dependencies {
     api(kotlin("stdlib"))
     compileOnly(libs.ktorm.core)
 }
+
+configureMavenPublishing()
