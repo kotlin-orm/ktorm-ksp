@@ -83,7 +83,6 @@ public class SequenceUpdateAllFunctionGenerator : TopLevelFunctionGenerator {
             .addCode(buildCodeBlock {
                 addStatement("%M()", checkNotModifiedFun)
                 beginControlFlow("return·this.database.%M(%T)", batchUpdateFun, table.tableClassName)
-
                 beginControlFlow("for (entity in entities)")
                 beginControlFlow("item")
                 for (column in table.columns) {
