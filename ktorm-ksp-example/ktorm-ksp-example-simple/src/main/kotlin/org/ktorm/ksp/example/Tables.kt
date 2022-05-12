@@ -53,6 +53,7 @@ public interface Employee : Entity<Employee> {
 public data class Customer(
     @PrimaryKey
     public var id: Int?,
+    @PrimaryKey
     public var name: String,
     public var email: String,
     public var phoneNumber: String,

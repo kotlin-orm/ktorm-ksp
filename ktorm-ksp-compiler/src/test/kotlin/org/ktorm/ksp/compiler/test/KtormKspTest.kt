@@ -14,6 +14,7 @@ import org.ktorm.logging.ConsoleLogger
 import org.ktorm.logging.LogLevel
 import org.ktorm.schema.*
 import java.io.File
+import java.lang.reflect.InvocationTargetException
 import kotlin.reflect.full.functions
 
 public class KtormKspTest {
@@ -1085,6 +1086,144 @@ public class KtormKspTest {
         assertThat(result.messages).contains("@KtormKspConfig can only be added to a class")
     }
 
+    @Test
+    public fun `modified entity sequence call add fun`() {
+        val (result1, result2) = twiceCompile(
+            SourceFile.kotlin(
+                "source.kt",
+                """
+                import org.ktorm.ksp.api.*
+                import org.ktorm.database.Database
+                import org.ktorm.entity.toList
+                import kotlin.collections.List
+                import org.ktorm.dsl.eq
+                import org.ktorm.entity.filter
+                
+                 @Table
+                data class User(
+                    @PrimaryKey
+                    var id: Int?,
+                    var username: String,
+                    var age: Int
+                )
+
+                object TestBridge {
+                    fun testAdd(database:Database) {
+                        val users = database.users.filter { it.id eq 1 }
+                        users.add(User(null, "lucy", 10))
+                    }
+                }
+                """,
+            )
+        )
+        assertThat(result1.exitCode).isEqualTo(ExitCode.OK)
+        assertThat(result2.exitCode).isEqualTo(ExitCode.OK)
+        val bridgeClass = result2.classLoader.loadClass("TestBridge")
+        val bridge = bridgeClass.kotlin.objectInstance
+        useDatabase { database ->
+            try {
+                bridgeClass.kotlin.functions.first { it.name == "testAdd" }.call(bridge, database)
+            } catch (e: InvocationTargetException) {
+                assertThat(e.targetException.message).contains("Please call on the origin sequence returned from database.sequenceOf(table)")
+                return
+            }
+            throw RuntimeException("fail")
+        }
+    }
+
+    @Test
+    public fun `modified entity sequence call update fun`() {
+        val (result1, result2) = twiceCompile(
+            SourceFile.kotlin(
+                "source.kt",
+                """
+                import org.ktorm.ksp.api.*
+                import org.ktorm.database.Database
+                import org.ktorm.entity.toList
+                import kotlin.collections.List
+                import org.ktorm.dsl.eq
+                import org.ktorm.entity.filter
+                
+                 @Table
+                data class User(
+                    @PrimaryKey
+                    var id: Int?,
+                    var username: String,
+                    var age: Int
+                )
+
+                object TestBridge {
+                    fun testAdd(database:Database) {
+                        val users = database.users.filter { it.id eq 1 }
+                        users.update(User(1, "lucy", 10))
+                    }
+                }
+                """,
+            )
+        )
+        assertThat(result1.exitCode).isEqualTo(ExitCode.OK)
+        assertThat(result2.exitCode).isEqualTo(ExitCode.OK)
+        val bridgeClass = result2.classLoader.loadClass("TestBridge")
+        val bridge = bridgeClass.kotlin.objectInstance
+        useDatabase { database ->
+            try {
+                bridgeClass.kotlin.functions.first { it.name == "testAdd" }.call(bridge, database)
+            } catch (e: InvocationTargetException) {
+                assertThat(e.targetException.message).contains("Please call on the origin sequence returned from database.sequenceOf(table)")
+                return
+            }
+            throw RuntimeException("fail")
+        }
+    }
+
+    @Test
+    public fun `multi primary key`() {
+        val (result1, result2) = twiceCompile(
+            SourceFile.kotlin(
+                "source.kt",
+                """
+                import org.ktorm.ksp.api.*
+                import org.ktorm.database.Database
+                import org.ktorm.entity.toList
+                import kotlin.collections.List
+                    
+                @Table(tableName = "province")
+                data class Province(
+                    @PrimaryKey
+                    val country:String,
+                    @PrimaryKey
+                    val province:String,
+                    var population:Int
+                )
+
+                object TestBridge {
+                    @Suppress("MemberVisibilityCanBePrivate")
+                    fun testAdd(database:Database) {
+                        database.provinces.add(Province("China", "Guangdong", 150000))
+                        val provinces = database.provinces.toList()
+                        assert(provinces.contains(Province("China", "Guangdong", 150000)))
+                    }
+                    fun testUpdate(database: Database) {
+                        var province = database.provinces.toList().first()
+                        province.population = 200000
+                        database.provinces.update(province)
+                        province = database.provinces.toList().first()
+                        assert(province.population == 200000)
+                    }
+                }
+                """,
+            )
+        )
+        assertThat(result1.exitCode).isEqualTo(ExitCode.OK)
+        assertThat(result2.exitCode).isEqualTo(ExitCode.OK)
+        val bridgeClass = result2.classLoader.loadClass("TestBridge")
+        val bridge = bridgeClass.kotlin.objectInstance
+        useDatabase { database ->
+            bridgeClass.kotlin.functions.first { it.name == "testAdd" }.call(bridge, database)
+            bridgeClass.kotlin.functions.first { it.name == "testUpdate" }.call(bridge, database)
+        }
+    }
+
     private fun createCompiler(vararg sourceFiles: SourceFile, useKsp: Boolean = true): KotlinCompilation {
         return KotlinCompilation().apply {
             workingDir = temporaryFolder.root
@@ -1100,7 +1239,7 @@ public class KtormKspTest {
 
     private inline fun twiceCompile(
         vararg sourceFiles: SourceFile,
-        sourceFileBlock: (String) -> Unit = {}
+        sourceFileBlock: (String) -> Unit = {},
     ): Pair<KotlinCompilation.Result, KotlinCompilation.Result> {
         val compiler1 = createCompiler(*sourceFiles)
         val result1 = compiler1.compile()

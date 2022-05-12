@@ -317,6 +317,8 @@ private val argumentExpressionType = ArgumentExpression::class.asClassName()
 private val tableExpressionType = TableExpression::class.asClassName()
 private val insertExpressionType = InsertExpression::class.asClassName()
 
+private val checkNotModifiedFun = MemberName("org.ktorm.ksp.api", "checkIfSequenceModified", true)
+
 /**
  * Generate add extend function to [EntitySequence].
  * e.g:
@@ -339,6 +341,7 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
             .addParameter("entity", table.entityClassName)
             .returns(Int::class.asClassName())
             .addCode(buildCodeBlock {
+                addStatement("%M()", checkNotModifiedFun)
                 addStatement("val assignments = ArrayList<ColumnAssignmentExpression<*>>(%L)", table.columns.size)
                 for (column in table.columns) {
                     if (column.isNullable) {
@@ -384,7 +387,7 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
                     """.trimIndent(), params
                 )
                 val primaryKeys = table.columns.filter { it.isPrimaryKey }
-                if (primaryKeys.isNotEmpty() && primaryKeys.first().isMutable) {
+                if (primaryKeys.size == 1 && primaryKeys.first().isMutable) {
                     val primaryKey = primaryKeys.first()
                     kdocBuilder.append(", And try to get the auto-incrementing primary key and assign it to the ${primaryKey.entityPropertyName.simpleName} property")
                     if (primaryKey.isNullable) {
@@ -452,54 +455,55 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
             .receiver(EntitySequence::class.asClassName().parameterizedBy(table.entityClassName, table.tableClassName))
             .addParameter("entity", table.entityClassName)
             .returns(Int::class.asClassName())
-            .addKdoc("""
+            .addKdoc(
+                """
                 Update entity by primary key
                 @return the effected row count. 
-            """.trimIndent())
+            """.trimIndent()
+            )
             .addCode(buildCodeBlock {
-                add("return·this.database.%M(%T)·{\n", updateFun, table.tableClassName)
-                withIndent(3) {
-                    for (column in table.columns) {
-                        if (!column.isPrimaryKey) {
-                            addStatement(
-                                "set(%T.%L,·entity.%L)",
-                                column.tableDefinition.tableClassName,
-                                column.tablePropertyName.simpleName,
-                                column.entityPropertyName.simpleName
-                            )
-                        }
+                addStatement("%M()", checkNotModifiedFun)
+                beginControlFlow("return·this.database.%M(%T)", updateFun, table.tableClassName)
+                for (column in table.columns) {
+                    if (!column.isPrimaryKey) {
+                        addStatement(
+                            "set(%T.%L,·entity.%L)",
+                            column.tableDefinition.tableClassName,
+                            column.tablePropertyName.simpleName,
+                            column.entityPropertyName.simpleName
+                        )
                     }
-                    beginControlFlow("where")
-                    primaryKeyColumns.forEachIndexed { index, column ->
-                        if (index == 0) {
-                            val conditionTemperate = if (primaryKeyColumns.size == 1) {
-                                "%T.%L·%M·entity.%L%L"
-                            } else {
-                                "(%T·%L·entity.%L%L)"
-                            }
-                            addStatement(
-                                conditionTemperate,
-                                column.tableDefinition.tableClassName,
-                                column.tablePropertyName.simpleName,
-                                eqFun,
-                                column.entityPropertyName.simpleName,
-                                if (column.isNullable) "!!" else ""
-                            )
-                        } else {
-                            addStatement(
-                                ".%M(%T.%L·%M·entity.%L%L)",
-                                andFun,
-                                column.tableDefinition.tableClassName,
-                                column.tablePropertyName.simpleName,
-                                eqFun,
-                                column.entityPropertyName.simpleName,
-                                if (column.isNullable) "!!" else ""
-                            )
-                        }
-                    }
-                    endControlFlow()
                 }
-                add("    }")
+                beginControlFlow("where")
+                primaryKeyColumns.forEachIndexed { index, column ->
+                    if (index == 0) {
+                        val conditionTemperate = if (primaryKeyColumns.size == 1) {
+                            "%T.%L·%M·entity.%L%L"
+                        } else {
+                            "(%T.%L·%M·entity.%L%L)"
+                        }
+                        addStatement(
+                            conditionTemperate,
+                            column.tableDefinition.tableClassName,
+                            column.tablePropertyName.simpleName,
+                            eqFun,
+                            column.entityPropertyName.simpleName,
+                            if (column.isNullable) "!!" else ""
+                        )
+                    } else {
+                        addStatement(
+                            ".%M(%T.%L·%M·entity.%L%L)",
+                            andFun,
+                            column.tableDefinition.tableClassName,
+                            column.tablePropertyName.simpleName,
+                            eqFun,
+                            column.entityPropertyName.simpleName,
+                            if (column.isNullable) "!!" else ""
+                        )
+                    }
+                }
+                endControlFlow()
+                endControlFlow()
             })
             .build()
             .run(emitter)
