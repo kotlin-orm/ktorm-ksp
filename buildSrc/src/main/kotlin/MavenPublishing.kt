@@ -89,7 +89,7 @@ fun Project.configureMavenPublishing() {
             }
         }
     }
-    /*signing {
+    signing {
         val keyId = System.getenv("GPG_KEY_ID")
         val secretKey = System.getenv("GPG_SECRET_KEY")
         val password = System.getenv("GPG_PASSWORD")
@@ -97,5 +97,10 @@ fun Project.configureMavenPublishing() {
         assert(!project.version.toString().endsWith("SNAPSHOT"))
         useInMemoryPgpKeys(keyId, secretKey, password)
         sign(publications["dist"])
-    }*/
+    }
+    afterEvaluate {
+        tasks
+            .filter { it.group == "publishing" }
+            .forEach { it.dependsOn("check") }
+    }
 }
