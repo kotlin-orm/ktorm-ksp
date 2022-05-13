@@ -87,6 +87,7 @@ public val Database.students: EntitySequence<Student, Students> get() = this.seq
 Add a dependency to ```build.gradle``` file:
 
 ```groovy
+// Groovy DSL
 plugins {
     id 'com.google.devtools.ksp' version '1.6.21-1.0.5'
 }
@@ -97,14 +98,39 @@ dependencies {
 }
 ```
 
+```kotlin
+// Kotlin DSL
+plugins {
+    id("com.google.devtools.ksp").version("1.6.21-1.0.5")
+}
+
+dependencies {
+  implementation("org.ktorm:ktorm-ksp-api:${ktorm-ksp.version}")
+  ksp("org.ktorm:ktorm-ksp-compiler:${ktorm-ksp.version}")
+}
+```
+
 In order for idea to aware the generated code, you also need to add the following configuration to ```build.gradle``` 
 (otherwise you will see some red line warnings)
 
 ```groovy
+// Groovy DSL
 kotlin {
     sourceSets {    
         main.kotlin.srcDirs += 'build/generated/ksp/main/kotlin'
         test.kotlin.srcDirs += 'build/generated/ksp/test/kotlin'
+    }
+}
+```
+
+```kotlin
+// Kotlin DSL
+kotlin {
+    sourceSets.main {
+        kotlin.srcDir("build/generated/ksp/main/kotlin")
+    }
+    sourceSets.test {
+        kotlin.srcDir("build/generated/ksp/test/kotlin")
     }
 }
 ```

@@ -82,6 +82,7 @@ public val Database.students: EntitySequence<Student, Students> get() = this.seq
 在build.gradle中添加依赖
 
 ```groovy
+// Groovy DSL
 plugins {
     id 'com.google.devtools.ksp' version '1.6.21-1.0.5'
 }
@@ -92,13 +93,38 @@ dependencies {
 }
 ```
 
+```kotlin
+// Kotlin DSL
+plugins {
+    id("com.google.devtools.ksp").version("1.6.21-1.0.5")
+}
+
+dependencies {
+  implementation("org.ktorm:ktorm-ksp-api:${ktorm-ksp.version}")
+  ksp("org.ktorm:ktorm-ksp-compiler:${ktorm-ksp.version}")
+}
+```
+
 为了让idea识别生成的代码 还需要在build.gradle中添加以下配置（否则你将会看到一堆红线警告）
 
 ```groovy
+// Groovy DSL
 kotlin {
     sourceSets {    
         main.kotlin.srcDirs += 'build/generated/ksp/main/kotlin'
         test.kotlin.srcDirs += 'build/generated/ksp/test/kotlin'
+    }
+}
+```
+
+```kotlin
+// Kotlin DSL
+kotlin {
+    sourceSets.main {
+        kotlin.srcDir("build/generated/ksp/main/kotlin")
+    }
+    sourceSets.test {
+        kotlin.srcDir("build/generated/ksp/test/kotlin")
     }
 }
 ```
