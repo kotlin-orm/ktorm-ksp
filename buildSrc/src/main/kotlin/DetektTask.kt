@@ -28,6 +28,7 @@ fun Project.configureDetekt() {
     }
 
     tasks.register<JavaExec>("detekt") {
+        group = "verification"
         mainClass.set("io.gitlab.arturbosch.detekt.cli.Main")
         classpath = detekt
         val input = "${projectDir}/src/main/kotlin"
