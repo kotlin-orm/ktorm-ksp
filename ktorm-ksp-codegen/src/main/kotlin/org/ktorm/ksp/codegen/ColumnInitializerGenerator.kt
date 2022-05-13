@@ -1,9 +1,24 @@
+/*
+ * Copyright 2018-2021 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.ktorm.ksp.codegen
 
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSFile
 import com.squareup.kotlinpoet.*
-import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import org.ktorm.ksp.codegen.definition.ColumnDefinition
 import org.ktorm.ksp.codegen.definition.ConverterDefinition
 import java.math.BigDecimal
@@ -74,7 +89,9 @@ public open class ColumnInitializerGenerator(
         ByteArray::class.asTypeName() to MemberName("org.ktorm.schema", "bytes", true)
     )
 
-    @OptIn(KotlinPoetKspPreview::class)
+    /**
+     * Generate column initializer code.
+     */
     public open fun generate(
         column: ColumnDefinition,
         dependencyFiles: MutableSet<KSFile>,
@@ -107,6 +124,9 @@ public open class ColumnInitializerGenerator(
         }
     }
 
+    /**
+     * Generate column initializer code.
+     */
     private fun doGenerate(
         columnName: String,
         config: CodeGenerateConfig,
@@ -128,7 +148,9 @@ public open class ColumnInitializerGenerator(
         val actualConverterDefinition = when {
             converterDefinition != null -> converterDefinition
             isEnum && enumConverterDefinition != null -> enumConverterDefinition
-            !isEnum && singleTypeConverterMap.containsKey(propertyClassName) -> singleTypeConverterMap[propertyClassName]
+            !isEnum && singleTypeConverterMap.containsKey(propertyClassName) -> {
+                singleTypeConverterMap[propertyClassName]
+            }
             else -> null
         }
         if (actualConverterDefinition != null) {
@@ -184,7 +206,9 @@ public open class ColumnInitializerGenerator(
                 }
             }
         }
-        error("Cannot find column generate function, property:${entityPropertyName.canonicalName} propertyTypeName:${propertyClassName.canonicalName}")
+        error(
+            "Cannot find column generate function, property:${entityPropertyName.canonicalName} " +
+                    "propertyTypeName:${propertyClassName.canonicalName}"
+        )
     }
-
 }

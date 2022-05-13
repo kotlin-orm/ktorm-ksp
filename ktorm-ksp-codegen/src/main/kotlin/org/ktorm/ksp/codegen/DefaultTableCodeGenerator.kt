@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018-2021 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.ktorm.ksp.codegen
 
 import com.squareup.kotlinpoet.*
@@ -21,7 +37,7 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
         }
     }
 
-    protected open fun CodeBlock.Builder.appendTableNameParameter(table: TableDefinition, config: CodeGenerateConfig) {
+    protected open fun buildTableNameParameter(table: TableDefinition, config: CodeGenerateConfig): List<CodeBlock> {
         val tableName = when {
             table.tableName.isNotEmpty() -> table.tableName
             config.namingStrategy != null && config.localNamingStrategy != null -> {
@@ -31,31 +47,38 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
                 table.entityClassName.simpleName
             }
             else -> {
-                add("tableName=%T.toTableName(%S),", config.namingStrategy, table.entityClassName.simpleName)
-                return
+                return listOf(
+                    CodeBlock.of(
+                        "tableName=%T.toTableName(%S),",
+                        config.namingStrategy,
+                        table.entityClassName.simpleName
+                    )
+                )
             }
         }
-        add("tableName=%S,", tableName)
+        val result = mutableListOf<CodeBlock>()
+        result.add(CodeBlock.of("tableName·=·%S", tableName))
         if (table.alias.isNotEmpty()) {
-            add("alias=%S,", table.alias)
+            result.add(CodeBlock.of("alias·=·%S", table.alias))
         }
         if (table.catalog.isNotEmpty()) {
-            add("catalog=%S,", table.catalog)
+            result.add(CodeBlock.of("catalog·=·%S", table.catalog))
         }
         if (table.schema.isNotEmpty()) {
-            add("schema=%S,", table.schema)
+            result.add(CodeBlock.of("schema·=·%S", table.schema))
         }
-        add("entityClass=%T::class", table.entityClassName)
+        result.add(CodeBlock.of("entityClass·=·%T::class", table.entityClassName))
+        return result
     }
-
 
     public open fun generateEntityInterfaceEntity(context: TableGenerateContext, emitter: (TypeSpec.Builder) -> Unit) {
         val table = context.table
         TypeSpec.objectBuilder(table.tableClassName)
             .superclass(Table::class.asClassName().parameterizedBy(table.entityClassName))
-            .addSuperclassConstructorParameter(buildCodeBlock {
-                appendTableNameParameter(table, context.config)
-            })
+            .apply {
+                buildTableNameParameter(table, context.config)
+                    .forEach { addSuperclassConstructorParameter(it) }
+            }
             .run(emitter)
     }
 
@@ -63,12 +86,12 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
         val table = context.table
         TypeSpec.objectBuilder(table.tableClassName)
             .superclass(BaseTable::class.asClassName().parameterizedBy(table.entityClassName))
-            .addSuperclassConstructorParameter(buildCodeBlock {
-                appendTableNameParameter(table, context.config)
-            })
+            .apply {
+                buildTableNameParameter(table, context.config)
+                    .forEach { addSuperclassConstructorParameter(it) }
+            }
             .run(emitter)
     }
-
 }
 
 private val bindToFun: MemberName = MemberName("", "bindTo")
@@ -118,7 +141,6 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
                             if (column.isPrimaryKey) {
                                 append(".%primaryKey:M()")
                             }
-
                         }
                         addNamed(code, params)
                     })
@@ -145,7 +167,6 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
             }
             .forEach(emitter)
     }
-
 }
 
 public class DefaultTableFunctionGenerator : TableFunctionGenerator {
@@ -158,7 +179,7 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
     }
 
     /**
-     * Generate doCreateEntity function for entity of any kind of class
+     * Generate doCreateEntity function for entity of any kind of class.
      */
     override fun generate(context: TableGenerateContext, emitter: (FunSpec) -> Unit) {
         if (context.table.ktormEntityType != KtormEntityType.ANY_KIND_CLASS) {
@@ -180,10 +201,14 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
                     .toSet()
                 // propertyName -> columnMember
                 val columnMap = table.columns.associateBy { it.entityPropertyName.simpleName }
-                val unknownParameters =
-                    constructor.parameters.filter { !it.hasDefault && it.name?.asString() !in constructorParameterNames }
+                val unknownParameters = constructor.parameters.filter {
+                    !it.hasDefault && it.name?.asString() !in constructorParameterNames
+                }
                 if (unknownParameters.isNotEmpty()) {
-                    error("unknown constructor parameter for ${table.entityClassName.canonicalName} : ${unknownParameters.map { it.name?.asString() }}")
+                    error(
+                        "unknown constructor parameter for ${table.entityClassName.canonicalName} : " +
+                                "${unknownParameters.map { it.name?.asString() }}"
+                    )
                 }
                 if (config.allowReflectionCreateEntity && constructorParameters.any { it.hasDefault }) {
                     addStatement("val constructor = %T::class.%M!!", table.entityClassName, primaryConstructor)
@@ -235,13 +260,15 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
                     withIndent {
                         for (parameter in constructorParameters) {
                             val column =
-                                table.columns.firstOrNull { it.entityPropertyName.simpleName == parameter.name!!.asString() }
-                                    ?: error(
-                                        "Construct parameter not exists in tableDefinition: ${parameter.name!!.asString()}, " +
-                                                "If the parameter is not a sql column, add a default value. If the parameter is a sql column, " +
-                                                "please remove the Ignore annotation or ignoreColumns in the Table annotation to remove the parameter"
-                                    )
-
+                                table.columns.firstOrNull {
+                                    it.entityPropertyName.simpleName == parameter.name!!.asString()
+                                } ?: error(
+                                    "Construct parameter not exists in tableDefinition: " +
+                                            "${parameter.name!!.asString()}, If the parameter is not a sql column, " +
+                                            "add a default value. If the parameter is a sql column, please remove " +
+                                            "the Ignore annotation or ignoreColumns in the Table annotation to " +
+                                            "remove the parameter"
+                                )
                             val notNullOperator = if (column.isNullable) "" else "!!"
                             addStatement(
                                 "%L·=·%L[this.%L]%L,",
@@ -254,9 +281,9 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
                     }
                     addStatement(")")
                 }
-                context.logger.info("constructorParameter:${constructorParameters.toString()}")
+                context.logger.info("constructorParameter:$constructorParameters")
                 if (nonConstructorParameterNames.isNotEmpty()) {
-                    //non-structural property
+                    // non-structural property
                     for (property in nonConstructorParameterNames) {
                         val column = columnMap[property]!!
                         if (!column.isMutable) {
@@ -277,7 +304,6 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
             .build()
             .run(emitter)
     }
-
 }
 
 /**
@@ -295,7 +321,7 @@ public class SequencePropertyGenerator : TopLevelPropertyGenerator {
         val tableClassName = table.tableClassName.simpleName
         val sequenceName = tableClassName.substring(0, 1).lowercase() + tableClassName.substring(1)
         val entitySequence = EntitySequence::class.asClassName()
-        //EntitySequence<E, T>
+        // EntitySequence<E, T>
         val sequenceType = entitySequence.parameterizedBy(table.entityClassName, table.tableClassName)
         PropertySpec.builder(sequenceName, sequenceType)
             .receiver(Database::class.asClassName())
@@ -358,10 +384,10 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
                     addNamed(
                         """
                                 assignments.add(
-                                  %columnAssignmentExpr:T(
-                                    column = %columnExpr:T(null, %table:T.%tableProperty:L.name, %table:T.%tableProperty:L.sqlType),
-                                    expression = %argumentExpr:T(entity.%entityProperty:L, %table:T.%tableProperty:L.sqlType)
-                                  )
+                                    %columnAssignmentExpr:T(
+                                        column = %columnExpr:T(null, %table:T.%tableProperty:L.name, %table:T.%tableProperty:L.sqlType),
+                                        expression = %argumentExpr:T(entity.%entityProperty:L, %table:T.%tableProperty:L.sqlType)
+                                    )
                                 )
                                 
                             """.trimIndent(),
@@ -380,8 +406,8 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
                 addNamed(
                     """
                         val expression = %insertExpr:T(
-                          table = %tableExpr:T(%table:T.tableName, null, %table:T.catalog, %table:T.schema),
-                          assignments = assignments
+                            table = %tableExpr:T(%table:T.tableName, null, %table:T.catalog, %table:T.schema),
+                            assignments = assignments
                         )
                         
                     """.trimIndent(), params
@@ -389,7 +415,10 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
                 val primaryKeys = table.columns.filter { it.isPrimaryKey }
                 if (primaryKeys.size == 1 && primaryKeys.first().isMutable) {
                     val primaryKey = primaryKeys.first()
-                    kdocBuilder.append(", And try to get the auto-incrementing primary key and assign it to the ${primaryKey.entityPropertyName.simpleName} property")
+                    kdocBuilder.append(
+                        ", And try to get the auto-incrementing primary key and assign it to the " +
+                                "${primaryKey.entityPropertyName.simpleName} property"
+                    )
                     if (primaryKey.isNullable) {
                         beginControlFlow("if (entity.%L == null)", primaryKey.entityPropertyName.simpleName)
                     }
@@ -397,13 +426,13 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
                         """
                         val (effects, rowSet) = database.executeUpdateAndRetrieveKeys(expression)
                         if (rowSet.next()) {
-                          val generatedKey = %T.%L.sqlType.getResult(rowSet, 1)
-                          if (generatedKey != null) {
-                            if (database.logger.isDebugEnabled()) {
-                              database.logger.debug("Generated Key: ${'$'}generatedKey")
+                            val generatedKey = %T.%L.sqlType.getResult(rowSet, 1)
+                            if (generatedKey != null) {
+                                if (database.logger.isDebugEnabled()) {
+                                    database.logger.debug("Generated Key: ${'$'}generatedKey")
+                                }
+                                entity.%L = generatedKey
                             }
-                            entity.%L = generatedKey
-                          }
                         }
                         return effects
                         
@@ -426,7 +455,6 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
             .build()
             .run(emitter)
     }
-
 }
 
 private val andFun = MemberName("org.ktorm.dsl", "and", true)
@@ -441,6 +469,10 @@ private val andFun = MemberName("org.ktorm.dsl", "and", true)
  * ```
  */
 public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
+
+    /**
+     * Generate entity sequence update function.
+     */
     override fun generate(context: TableGenerateContext, emitter: (FunSpec) -> Unit) {
         if (context.table.ktormEntityType != KtormEntityType.ANY_KIND_CLASS) {
             return
@@ -448,7 +480,10 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
         val table = context.table
         val primaryKeyColumns = table.columns.filter { it.isPrimaryKey }
         if (primaryKeyColumns.isEmpty()) {
-            context.logger.info("skip the entity sequence update method of table ${table.entityClassName} because it does not have a primary key column")
+            context.logger.info(
+                "skip the entity sequence update method of table " +
+                        "${table.entityClassName} because it does not have a primary key column"
+            )
             return
         }
         FunSpec.builder("update")
@@ -508,5 +543,4 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
             .build()
             .run(emitter)
     }
-
 }

@@ -18,6 +18,10 @@ public data class CodeGenerateConfig(
     public val localNamingStrategy: NamingStrategy?,
     public val extensionGenerator: ExtensionGeneratorConfig
 ) {
+
+    /**
+     * The [CodeGenerateConfig] builder.
+     */
     public class Builder {
         public var allowReflectionCreateEntity: Boolean = true
         public var enumConverter: ConverterDefinition? = null
@@ -27,6 +31,9 @@ public data class CodeGenerateConfig(
         public var localNamingStrategy: NamingStrategy? = null
         public var extension: ExtensionGeneratorConfig = ExtensionGeneratorConfig()
 
+        /**
+         * Build the [CodeGenerateConfig] instance.
+         */
         public fun build(): CodeGenerateConfig {
             return CodeGenerateConfig(
                 allowReflectionCreateEntity,
@@ -41,7 +48,10 @@ public data class CodeGenerateConfig(
     }
 }
 
-public data class ExtensionGeneratorConfig (
+/**
+ * Entity extension functions and properties generation configuration.
+ */
+public data class ExtensionGeneratorConfig(
     val enableSequenceOf: Boolean = true,
     val enableClassEntitySequenceAddFun: Boolean = true,
     val enableClassEntitySequenceUpdateFun: Boolean = true

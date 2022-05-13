@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018-2021 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 @file:OptIn(ExperimentalStdlibApi::class, KotlinPoetKspPreview::class, KspExperimental::class)
 
 package org.ktorm.ksp.compiler
@@ -83,11 +99,15 @@ public class KtormProcessor(
                     error("Wrong references column: ${it.tablePropertyName.canonicalName}, References Column are only allowed for interface entity type")
                 }
                 val table = entityClassMap[it.propertyClassName]
-                    ?: error("Wrong references column: ${it.tablePropertyName.canonicalName} , Type ${it.propertyClassName} " +
-                            "is not an entity type, please check if a @Table annotation is added to type ${it.propertyClassName}")
+                    ?: error(
+                        "Wrong references column: ${it.tablePropertyName.canonicalName} , Type ${it.propertyClassName} " +
+                                "is not an entity type, please check if a @Table annotation is added to type ${it.propertyClassName}"
+                    )
                 if (table.ktormEntityType != KtormEntityType.ENTITY_INTERFACE) {
-                    error("Wrong references column: ${it.tablePropertyName.canonicalName}. Type ${it.propertyClassName} is not an interface entity type, " +
-                            "References column must be interface entity type")
+                    error(
+                        "Wrong references column: ${it.tablePropertyName.canonicalName}. Type ${it.propertyClassName} is not an interface entity type, " +
+                                "References column must be interface entity type"
+                    )
                 }
                 val primaryKeyColumns = table.columns.filter { column -> column.isPrimaryKey }
                 if (primaryKeyColumns.isEmpty()) {
