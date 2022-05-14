@@ -28,7 +28,7 @@ import org.ktorm.ksp.codegen.TopLevelFunctionGenerator
 private val batchInsertFun = MemberName("org.ktorm.dsl", "batchInsert", true)
 private val batchUpdateFun = MemberName("org.ktorm.dsl", "batchUpdate", true)
 private val eqFun = MemberName("org.ktorm.dsl", "eq", true)
-private val checkNotModifiedFun = MemberName("org.ktorm.ksp.api", "checkIfSequenceModified", true)
+private val checkNotModifiedFun = MemberName("org.ktorm.ksp.api.EntitySequenceUtil", "checkIfSequenceModified", false)
 
 public class SequenceAddAllFunctionGenerator : TopLevelFunctionGenerator {
     override fun generate(context: TableGenerateContext, emitter: (FunSpec) -> Unit) {
@@ -44,7 +44,7 @@ public class SequenceAddAllFunctionGenerator : TopLevelFunctionGenerator {
             .addParameter("entities", Iterable::class.asClassName().parameterizedBy(table.entityClassName))
             .returns(IntArray::class.asClassName())
             .addCode(buildCodeBlock {
-                addStatement("%M()", checkNotModifiedFun)
+                addStatement("%M(this)", checkNotModifiedFun)
                 beginControlFlow("return·this.database.%M(%T)", batchInsertFun, table.tableClassName)
                 beginControlFlow("for (entity in entities)")
                 beginControlFlow("item")
@@ -100,7 +100,7 @@ public class SequenceUpdateAllFunctionGenerator : TopLevelFunctionGenerator {
             .addParameter("entities", Iterable::class.asClassName().parameterizedBy(table.entityClassName))
             .returns(IntArray::class.asClassName())
             .addCode(buildCodeBlock {
-                addStatement("%M()", checkNotModifiedFun)
+                addStatement("%M(this)", checkNotModifiedFun)
                 beginControlFlow("return·this.database.%M(%T)", batchUpdateFun, table.tableClassName)
                 beginControlFlow("for (entity in entities)")
                 beginControlFlow("item")

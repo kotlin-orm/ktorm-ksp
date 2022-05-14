@@ -343,7 +343,7 @@ private val argumentExpressionType = ArgumentExpression::class.asClassName()
 private val tableExpressionType = TableExpression::class.asClassName()
 private val insertExpressionType = InsertExpression::class.asClassName()
 
-private val checkNotModifiedFun = MemberName("org.ktorm.ksp.api", "checkIfSequenceModified", true)
+private val checkNotModifiedFun = MemberName("org.ktorm.ksp.api.EntitySequenceUtil", "checkIfSequenceModified", false)
 
 /**
  * Generate add extend function to [EntitySequence].
@@ -367,7 +367,7 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
             .addParameter("entity", table.entityClassName)
             .returns(Int::class.asClassName())
             .addCode(buildCodeBlock {
-                addStatement("%M()", checkNotModifiedFun)
+                addStatement("%M(this)", checkNotModifiedFun)
                 addStatement("val assignments = ArrayList<ColumnAssignmentExpression<*>>(%L)", table.columns.size)
                 for (column in table.columns) {
                     if (column.isNullable) {
@@ -497,7 +497,7 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
             """.trimIndent()
             )
             .addCode(buildCodeBlock {
-                addStatement("%M()", checkNotModifiedFun)
+                addStatement("%M(this)", checkNotModifiedFun)
                 beginControlFlow("return·this.database.%M(%T)", updateFun, table.tableClassName)
                 for (column in table.columns) {
                     if (!column.isPrimaryKey) {
