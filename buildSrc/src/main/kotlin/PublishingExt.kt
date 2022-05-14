@@ -23,11 +23,11 @@ import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
-internal val Project.`sourceSets`: SourceSetContainer
+internal val Project.sourceSets: SourceSetContainer
     get() = extensions.getByName("sourceSets") as SourceSetContainer
 
 @OptIn(ExperimentalContracts::class)
-internal fun Project.`publishing`(configure: PublishingExtension.() -> Unit): Unit {
+internal fun Project.publishing(configure: PublishingExtension.() -> Unit): Unit {
     contract {
         callsInPlace(configure, InvocationKind.EXACTLY_ONCE)
     }
@@ -35,7 +35,7 @@ internal fun Project.`publishing`(configure: PublishingExtension.() -> Unit): Un
 }
 
 @OptIn(ExperimentalContracts::class)
-internal fun Project.`signing`(configure: SigningExtension.() -> Unit): Unit {
+internal fun Project.signing(configure: SigningExtension.() -> Unit): Unit {
     contract {
         callsInPlace(configure, InvocationKind.EXACTLY_ONCE)
     }

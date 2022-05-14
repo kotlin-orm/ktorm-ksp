@@ -41,12 +41,12 @@ fun Project.configureCopyrightCheck() {
         doLast {
             val dir = File(projectDir, "src/main/kotlin")
             if (dir.exists()) {
-                println("check copyright: ${dir}")
+                println("check copyright: $dir")
                 dir.walk().filter { it.name.endsWith(".kt") }.forEach {
                     val reader = it.bufferedReader()
                     for (line in copyrightLines) {
                         if (line != reader.readLine()) {
-                            throw IllegalStateException("Copyright header not found in file: " + it)
+                            throw IllegalStateException("Copyright header not found in file: $it")
                         }
                     }
                 }
