@@ -12,9 +12,11 @@
 
 # 特性
 
-- 只需编写实体类，自动生成相应的Table对象。支持基于Entity接口/[任意类](https://www.ktorm.org/zh-cn/define-entities-as-any-kind-of-classes.html) 定义的实体类
+- 只需编写实体类，自动生成相应的Table对象。支持基于Entity接口/[任意类](https://www.ktorm.org/zh-cn/define-entities-as-any-kind-of-classes.html)
+  定义的实体类
 
-- 让[任意类](https://www.ktorm.org/zh-cn/define-entities-as-any-kind-of-classes.html) 实体类更好用。默认自动实现doCreateEntity方法，以及实体序列的新增/更新方法
+- 让[任意类](https://www.ktorm.org/zh-cn/define-entities-as-any-kind-of-classes.html)
+  实体类更好用。默认自动实现doCreateEntity方法，以及实体序列的新增/更新方法
 
 - 可扩展的代码生成逻辑。通过SPI机制，只需实现指定的接口，即可编写自己所需的自动生成逻辑。
 
@@ -60,22 +62,22 @@ public val Database.students: EntitySequence<Student, Students> get() = this.seq
 
 - [快速入门](#快速入门)
 - [实体定义](#实体定义)
-  - [任意类的实体类定义](#任意类的实体类定义)
-  - [基于Entity接口的实体类定义](#基于Entity接口的实体类定义)
-  - [表定义](#表定义)
-  - [主键定义](#主键定义)
-  - [列定义](#列定义)
-  - [忽略指定属性](#忽略指定属性)
+    - [任意类的实体类定义](#任意类的实体类定义)
+    - [基于Entity接口的实体类定义](#基于Entity接口的实体类定义)
+    - [表定义](#表定义)
+    - [主键定义](#主键定义)
+    - [列定义](#列定义)
+    - [忽略指定属性](#忽略指定属性)
 - [全局配置](#全局配置)
 - [命名风格](#命名风格)
-  - [命名单独配置](#命名单独配置)
-  - [全局命名风格配置](#全局命名风格配置)
+    - [命名单独配置](#命名单独配置)
+    - [全局命名风格配置](#全局命名风格配置)
 - [类型转换器](#类型转换器)
-  - [列配置使用类型转换器](#列配置使用类型转换器)
-  - [全局配置使用类型转换器](#全局配置使用类型转换器)
+    - [列配置使用类型转换器](#列配置使用类型转换器)
+    - [全局配置使用类型转换器](#全局配置使用类型转换器)
 - [方法/属性生成器](#方法/属性生成器)
-  - [自定义生成器的步骤](#自定义生成器的步骤)
-  - [可用的生成器扩展](#可用的生成器扩展)
+    - [自定义生成器的步骤](#自定义生成器的步骤)
+    - [可用的生成器扩展](#可用的生成器扩展)
 
 ### 快速入门
 
@@ -100,8 +102,8 @@ plugins {
 }
 
 dependencies {
-  implementation("org.ktorm:ktorm-ksp-api:${ktorm-ksp.version}")
-  ksp("org.ktorm:ktorm-ksp-compiler:${ktorm-ksp.version}")
+    implementation("org.ktorm:ktorm-ksp-api:${ktorm - ksp.version}")
+    ksp("org.ktorm:ktorm-ksp-compiler:${ktorm - ksp.version}")
 }
 ```
 
@@ -110,7 +112,7 @@ dependencies {
 ```groovy
 // Groovy DSL
 kotlin {
-    sourceSets {    
+    sourceSets {
         main.kotlin.srcDirs += 'build/generated/ksp/main/kotlin'
         test.kotlin.srcDirs += 'build/generated/ksp/test/kotlin'
     }
@@ -190,13 +192,14 @@ public val Database.students: EntitySequence<Student, Students> get() = this.seq
 ```kotlin
 val users = database.users.toList()
 ```
+
 #### 表定义
 
 将@Table注解添加到实体类上，将会自动生成相应的Table类。
 
 @Table的参数如下：
 
-| 参数            |   说明   
+| 参数            |   说明
 |----------|:----------:|
 tableName | 指定BaseTable.tableName的参数值
 tableClassName | 指定生成表类型的类型名称，默认取实体类的名词复数形式
@@ -222,7 +225,7 @@ converter | 指定列转换器，关于转换器请参考文档下方中的类�
 propertyName | 指定在生成表类中，对应列定义的属性名称。
 isReferences | 指定此属性是否为引用列，只有基于Entity接口的实体类，可以赋值为true。当此值为true时，生成的列定义将会自动调用references方法
 
-#### 忽略指定属性 
+#### 忽略指定属性
 
 在实体类属性添加@Ignore注解，生成的表类中不会包含此属性的列定义。也可以在@Table中的ignoreColumns参数指定要忽略的属性。
 
@@ -248,7 +251,7 @@ enableClassEntitySequenceUpdateFun | 是否生成实体序列更新方法扩展
 
 ### 命名风格
 
-在默认情况下，生成表类中的表名，取实体类类名。列名取对应实体类中的属性名称。 
+在默认情况下，生成表类中的表名，取实体类类名。列名取对应实体类中的属性名称。
 
 可以通过全局配置、单独配置修改生成的名称。
 
@@ -285,11 +288,11 @@ public object Students : Table<Student>(tableName = "t_student", entityClass = S
 #### 全局命名风格配置
 
 在任意类上添加@KtormKspConfig注解配置（注意项目中只能声明一次此注解）并赋值namingStrategy参数，此属性需要一个实现NamingStrategy接口的**单例对象**,
-在ktorm-ksp中自带了驼峰转小写下划线风格的命名风格策略： CamelCaseToLowerCaseUnderscoresNamingStrategy
+在ktorm-ksp中自带了驼峰转蛇形的命名策略： CamelCaseToSnakeCaseNamingStrategy
 
 ```kotlin
 @KtormKspConfig(
-    namingStrategy = CamelCaseToLowerCaseUnderscoresNamingStrategy::class
+    namingStrategy = CamelCaseToSnakeCaseNamingStrategy::class
 )
 public class KtormConfig
 
@@ -456,8 +459,8 @@ data class Username(
 )
 
 @KtormKspConfig(
-  singleTypeConverters = [UsernameConverter::class],
-  enumConverter = IntEnumConverter::class
+    singleTypeConverters = [UsernameConverter::class],
+    enumConverter = IntEnumConverter::class
 )
 class KtormConfig
 
@@ -479,12 +482,12 @@ object UsernameConverter : SingleTypeConverter<Username> {
 }
 
 object IntEnumConverter : EnumConverter {
-  override fun <E : Enum<E>> convert(table: BaseTable<*>, columnName: String, propertyType: KClass<E>): Column<E> {
-    val values = propertyType.java.enumConstants
-    return with(table) {
-      int(columnName).transform({ values[it] }, { it.ordinal })
+    override fun <E : Enum<E>> convert(table: BaseTable<*>, columnName: String, propertyType: KClass<E>): Column<E> {
+        val values = propertyType.java.enumConstants
+        return with(table) {
+            int(columnName).transform({ values[it] }, { it.ordinal })
+        }
     }
-  }
 }
 ```
 
@@ -503,11 +506,11 @@ public object Users : BaseTable<User>(tableName = "User", entityClass = User::cl
 ### 方法/属性生成器
 
 ktorm-ksp生成的表类代码由多个代码生成器进行生成，这些生成器都是可自定义扩展的。
- 
+
 - 表类型生成器 TableTypeGenerator
 
   表类型声明生成，只允许存在一个，自定义实现会覆盖默认实现。
- 
+
 - 表属性生成器 TablePropertyGenerator
 
   表类属性声明生成，只允许存在一个，自定义实现会覆盖默认实现。
@@ -515,13 +518,13 @@ ktorm-ksp生成的表类代码由多个代码生成器进行生成，这些生�
 - 表方法生成器 TableFunctionGenerator
 
   表类方法生成，只允许存在一个，自定义实现会覆盖默认实现。
- 
+
 - 顶级属性生成器 TopLevelPropertyGenerator
-  
+
   顶级属性生成，一般用于生成扩展属性，允许存在多个。
 
 - 顶级方法生成器 TopLevelFunctionGenerator
-  
+
   顶级方法生成，一般用于生成扩展方法，允许存在多个。
 
 #### 自定义生成器原理
@@ -537,12 +540,15 @@ ktorm-ksp-compiler模块通过SPI自动加载your-ext-module中定义的生成�
 （请参考此[模块](ktorm-ksp-ext/ktorm-ksp-ext-sequence-batch) 的代码实现）
 
 新建实现生成器的module（对应上图中的your-ext-module），在build.gradle.kts添加依赖
+
 ```groovy
 dependencies {
-  implementation 'org.ktorm:ktorm-ksp-codegen:${ktorm-ksp.version}'
+    implementation 'org.ktorm:ktorm-ksp-codegen:${ktorm-ksp.version}'
 }
 ```
+
 新建生成器类，实现任意一个生成器接口。
+
 ```kotlin
 public class SequenceAddAllFunctionGenerator : TopLevelFunctionGenerator {
     // 忽略具体实现
@@ -551,19 +557,24 @@ public class SequenceUpdateAllFunctionGenerator : TopLevelFunctionGenerator {
     // 忽略具体实现
 }
 ```
+
 在resources/META-INF/services目录下新建文件，文件名为生成器接口的全限定类名（org.ktorm.ksp.codegen.TopLevelFunctionGenerator）并中文件中新增自定义的生成器的全限定类名，多个类以换行分割。
+
 ```
 org.ktorm.ksp.ext.SequenceAddAllFunctionGenerator
 org.ktorm.ksp.ext.SequenceUpdateAllFunctionGenerator
 ```
+
 在使用需要生成代码的模块（对应上图中的your-app-module）中，添加以下依赖
+
 ```groovy
 dependencies {
-  implementation 'org.ktorm:ktorm-ksp-api:${ktorm-ksp.version}'
-  ksp 'org.ktorm:ktorm-ksp-compile:${ktorm-ksp.version}'
-  ksp project(':your-ext-module')
+    implementation 'org.ktorm:ktorm-ksp-api:${ktorm-ksp.version}'
+    ksp 'org.ktorm:ktorm-ksp-compile:${ktorm-ksp.version}'
+    ksp project(':your-ext-module')
 }
 ```
+
 构建项目，你将看到通过自定义生成器生成的代码。
 
 #### 可用的生成器扩展
@@ -581,20 +592,20 @@ ksp 'org.ktorm:ktorm-ksp-ext-sequence-batch:${ktorm-ksp.version}'
 ```kotlin
 /**
  * 批量插入实体到数据库, 此方法不会获取自增主键
- * @param entities 要插入的实体列表 
+ * @param entities 要插入的实体列表
  * @return 每个子操作影响的行数
  */
 public fun EntitySequence<Customer, Customers>.addAll(entities: Iterable<Customer>): IntArray =
-  this.database.batchInsert(Customers) {
-    for (entity in entities) {
-      item {
-        set(Customers.id, entity.id)
-        set(Customers.name, entity.name)
-        set(Customers.email, entity.email)
-        set(Customers.phoneNumber, entity.phoneNumber)
-      }
+    this.database.batchInsert(Customers) {
+        for (entity in entities) {
+            item {
+                set(Customers.id, entity.id)
+                set(Customers.name, entity.name)
+                set(Customers.email, entity.email)
+                set(Customers.phoneNumber, entity.phoneNumber)
+            }
+        }
     }
-  }
 
 /**
  * 根据实体主键批量更新
@@ -602,16 +613,16 @@ public fun EntitySequence<Customer, Customers>.addAll(entities: Iterable<Custome
  * @return 每个子操作影响的行数
  */
 public fun EntitySequence<Customer, Customers>.updateAll(entities: Iterable<Customer>): IntArray =
-  this.database.batchUpdate(Customers) {
-    for (entity in entities) {
-      item {
-        set(Customers.name, entity.name)
-        set(Customers.email, entity.email)
-        set(Customers.phoneNumber, entity.phoneNumber)
-        where {
-          it.id eq entity.id!!
+    this.database.batchUpdate(Customers) {
+        for (entity in entities) {
+            item {
+                set(Customers.name, entity.name)
+                set(Customers.email, entity.email)
+                set(Customers.phoneNumber, entity.phoneNumber)
+                where {
+                    it.id eq entity.id!!
+                }
+            }
         }
-      }
     }
-  }
 ```

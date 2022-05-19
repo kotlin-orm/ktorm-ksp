@@ -50,7 +50,7 @@ public interface NamingStrategy {
  * UserProfile -> user_profile
  * UserProfileVisibility -> user_profile_visibility
  */
-public object CamelCaseToLowerCaseUnderscoresNamingStrategy : NamingStrategy {
+public object CamelCaseToSnakeCaseNamingStrategy : NamingStrategy {
 
     override fun toTableName(entityClassName: String): String {
         return entityClassName.camelCase().lowercase()

@@ -60,7 +60,7 @@ public class KtormKspExtTest {
                     var age: Int,
                 )
 
-                @KtormKspConfig(namingStrategy = CamelCaseToLowerCaseUnderscoresNamingStrategy::class)
+                @KtormKspConfig(namingStrategy = CamelCaseToSnakeCaseNamingStrategy::class)
                 class KtormConfig
 
                 object TestBridge {
@@ -113,7 +113,7 @@ public class KtormKspExtTest {
                     var age: Int,
                 )
 
-                @KtormKspConfig(namingStrategy = CamelCaseToLowerCaseUnderscoresNamingStrategy::class)
+                @KtormKspConfig(namingStrategy = CamelCaseToSnakeCaseNamingStrategy::class)
                 class KtormConfig
 
                 object TestBridge {
@@ -280,7 +280,7 @@ public class KtormKspExtTest {
                     }
                 }
 
-                @KtormKspConfig(namingStrategy = CamelCaseToLowerCaseUnderscoresNamingStrategy::class)
+                @KtormKspConfig(namingStrategy = CamelCaseToSnakeCaseNamingStrategy::class)
                 class KtormConfig
                 """,
             )
@@ -334,7 +334,7 @@ public class KtormKspExtTest {
                     }
                 }
 
-                @KtormKspConfig(namingStrategy = CamelCaseToLowerCaseUnderscoresNamingStrategy::class)
+                @KtormKspConfig(namingStrategy = CamelCaseToSnakeCaseNamingStrategy::class)
                 class KtormConfig
                 """,
             )

@@ -17,12 +17,12 @@
 package org.ktorm.ksp.example.ext
 
 import org.ktorm.entity.toList
-import org.ktorm.ksp.api.CamelCaseToLowerCaseUnderscoresNamingStrategy
+import org.ktorm.ksp.api.CamelCaseToSnakeCaseNamingStrategy
 import org.ktorm.ksp.api.KtormKspConfig
 import org.ktorm.ksp.example.common.DatabaseFactory
 
 @KtormKspConfig(
-    namingStrategy = CamelCaseToLowerCaseUnderscoresNamingStrategy::class
+    namingStrategy = CamelCaseToSnakeCaseNamingStrategy::class
 )
 public class Config
 
