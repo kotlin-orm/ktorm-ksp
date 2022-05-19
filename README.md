@@ -307,8 +307,7 @@ the ```Global Naming Configuration```.
 Add @KtormKspConfig annotation configuration on any class (this annotation can only be added once) and assign
 the ```namingStrategy``` parameter, this property requires a **singleton object** that implements the NamingStrategy
 interface,
-In ktorm-ksp comes a camel case to snake case style naming style
-strategy: ```CamelCaseToSnakeCaseNamingStrategy```
+In ktorm-ksp comes a camel case to snake case naming style strategy: ```CamelCaseToSnakeCaseNamingStrategy```
 
 ```kotlin
 @KtormKspConfig(
