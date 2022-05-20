@@ -247,14 +247,14 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
                     if (nonConstructorParameterNames.isEmpty()) {
                         addStatement("return constructor.callBy(parameterMap)", table.entityClassName)
                     } else {
-                        addStatement("val instance = constructor.callBy(parameterMap)", table.entityClassName)
+                        addStatement("val entity = constructor.callBy(parameterMap)", table.entityClassName)
                     }
                 } else {
                     // Create instance with code when construct has no default value parameter
                     if (nonConstructorParameterNames.isEmpty()) {
                         addStatement(" return·%T(", table.entityClassName)
                     } else {
-                        addStatement("val instance = %T(", table.entityClassName)
+                        addStatement("val·entity·=·%T(", table.entityClassName)
                     }
                     logger.info("constructorParameter:${constructorParameters.map { it.name!!.asString() }}")
                     withIndent {
@@ -291,14 +291,14 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
                         }
                         val notNullOperator = if (column.isNullable) "" else "!!"
                         addStatement(
-                            "instance.%L·=·%L[%M]%L",
+                            "entity.%L·=·%L[%M]%L",
                             property,
                             row,
                             column.tablePropertyName,
                             notNullOperator
                         )
                     }
-                    addStatement("return instance")
+                    addStatement("return·entity")
                 }
             })
             .build()
