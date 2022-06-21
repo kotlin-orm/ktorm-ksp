@@ -3,11 +3,11 @@
 name: build
 
 on:
- push:
- pull_request:
-   types: [opened, synchronize, reopened]
- release:
-   types: [published]
+  push:
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+  release:
+    types: [ published ]
 
 
 jobs:
@@ -16,25 +16,25 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
-        
+
       - name: Setup Java
         uses: actions/setup-java@v3
         with:
-          distribution: 'zulu' 
+          distribution: 'zulu'
           java-version: '11'
-          
+
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
-        
+
       - name: Assemble the Project
         run: ./gradlew assemble
 
       - name: Run Tests
         run: ./gradlew check
-        
+
       - name: Publish Artifacts
         run: |
-          if [[ $(cat "ktorm.version") =~ "SNAPSHOT" ]] ; then
+          if [[ $(cat "ktorm-ksp.version") =~ "SNAPSHOT" ]] ; then
             ./gradlew publishDistPublicationToSnapshotRepository
           else
             if [[ $GITHUB_EVENT_NAME == "release" ]] ; then
