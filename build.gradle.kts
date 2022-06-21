@@ -9,9 +9,11 @@ buildscript {
     }
 }
 
+val fileVersion = file("ktorm-ksp.version").readText()
+
 allprojects {
     group = "org.ktorm"
-    version = "1.0"
+    version = fileVersion
 }
 
 subprojects {

@@ -98,9 +98,4 @@ fun Project.configureMavenPublishing() {
         useInMemoryPgpKeys(keyId, secretKey, password)
         sign(publications["dist"])
     }
-    afterEvaluate {
-        tasks
-            .filter { it.group == "publishing" }
-            .forEach { it.dependsOn("check") }
-    }
 }
