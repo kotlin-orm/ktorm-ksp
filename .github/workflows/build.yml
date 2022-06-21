@@ -1,0 +1,51 @@
+# This is a basic workflow to help you get started with Actions
+
+name: build
+
+on:
+ push:
+ pull_request:
+   types: [opened, synchronize, reopened]
+ release:
+   types: [published]
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu' 
+          java-version: '11'
+          
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+        
+      - name: Assemble the Project
+        run: ./gradlew assemble
+
+      - name: Run Tests
+        run: ./gradlew check
+        
+      - name: Publish Artifacts
+        run: |
+          if [[ $(cat "ktorm.version") =~ "SNAPSHOT" ]] ; then
+            ./gradlew publishDistPublicationToSnapshotRepository
+          else
+            if [[ $GITHUB_EVENT_NAME == "release" ]] ; then
+              ./gradlew publishDistPublicationToCentralRepository
+            else
+              echo "Skip release publication because this is not a release event"
+            fi
+          fi
+        env:
+          OSSRH_USER: ${{secrets.OSSRH_USER}}
+          OSSRH_PASSWORD: ${{secrets.OSSRH_PASSWORD}}
+          GPG_KEY_ID: ${{secrets.GPG_KEY_ID}}
+          GPG_PASSWORD: ${{secrets.GPG_PASSWORD}}
+          GPG_SECRET_KEY: ${{secrets.GPG_SECRET_KEY}}
