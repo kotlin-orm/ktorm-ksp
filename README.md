@@ -84,10 +84,10 @@ public val Database.students: EntitySequence<Student, Students> get() = this.seq
 
 ### Quick Start
 
-Add a dependency to ```build.gradle``` file:
+Add a dependency to ```build.gradle``` or ```pom.xml``` file:
 
 ```groovy
-// Groovy DSL
+// groovy dsl gradle 
 plugins {
     id 'com.google.devtools.ksp' version '1.6.21-1.0.5'
 }
@@ -99,19 +99,73 @@ dependencies {
 ```
 
 ```kotlin
-// Kotlin DSL
+// kotlin dsl gradle
 plugins {
     id("com.google.devtools.ksp").version("1.6.21-1.0.5")
 }
 
 dependencies {
-    implementation("org.ktorm:ktorm-ksp-api:${ktorm - ksp.version}")
-    ksp("org.ktorm:ktorm-ksp-compiler:${ktorm - ksp.version}")
+    implementation("org.ktorm:ktorm-ksp-api:${ktorm-ksp.version}")
+    ksp("org.ktorm:ktorm-ksp-compiler:${ktorm-ksp.version}")
 }
 ```
 
+```xml
+<!-- maven -->
+<project>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-maven-plugin</artifactId>
+                <version>${kotlin.version}</version>
+                <configuration>
+                    <compilerPlugins>
+                        <compilerPlugin>ksp</compilerPlugin>
+                    </compilerPlugins>
+                    <sourceDirs>
+                        <sourceDir>src/main/kotlin</sourceDir>
+                        <sourceDir>target/generated-sources/ksp</sourceDir>
+                    </sourceDirs>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.dyescape</groupId>
+                        <artifactId>kotlin-maven-symbol-processing</artifactId>
+                        <version>1.3</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.ktorm</groupId>
+                        <artifactId>ktorm-ksp-compiler</artifactId>
+                        <version>${ktorm-ksp.version}</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <id>compile</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.ktorm</groupId>
+            <artifactId>ktorm-ksp-api</artifactId>
+            <version>${ktorm-ksp.version}</version>
+        </dependency>
+    </dependencies>
+</project>
+```
+
 In order for idea to aware the generated code, you also need to add the following configuration to ```build.gradle```
-(otherwise you will see some red line warnings)
+(otherwise you will see some red line warnings). If you use maven, please ignore this step. Because the relevant
+configuration has been added in the previous step.
 
 ```groovy
 // Groovy DSL
@@ -135,6 +189,12 @@ kotlin {
 }
 ```
 
+How to get ksp to generate code?
+
+- Gradle: build project, running application, execute ```gradle build``` command. will generate code in
+  ```build/generated/ksp/main/kotlin``` directory
+- Maven: execute ```mvn kotlin:compile``` will generate code in ```target/generated-sources/ksp``` directory
+
 ### Define Entities
 
 #### Define Entities Of Any Kind Of Class
@@ -149,9 +209,7 @@ public data class Student(
 )
 ```
 
-Running the application or execute ```gradle build``` command will generate the corresponding BaseTable class and
-related extensions in
-```build/generated/ksp/main/kotlin``` under the project
+Generate code：
 
 ```kotlin
 public object Students : BaseTable<Student>(tableName = "Student", entityClass = Student::class) {
@@ -184,9 +242,7 @@ public interface Student : Entity<Student> {
 }
 ```
 
-Running the application or execute ```gradle build``` command will generate the corresponding BaseTable class and
-related extensions in
-```build/generated/ksp/main/kotlin``` under the project
+Generate code：
 
 ```kotlin
 public object Students : Table<Student>(tableName = "Student", entityClass = Student::class) {
@@ -306,8 +362,7 @@ the ```Global Naming Configuration```.
 
 Add @KtormKspConfig annotation configuration on any class (this annotation can only be added once) and assign
 the ```namingStrategy``` parameter, this property requires a **singleton object** that implements the NamingStrategy
-interface,
-In ktorm-ksp comes a camel case to snake case naming style strategy: ```CamelCaseToSnakeCaseNamingStrategy```
+interface, In ktorm-ksp comes a camel case to snake case naming style strategy: ```CamelCaseToSnakeCaseNamingStrategy```
 
 ```kotlin
 @KtormKspConfig(
@@ -573,12 +628,31 @@ uses it to participate in ```code generator```, to achieve the purpose of custom
 Please refer to the code implementation of this [module](ktorm-ksp-ext/ktorm-ksp-ext-sequence-batch)
 
 Create a new module that implements the generator (corresponding to ```your-ext-module``` in the above figure), and add
-dependencies in ```build.gradle```
+dependencies in ```build.gradle``` or ```pom.xml```
 
 ```groovy
+// groovy dsl gradle 
 dependencies {
     implementation 'org.ktorm:ktorm-ksp-codegen:${ktorm-ksp.version}'
 }
+```
+
+```kotlin
+// kotlin dsl gradle
+dependencies {
+    implementation("org.ktorm:ktorm-ksp-codegen:${ktorm-ksp.version}")
+}
+```
+
+```xml
+<!-- maven -->
+<dependencies>
+    <dependency>
+        <groupId>org.ktorm</groupId>
+        <artifactId>ktorm-ksp-codegen</artifactId>
+        <version>${ktorm-ksp.version}</version>
+    </dependency>
+</dependencies>
 ```
 
 Create a new generator class that implements any generator interface.
@@ -601,10 +675,11 @@ org.ktorm.ksp.ext.SequenceAddAllFunctionGenerator
 org.ktorm.ksp.ext.SequenceUpdateAllFunctionGenerator
 ```
 
-In the module that needs to generate code (corresponding to ```your-app-module``` in the above figure), add the
-following dependencies
+Add the ```your-ext-module``` to the modules that need to generate code with it (corresponding to ```your-app-module```
+in the above figure)
 
 ```groovy
+// groovy dsl gradle 
 dependencies {
     implementation 'org.ktorm:ktorm-ksp-api:${ktorm-ksp.version}'
     ksp 'org.ktorm:ktorm-ksp-compile:${ktorm-ksp.version}'
@@ -612,7 +687,60 @@ dependencies {
 }
 ```
 
-Running the application or execute ```gradle build``` command. You will see the code generated by the custom generator.
+```kotlin
+// kotlin dsl gradle
+dependencies {
+    implementation("org.ktorm:ktorm-ksp-api:${ktorm-ksp.version}")
+    ksp("org.ktorm:ktorm-ksp-compile:${ktorm-ksp.version}")
+    ksp(project(":your-ext-module"))
+}
+```
+
+```xml
+<!-- maven -->
+<plugin>
+    <groupId>org.jetbrains.kotlin</groupId>
+    <artifactId>kotlin-maven-plugin</artifactId>
+    <version>${kotlin.version}</version>
+    <configuration>
+        <compilerPlugins>
+            <compilerPlugin>ksp</compilerPlugin>
+        </compilerPlugins>
+        <sourceDirs>
+            <sourceDir>src/main/kotlin</sourceDir>
+            <sourceDir>target/generated-sources/ksp</sourceDir>
+        </sourceDirs>
+    </configuration>
+    <dependencies>
+        <dependency>
+            <groupId>com.dyescape</groupId>
+            <artifactId>kotlin-maven-symbol-processing</artifactId>
+            <version>1.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.ktorm</groupId>
+            <artifactId>ktorm-ksp-compiler</artifactId>
+            <version>${ktorm-ksp.version}</version>
+        </dependency>
+        <dependency>
+            <groupId><!-- your-ext-module groupId --></groupId>
+            <artifactId><!-- your-ext-module artifactId --></artifactId>
+            <version><!-- your-ext-module version --></version>
+        </dependency>
+    </dependencies>
+    <executions>
+        <execution>
+            <id>compile</id>
+            <phase>compile</phase>
+            <goals>
+                <goal>compile</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+```
+
+Let ksp generate the code again. You will see the code generated by the custom generator.
 
 #### Available Generator Extensions
 

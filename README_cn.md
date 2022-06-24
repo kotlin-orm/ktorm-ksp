@@ -81,7 +81,7 @@ public val Database.students: EntitySequence<Student, Students> get() = this.seq
 
 ### 快速入门
 
-在build.gradle中添加依赖
+在```build.gradle```或```pom.xml```中添加依赖
 
 ```groovy
 // Groovy DSL
@@ -102,12 +102,67 @@ plugins {
 }
 
 dependencies {
-    implementation("org.ktorm:ktorm-ksp-api:${ktorm - ksp.version}")
-    ksp("org.ktorm:ktorm-ksp-compiler:${ktorm - ksp.version}")
+    implementation("org.ktorm:ktorm-ksp-api:${ktorm-ksp.version}")
+    ksp("org.ktorm:ktorm-ksp-compiler:${ktorm-ksp.version}")
 }
 ```
 
-为了让idea识别生成的代码 还需要在build.gradle中添加以下配置（否则你将会看到一堆红线警告）
+```xml
+<!-- maven -->
+<project>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-maven-plugin</artifactId>
+                <version>${kotlin.version}</version>
+                <configuration>
+                    <compilerPlugins>
+                        <compilerPlugin>ksp</compilerPlugin>
+                    </compilerPlugins>
+                    <sourceDirs>
+                        <sourceDir>src/main/kotlin</sourceDir>
+                        <sourceDir>target/generated-sources/ksp</sourceDir>
+                    </sourceDirs>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.dyescape</groupId>
+                        <artifactId>kotlin-maven-symbol-processing</artifactId>
+                        <version>1.3</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.ktorm</groupId>
+                        <artifactId>ktorm-ksp-compiler</artifactId>
+                        <version>${ktorm-ksp.version}</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <id>compile</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.ktorm</groupId>
+            <artifactId>ktorm-ksp-api</artifactId>
+            <version>${ktorm-ksp.version}</version>
+        </dependency>
+    </dependencies>
+</project>
+```
+
+为了让idea识别生成的代码，还需要在build.gradle中添加以下配置。（否则你将会看到一堆红线警告）如果你使用的是maven则可以跳过这一步，因为上一步
+已经包含相关的配置了。
+
 
 ```groovy
 // Groovy DSL
@@ -131,6 +186,11 @@ kotlin {
 }
 ```
 
+如何让KSP生成代码?
+
+- Gradle: 构建项目、运行应用、执行 ```gradle build``` 命令均可。将会在```build/generated/ksp/main/kotlin```目录中生成代码。 
+- Maven: 执行```mvn kotlin:compile``` 命令。将会在```target/generated-sources/ksp``` 目录中生成代码。
+
 ### 实体定义
 
 #### 任意类的实体类定义
@@ -145,7 +205,7 @@ public data class Student(
 )
 ```
 
-运行项目或者gradle build命令, 将会在项目下的 build/generated/ksp/main/kotlin 生成相应的BaseTable类以及相关扩展
+生成代码：
 
 ```kotlin
 public object Students : BaseTable<Student>(tableName = "Student", entityClass = Student::class) {
@@ -177,7 +237,7 @@ public interface Student : Entity<Student> {
 }
 ```
 
-运行项目或者gradle build命令, 将会在项目下的 build/generated/ksp/main/kotlin 生成表定义以及相关的扩展，下面是生成的代码
+生成代码：
 
 ```kotlin
 public object Students : Table<Student>(tableName = "Student", entityClass = Student::class) {
@@ -539,12 +599,31 @@ ktorm-ksp-compiler模块通过SPI自动加载your-ext-module中定义的生成�
 
 （请参考此[模块](ktorm-ksp-ext/ktorm-ksp-ext-sequence-batch) 的代码实现）
 
-新建实现生成器的module（对应上图中的your-ext-module），在build.gradle.kts添加依赖
+新建实现生成器的module（对应上图中的your-ext-module），在```build.gradle```或```pom.xml```中添加依赖
 
 ```groovy
+// groovy dsl gradle 
 dependencies {
     implementation 'org.ktorm:ktorm-ksp-codegen:${ktorm-ksp.version}'
 }
+```
+
+```kotlin
+// kotlin dsl gradle
+dependencies {
+    implementation("org.ktorm:ktorm-ksp-codegen:${ktorm-ksp.version}")
+}
+```
+
+```xml
+<!-- maven -->
+<dependencies>
+    <dependency>
+        <groupId>org.ktorm</groupId>
+        <artifactId>ktorm-ksp-codegen</artifactId>
+        <version>${ktorm-ksp.version}</version>
+    </dependency>
+</dependencies>
 ```
 
 新建生成器类，实现任意一个生成器接口。
@@ -558,21 +637,76 @@ public class SequenceUpdateAllFunctionGenerator : TopLevelFunctionGenerator {
 }
 ```
 
-在resources/META-INF/services目录下新建文件，文件名为生成器接口的全限定类名（org.ktorm.ksp.codegen.TopLevelFunctionGenerator）并中文件中新增自定义的生成器的全限定类名，多个类以换行分割。
+在resources/META-INF/services目录下新建文件，文件名为生成器接口的全限定类名（org.ktorm.ksp.codegen.TopLevelFunctionGenerator）
+并中文件中新增自定义的生成器的全限定类名，多个类以换行分割。
 
 ```
 org.ktorm.ksp.ext.SequenceAddAllFunctionGenerator
 org.ktorm.ksp.ext.SequenceUpdateAllFunctionGenerator
 ```
 
-在使用需要生成代码的模块（对应上图中的your-app-module）中，添加以下依赖
+将上面的```your-ext-module```模块添加到需要用它来生成代码的模块（对应上图中的your-app-module）
 
 ```groovy
+// groovy dsl gradle 
 dependencies {
     implementation 'org.ktorm:ktorm-ksp-api:${ktorm-ksp.version}'
     ksp 'org.ktorm:ktorm-ksp-compile:${ktorm-ksp.version}'
     ksp project(':your-ext-module')
 }
+```
+
+```kotlin
+// kotlin dsl gradle
+dependencies {
+    implementation("org.ktorm:ktorm-ksp-api:${ktorm-ksp.version}")
+    ksp("org.ktorm:ktorm-ksp-compile:${ktorm-ksp.version}")
+    ksp(project(":your-ext-module"))
+}
+```
+
+```xml
+<!-- maven -->
+<plugin>
+    <groupId>org.jetbrains.kotlin</groupId>
+    <artifactId>kotlin-maven-plugin</artifactId>
+    <version>${kotlin.version}</version>
+    <configuration>
+        <compilerPlugins>
+            <compilerPlugin>ksp</compilerPlugin>
+        </compilerPlugins>
+        <sourceDirs>
+            <sourceDir>src/main/kotlin</sourceDir>
+            <sourceDir>target/generated-sources/ksp</sourceDir>
+        </sourceDirs>
+    </configuration>
+    <dependencies>
+        <dependency>
+            <groupId>com.dyescape</groupId>
+            <artifactId>kotlin-maven-symbol-processing</artifactId>
+            <version>1.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.ktorm</groupId>
+            <artifactId>ktorm-ksp-compiler</artifactId>
+            <version>${ktorm-ksp.version}</version>
+        </dependency>
+        <dependency>
+            <groupId><!-- your-ext-module groupId --></groupId>
+            <artifactId><!-- your-ext-module artifactId --></artifactId>
+            <version><!-- your-ext-module version --></version>
+        </dependency>
+    </dependencies>
+    <executions>
+        <execution>
+            <id>compile</id>
+            <phase>compile</phase>
+            <goals>
+                <goal>compile</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
 ```
 
 构建项目，你将看到通过自定义生成器生成的代码。
