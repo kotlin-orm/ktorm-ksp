@@ -49,7 +49,7 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
             else -> {
                 return listOf(
                     CodeBlock.of(
-                        "tableName=%T.toTableName(%S),",
+                        "tableName·=·%T.toTableName(%S)",
                         config.namingStrategy,
                         table.entityClassName.simpleName
                     )
