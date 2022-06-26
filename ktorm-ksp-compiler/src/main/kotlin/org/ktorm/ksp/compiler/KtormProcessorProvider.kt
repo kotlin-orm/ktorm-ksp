@@ -119,7 +119,7 @@ public class KtormProcessor(
                 it.referencesColumn = primaryKeyColumns.first()
             }
         // start generate
-        KtormCodeGenerator().generate(
+        KtormCodeGenerator.generate(
             tableDefinitions, environment.codeGenerator, config, ColumnInitializerGenerator(config, logger), logger
         )
         return configRet + tableRet

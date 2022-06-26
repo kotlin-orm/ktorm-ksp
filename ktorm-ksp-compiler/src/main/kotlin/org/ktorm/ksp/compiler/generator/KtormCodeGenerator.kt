@@ -28,7 +28,7 @@ import org.ktorm.ksp.codegen.ColumnInitializerGenerator
 import org.ktorm.ksp.codegen.TableGenerateContext
 import org.ktorm.ksp.codegen.definition.TableDefinition
 
-public class KtormCodeGenerator {
+public object KtormCodeGenerator {
 
     public fun generate(
         tables: List<TableDefinition>,
