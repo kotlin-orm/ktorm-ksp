@@ -830,8 +830,8 @@ public class KtormKspTest {
                 import org.ktorm.entity.EntitySequence
                 import org.ktorm.ksp.api.*
                 import java.time.LocalDate
-                    
-                @Table
+                // modify sequenceName  
+                @Table(sequenceName = "aUsers")
                 data class User(
                     @PrimaryKey
                     var id: Int,
@@ -853,7 +853,7 @@ public class KtormKspTest {
 
                 object TestBridge {
                     fun getUsers(database:Database): EntitySequence<User,Users> {
-                        return database.users
+                        return database.aUsers
                     }
                     fun getEmployees(database: Database): EntitySequence<Employee,Employees> {
                         return database.employees
@@ -881,6 +881,7 @@ public class KtormKspTest {
             ).isEqualTo("[Employee{id=1, name=vince, job=engineer, hireDate=2018-01-01}, Employee{id=2, name=marry, job=trainee, hireDate=2019-01-01}, Employee{id=3, name=tom, job=director, hireDate=2018-01-01}, Employee{id=4, name=penny, job=assistant, hireDate=2019-01-01}]")
         }
     }
+
 
     @Test
     public fun `sequence add function`() {

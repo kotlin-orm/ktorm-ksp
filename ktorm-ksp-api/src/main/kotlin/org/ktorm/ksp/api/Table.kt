@@ -72,5 +72,11 @@ public annotation class Table(
     /**
      * Specifies to ignore properties that do not generate column definitions.
      */
-    val ignoreColumns: Array<String> = []
+    val ignoreColumns: Array<String> = [],
+
+    /**
+     * The sequence name，By default, the first character lowercase of the [tableClassName], and the value
+     * will not be an empty string.
+     */
+    val sequenceName: String = "",
 )

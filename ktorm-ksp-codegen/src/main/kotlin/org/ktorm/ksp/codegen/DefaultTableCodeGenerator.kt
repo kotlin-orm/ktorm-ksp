@@ -319,7 +319,11 @@ public class SequencePropertyGenerator : TopLevelPropertyGenerator {
         val table = context.table
         val sequenceOf = MemberName("org.ktorm.entity", "sequenceOf", true)
         val tableClassName = table.tableClassName.simpleName
-        val sequenceName = tableClassName.substring(0, 1).lowercase() + tableClassName.substring(1)
+
+        val sequenceName = table.sequenceName.ifEmpty {
+            tableClassName.substring(0, 1).lowercase() + tableClassName.substring(1)
+        }
+
         val entitySequence = EntitySequence::class.asClassName()
         // EntitySequence<E, T>
         val sequenceType = entitySequence.parameterizedBy(table.entityClassName, table.tableClassName)

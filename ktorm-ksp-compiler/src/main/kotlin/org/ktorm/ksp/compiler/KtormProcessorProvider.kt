@@ -51,7 +51,7 @@ public class KtormProcessorProvider : SymbolProcessorProvider {
 }
 
 public class KtormProcessor(
-    private val environment: SymbolProcessorEnvironment
+    private val environment: SymbolProcessorEnvironment,
 ) : SymbolProcessor {
     private val logger = environment.logger
 
@@ -204,7 +204,7 @@ public class KtormProcessor(
 
     public inner class EntityVisitor(
         private val tableDefinitions: MutableList<TableDefinition>,
-        private val entityTableMap: MutableMap<ClassName, ClassName>
+        private val entityTableMap: MutableMap<ClassName, ClassName>,
     ) : KSVisitorVoid() {
 
         @OptIn(KspExperimental::class, KotlinPoetKspPreview::class)
@@ -222,6 +222,7 @@ public class KtormProcessor(
                             ?: error("wrong entity class declaration: ${entityClassName.canonicalName}, Entity of interface type must inherit [${entityQualifiedName}]")
                         KtormEntityType.ENTITY_INTERFACE
                     }
+
                     ClassKind.CLASS -> KtormEntityType.ANY_KIND_CLASS
                     else -> error("wrong entity class declaration: ${entityClassName.canonicalName}, classKind must to be Interface or Class")
                 }
@@ -237,6 +238,7 @@ public class KtormProcessor(
                 val tableDef = TableDefinition(
                     tableName,
                     tableClassName,
+                    table.sequenceName,
                     table.alias,
                     table.catalog,
                     table.schema,
@@ -314,12 +316,15 @@ public class KtormProcessor(
                         this.endsWith("ch") -> {
                     return this + "es"
                 }
+
                 this.endsWith("y") -> {
                     return this.substring(0, this.length - 1) + "ies"
                 }
+
                 this.endsWith("o") -> {
                     return this + "es"
                 }
+
                 else -> {
                     return this + "s"
                 }
