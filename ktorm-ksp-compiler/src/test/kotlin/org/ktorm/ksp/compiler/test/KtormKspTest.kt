@@ -31,7 +31,7 @@ import org.ktorm.logging.LogLevel
 import org.ktorm.schema.*
 import java.io.File
 import java.lang.reflect.InvocationTargetException
-import kotlin.reflect.full.functions
+import kotlin.reflect.full.*
 
 public class KtormKspTest {
 
@@ -109,7 +109,7 @@ public class KtormKspTest {
             )
         ) {
             // use reflection create instance
-            assertThat(it).contains("object Users", "constructor.callBy(parameterMap)")
+            assertThat(it).contains("public open class Users", "constructor.callBy(parameterMap)")
         }
         assertThat(result1.exitCode).isEqualTo(ExitCode.OK)
         assertThat(result2.exitCode).isEqualTo(ExitCode.OK)
@@ -1296,7 +1296,7 @@ public class KtormKspTest {
     private fun KotlinCompilation.Result.getBaseTable(className: String): BaseTable<*> {
         val clazz = classLoader.loadClass(className)
         assertThat(clazz).isNotNull
-        val table = clazz.kotlin.objectInstance
+        val table = clazz.kotlin.createInstance()
         assertThat(table).isInstanceOf(BaseTable::class.java)
         return table as BaseTable<*>
     }
@@ -1304,7 +1304,7 @@ public class KtormKspTest {
     private fun KotlinCompilation.Result.getTable(className: String): BaseTable<*> {
         val clazz = classLoader.loadClass(className)
         assertThat(clazz).isNotNull
-        val table = clazz.kotlin.objectInstance
+        val table = clazz.kotlin.createInstance()
         assertThat(table).isInstanceOf(Table::class.java)
         return table as Table<*>
     }

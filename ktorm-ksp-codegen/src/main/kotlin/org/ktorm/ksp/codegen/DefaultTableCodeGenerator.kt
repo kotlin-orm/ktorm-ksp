@@ -18,15 +18,12 @@ package org.ktorm.ksp.codegen
 
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import org.ktorm.database.Database
-import org.ktorm.dsl.QueryRowSet
-import org.ktorm.entity.EntitySequence
+import org.ktorm.database.*
+import org.ktorm.dsl.*
+import org.ktorm.entity.*
 import org.ktorm.expression.*
-import org.ktorm.ksp.codegen.definition.KtormEntityType
-import org.ktorm.ksp.codegen.definition.TableDefinition
-import org.ktorm.schema.BaseTable
-import org.ktorm.schema.Column
-import org.ktorm.schema.Table
+import org.ktorm.ksp.codegen.definition.*
+import org.ktorm.schema.*
 
 public open class DefaultTableTypeGenerator : TableTypeGenerator {
 
@@ -43,9 +40,11 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
             config.namingStrategy != null && config.localNamingStrategy != null -> {
                 config.localNamingStrategy.toTableName(table.entityClassName.simpleName)
             }
+
             config.namingStrategy == null -> {
                 table.entityClassName.simpleName
             }
+
             else -> {
                 return listOf(
                     CodeBlock.of(
@@ -58,9 +57,7 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
         }
         val result = mutableListOf<CodeBlock>()
         result.add(CodeBlock.of("tableName·=·%S", tableName))
-        if (table.alias.isNotEmpty()) {
-            result.add(CodeBlock.of("alias·=·%S", table.alias))
-        }
+        result.add(CodeBlock.of("alias·=·alias"))
         if (table.catalog.isNotEmpty()) {
             result.add(CodeBlock.of("catalog·=·%S", table.catalog))
         }
@@ -73,22 +70,58 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
 
     public open fun generateEntityInterfaceEntity(context: TableGenerateContext, emitter: (TypeSpec.Builder) -> Unit) {
         val table = context.table
-        TypeSpec.objectBuilder(table.tableClassName)
+        TypeSpec.classBuilder(table.tableClassName)
             .superclass(Table::class.asClassName().parameterizedBy(table.entityClassName))
             .apply {
                 buildTableNameParameter(table, context.config)
                     .forEach { addSuperclassConstructorParameter(it) }
+
+                buildClassTable(table, this)
             }
             .run(emitter)
     }
 
+    private fun buildClassTable(table: TableDefinition, typeSpec: TypeSpec.Builder) {
+
+        typeSpec.addModifiers(KModifier.OPEN)
+            .primaryConstructor(
+                FunSpec.constructorBuilder()
+                    .addParameter(
+                        ParameterSpec.builder("alias", typeNameOf<String?>())
+                            .defaultValue(if (table.alias.isNotEmpty()) "\"${table.alias}\"" else "null")
+                            .build()
+                    )
+                    .build()
+            )
+
+            .addType(
+                TypeSpec.companionObjectBuilder(null)
+                    .superclass(table.tableClassName)
+                    .build()
+            )
+            .addFunction(
+                FunSpec.builder("aliased")
+                    .returns(table.tableClassName)
+                    .addParameter(ParameterSpec.builder("alias", typeNameOf<String>()).build())
+                    .addModifiers(KModifier.OVERRIDE)
+                    .addCode(
+                        "return %T(alias)", table.tableClassName
+                    )
+                    .build()
+            )
+    }
+
     public open fun generateAnyKindClassEntity(context: TableGenerateContext, emitter: (TypeSpec.Builder) -> Unit) {
         val table = context.table
-        TypeSpec.objectBuilder(table.tableClassName)
+        TypeSpec.classBuilder(table.tableClassName)
             .superclass(BaseTable::class.asClassName().parameterizedBy(table.entityClassName))
             .apply {
+
                 buildTableNameParameter(table, context.config)
                     .forEach { addSuperclassConstructorParameter(it) }
+
+                buildClassTable(table, this)
+
             }
             .run(emitter)
     }
