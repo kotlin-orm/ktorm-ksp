@@ -46,20 +46,26 @@ public data class Student(
 自动生成代码 ▼
 
 ```kotlin
-public object Students : BaseTable<Student>(tableName = "Student", entityClass = Student::class,) {
+public open class Students(
+    alias: String? = null,
+) : BaseTable<Student>(tableName = "Student", alias = alias, entityClass = Student::class) {
     public val id: Column<Int> = int("id").primaryKey()
 
     public val name: Column<String> = varchar("name")
 
     public val age: Column<Int> = int("age")
 
+    public override fun aliased(alias: String): Students = Students(alias)
+
     public override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean): Student {
         return Student(
-            id = row[id],
-            name = row[name]!!,
-            age = row[age]!!,
+            id = row[this.id],
+            name = row[this.name]!!,
+            age = row[this.age]!!,
         )
     }
+
+    public companion object : Students()
 }
 
 public fun EntitySequence<Student, Students>.add(entity: Student): Int { /*此处省略具体实现*/
@@ -199,7 +205,7 @@ kotlin {
 
 如何让KSP生成代码?
 
-- Gradle: 构建项目、运行应用、执行 ```gradle build``` 命令均可。将会在```build/generated/ksp/main/kotlin```目录中生成代码。 
+- Gradle: 构建项目、运行应用、执行 ```gradle build``` 命令均可。将会在```build/generated/ksp/main/kotlin```目录中生成代码。
 - Maven: 执行```mvn kotlin:compile``` 命令。将会在```target/generated-sources/ksp``` 目录中生成代码。
 
 ### 实体定义
@@ -219,8 +225,10 @@ public data class Student(
 生成代码：
 
 ```kotlin
-public object Students : BaseTable<Student>(tableName = "Student", entityClass = Student::class) {
-    // 此处省略具体实现
+public open class Students(
+    alias: String? = null,
+) : BaseTable<Student>(tableName = "Student", alias = alias, entityClass = Student::class) {
+    // Ignore code
 }
 
 public fun EntitySequence<Student, Students>.add(entity: Student): Int { /*此处省略具体实现*/
@@ -251,8 +259,10 @@ public interface Student : Entity<Student> {
 生成代码：
 
 ```kotlin
-public object Students : Table<Student>(tableName = "Student", entityClass = Student::class) {
-    // 此处省略具体实现
+public open class Students(
+    alias: String? = null,
+) : Table<Student>(tableName = "Student", alias = alias, entityClass = Student::class) {
+    // Ignore code
 }
 
 public val Database.students: EntitySequence<Student, Students> get() = this.sequenceOf(Students)
@@ -289,12 +299,12 @@ ignoreColumns | 指定要忽略的属性名称列表，被忽略的属性将不�
 
 @Column的参数如下：
 
-| 参数            |   说明
-|----------|:----------:|
-columnName | 指定SQL中的列名
-converter | 指定列转换器，关于转换器请参考文档下方中的类型转换器说明
-propertyName | 指定在生成表类中，对应列定义的属性名称。
-isReferences | 指定此属性是否为引用列，只有基于Entity接口的实体类，可以赋值为true。当此值为true时，生成的列定义将会自动调用references方法
+| 参数           | 说明                                                                        |
+|--------------|:--------------------------------------------------------------------------|
+| columnName   | 指定SQL中的列名                                                                 |
+| converter    | 指定列转换器，关于转换器请参考文档下方中的类型转换器说明                                              |
+| propertyName | 指定在生成表类中，对应列定义的属性名称。                                                      |
+| isReferences | 指定此属性是否为引用列，只有基于Entity接口的实体类，可以赋值为true。当此值为true时，生成的列定义将会自动调用references方法 |
 
 #### 忽略指定属性
 
@@ -304,21 +314,21 @@ isReferences | 指定此属性是否为引用列，只有基于Entity接口的�
 
 在```任意类的实体类```上添加@KtormKspConfig注解，可以进行全局配置（只能添加一次此注解），注解参数如下
 
-| 参数            |   说明
-|----------|:----------:|
-allowReflectionCreateClassEntity | 是否允许在doCreateEntity方法中通过反射创建```任意类的实体类```的实例对象。如果为true，那么当实体类构造参数存在默认值参数时，会使用反射进行创建实例 （反射意味着带来了轻微的性能损耗，尽管大部分情况下这个损耗可以忽略不计）。如果如果为false，那么会直接构造方法创建实例，构造中的默认值参数的默认值，将无法生效
-enumConverter | 全局枚举转换器，实体类中的枚举类型属性会自动使用该转换器。关于转换器请参考下文类型转换器的说明
-singleTypeConverters | 全局单类型转换器，实体类中的对应类型的属性会自动使用该转换器。关于转换器请参考下文类型转换器的说明
-namingStrategy | 全局命名风格配置。关于命名风格请参考下文命名风格的说明
-extension | 扩展方法/属性的生成选项（具体的扩展说明请参考下文方法/属性生成器的相关说明）
+| 参数                               | 说明                                                                                                                                                                      |
+|----------------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| allowReflectionCreateClassEntity | 是否允许在doCreateEntity方法中通过反射创建```任意类的实体类```的实例对象。如果为true，那么当实体类构造参数存在默认值参数时，会使用反射进行创建实例 （反射意味着带来了轻微的性能损耗，尽管大部分情况下这个损耗可以忽略不计）。如果如果为false，那么会直接构造方法创建实例，构造中的默认值参数的默认值，将无法生效 |
+| enumConverter                    | 全局枚举转换器，实体类中的枚举类型属性会自动使用该转换器。关于转换器请参考下文类型转换器的说明                                                                                                                         |
+| singleTypeConverters             | 全局单类型转换器，实体类中的对应类型的属性会自动使用该转换器。关于转换器请参考下文类型转换器的说明                                                                                                                       |
+| namingStrategy                   | 全局命名风格配置。关于命名风格请参考下文命名风格的说明                                                                                                                                             |
+| extension                        | 扩展方法/属性的生成选项（具体的扩展说明请参考下文方法/属性生成器的相关说明）                                                                                                                                 |
 
 extension参数说明
 
-| 参数            |   说明
-|----------|:----------:|
-enableSequenceOf | 是否生成实体序列扩展
-enableClassEntitySequenceAddFun | 是否生成实体序列添加方法扩展
-enableClassEntitySequenceUpdateFun | 是否生成实体序列更新方法扩展
+| 参数                                 | 说明             |
+|------------------------------------|:---------------|
+| enableSequenceOf                   | 是否生成实体序列扩展     |
+| enableClassEntitySequenceAddFun    | 是否生成实体序列添加方法扩展 |
+| enableClassEntitySequenceUpdateFun | 是否生成实体序列更新方法扩展 |
 
 ### 命名风格
 
@@ -347,10 +357,14 @@ public interface Student : Entity<Student> {
 生成代码：
 
 ```kotlin
-public object Students : Table<Student>(tableName = "t_student", entityClass = Student::class) {
+public open class Students(
+    alias: String? = null,
+) : Table<Student>(tableName = "t_student", alias = alias, entityClass = Student::class) {
     public val id: Column<Int> = int("id").bindTo { it.id }.primaryKey()
     public val name: Column<String> = varchar("student_name").bindTo { it.name }
     public val age: Column<Int> = int("age").bindTo { it.age }
+    public override fun aliased(alias: String): Students = Students(alias)
+    public companion object : Students()
 }
 ```
 
@@ -371,7 +385,7 @@ public class KtormConfig
 public interface Student : Entity<Student> {
     @PrimaryKey
     public var id: Int?
-    public var name: String
+    public var firstName: String
     public var age: Int
 }
 ```
@@ -379,13 +393,18 @@ public interface Student : Entity<Student> {
 生成代码：
 
 ```kotlin
-public object StudentProfiles :
-    Table<StudentProfile>(tableName = "student_profile", entityClass = StudentProfile::class) {
+public open class Students(
+    alias: String? = null,
+) : Table<Student>(tableName = "student", alias = alias, entityClass = Student::class) {
     public val id: Column<Int> = int("id").bindTo { it.id }.primaryKey()
+
     public val firstName: Column<String> = varchar("first_name").bindTo { it.firstName }
-    public val lastName: Column<String> = varchar("last_name").bindTo { it.lastName }
-    public val telephoneNumber: Column<String> =
-        varchar("telephone_number").bindTo { it.telephoneNumber }
+
+    public val age: Column<Int> = int("age").bindTo { it.age }
+
+    public override fun aliased(alias: String): Students = Students(alias)
+
+    public companion object : Students()
 }
 ```
 
@@ -393,29 +412,29 @@ public object StudentProfiles :
 
 在ktorm-ksp中默认支持的数据类型如下
 
-| kotlin类型 | 函数名 | 底层SQL类型 | JDBC 类型码 (java.sql.Types)
-|---------|:-------------:|------:|------:|
-kotlin.Boolean  | boolean | boolean | Types.BOOLEAN
-kotlin.Int  | int | int | Types.INTEGER
-kotlin.Short  | short | smallint | Types.SMALLINT
-kotlin.Long  | long | bigint | Types.BIGINT
-kotlin.Float  | float | float | Types.FLOAT
-kotlin.Double  | double | double | Types.DOUBLE
-kotlin.BigDecimal  | decimal | decimal | Types.DECIMAL
-kotlin.String  | varchar | varchar | Types.VARCHAR
-java.sql.Date  | jdbcDate | date | Types.DATE
-java.sql.Time  | jdbcTime | time | Types.TIME
-java.sql.Timestamp  | jdbcTimestamp | timestamp | Types.TIMESTAMP
-java.time.LocalDateTime  | datetime | datetime | Types.TIMESTAMP
-java.time.LocalDate  | date | date | Types.DATE
-java.time.LocalTime  | time | time | Types.TIME
-java.time.MonthDay  | monthDay | varchar | Types.VARCHAR
-java.time.YearMonth  | yearMonth | varchar | Types.VARCHAR
-java.time.Year  | year | int | Types.INTEGER
-java.time.Instant  | timestamp | timestamp | Types.TIMESTAMP
-java.util.UUID  | uuid | uuid | Types.OTHER
-kotlin.ByteArray  | bytes | bytes | Types.BINARY
-kotlin.Enum  | enum | enum | Types.VARCHAR
+| kotlin类型                |      函数名      |   底层SQL类型 | JDBC 类型码 (java.sql.Types) |
+|-------------------------|:-------------:|----------:|--------------------------:|
+| kotlin.Boolean          |    boolean    |   boolean |             Types.BOOLEAN |
+| kotlin.Int              |      int      |       int |             Types.INTEGER |
+| kotlin.Short            |     short     |  smallint |            Types.SMALLINT |
+| kotlin.Long             |     long      |    bigint |              Types.BIGINT |
+| kotlin.Float            |     float     |     float |               Types.FLOAT |
+| kotlin.Double           |    double     |    double |              Types.DOUBLE |
+| kotlin.BigDecimal       |    decimal    |   decimal |             Types.DECIMAL |
+| kotlin.String           |    varchar    |   varchar |             Types.VARCHAR |
+| java.sql.Date           |   jdbcDate    |      date |                Types.DATE |
+| java.sql.Time           |   jdbcTime    |      time |                Types.TIME |
+| java.sql.Timestamp      | jdbcTimestamp | timestamp |           Types.TIMESTAMP |
+| java.time.LocalDateTime |   datetime    |  datetime |           Types.TIMESTAMP |
+| java.time.LocalDate     |     date      |      date |                Types.DATE |
+| java.time.LocalTime     |     time      |      time |                Types.TIME |
+| java.time.MonthDay      |   monthDay    |   varchar |             Types.VARCHAR |
+| java.time.YearMonth     |   yearMonth   |   varchar |             Types.VARCHAR |
+| java.time.Year          |     year      |       int |             Types.INTEGER |
+| java.time.Instant       |   timestamp   | timestamp |           Types.TIMESTAMP |
+| java.util.UUID          |     uuid      |      uuid |               Types.OTHER |
+| kotlin.ByteArray        |     bytes     |     bytes |              Types.BINARY |
+| kotlin.Enum             |     enum      |      enum |             Types.VARCHAR |
 
 如果需要使用不在上述的类型，或者想覆盖默认的类型行为，则需要使用到类型转换器
 
@@ -497,11 +516,17 @@ object IntEnumConverter : EnumConverter {
 生成代码
 
 ```kotlin
-public object Users : BaseTable<User>(tableName = "User", entityClass = User::class) {
+public open class Users(
+    alias: String? = null,
+) : BaseTable<User>(tableName = "User", alias = alias, entityClass = User::class) {
     public val id: Column<Int> = int("id").primaryKey()
-    public val username: Column<Username> = UsernameConverter.convert(this, "username", Username::class)
+
+    public val username: Column<Username> =
+        UsernameConverter.convert(this,"username",Username::class)
+
     public val age: Column<Int> = int("age")
-    public val gender: Column<Gender> = IntEnumConverter.convert(this, "gender", Gender::class)
+
+    public val gender: Column<Gender> = IntEnumConverter.convert(this,"gender",Gender::class)
     // ...
 }
 ```
@@ -515,6 +540,11 @@ public object Users : BaseTable<User>(tableName = "User", entityClass = User::cl
 - enumConverter: 接收一个EnumConverter的类型，所有的枚举类型会自动使用该转换器。
 
 ```kotlin
+enum class Gender {
+    MALE,
+    FEMALE
+}
+
 @Table
 data class User(
     @PrimaryKey
@@ -565,11 +595,17 @@ object IntEnumConverter : EnumConverter {
 生成代码：
 
 ```kotlin
-public object Users : BaseTable<User>(tableName = "User", entityClass = User::class) {
+public open class Users(
+    alias: String? = null,
+) : BaseTable<User>(tableName = "User", alias = alias, entityClass = User::class) {
     public val id: Column<Int> = int("id").primaryKey()
-    public val username: Column<Username> = UsernameConverter.convert(this, "username", Username::class)
+
+    public val username: Column<Username> =
+        UsernameConverter.convert(this,"username",Username::class)
+
     public val age: Column<Int> = int("age")
-    public val gender: Column<Gender> = IntEnumConverter.convert(this, "gender", Gender::class)
+
+    public val gender: Column<Gender> = IntEnumConverter.convert(this,"gender",Gender::class)
     // ...
 }
 ```
