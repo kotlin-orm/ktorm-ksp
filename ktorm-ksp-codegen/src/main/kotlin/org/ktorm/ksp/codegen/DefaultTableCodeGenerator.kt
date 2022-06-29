@@ -324,10 +324,10 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
                         }
                         val notNullOperator = if (column.isNullable) "" else "!!"
                         addStatement(
-                            "entity.%L·=·%L[%M]%L",
+                            "entity.%L·=·%L[this.%L]%L",
                             property,
                             row,
-                            column.tablePropertyName,
+                            column.tablePropertyName.simpleName,
                             notNullOperator
                         )
                     }
