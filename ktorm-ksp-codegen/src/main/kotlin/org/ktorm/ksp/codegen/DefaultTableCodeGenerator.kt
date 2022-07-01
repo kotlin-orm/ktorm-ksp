@@ -18,12 +18,15 @@ package org.ktorm.ksp.codegen
 
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import org.ktorm.database.*
-import org.ktorm.dsl.*
-import org.ktorm.entity.*
+import org.ktorm.database.Database
+import org.ktorm.dsl.QueryRowSet
+import org.ktorm.entity.EntitySequence
 import org.ktorm.expression.*
-import org.ktorm.ksp.codegen.definition.*
-import org.ktorm.schema.*
+import org.ktorm.ksp.codegen.definition.KtormEntityType
+import org.ktorm.ksp.codegen.definition.TableDefinition
+import org.ktorm.schema.BaseTable
+import org.ktorm.schema.Column
+import org.ktorm.schema.Table
 
 public open class DefaultTableTypeGenerator : TableTypeGenerator {
 
@@ -40,11 +43,9 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
             config.namingStrategy != null && config.localNamingStrategy != null -> {
                 config.localNamingStrategy.toTableName(table.entityClassName.simpleName)
             }
-
             config.namingStrategy == null -> {
                 table.entityClassName.simpleName
             }
-
             else -> {
                 return listOf(
                     CodeBlock.of(
@@ -82,7 +83,6 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
     }
 
     private fun buildClassTable(table: TableDefinition, typeSpec: TypeSpec.Builder) {
-
         typeSpec.addModifiers(KModifier.OPEN)
             .primaryConstructor(
                 FunSpec.constructorBuilder()
@@ -93,7 +93,6 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
                     )
                     .build()
             )
-
             .addType(
                 TypeSpec.companionObjectBuilder(null)
                     .superclass(table.tableClassName)
@@ -116,12 +115,10 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
         TypeSpec.classBuilder(table.tableClassName)
             .superclass(BaseTable::class.asClassName().parameterizedBy(table.entityClassName))
             .apply {
-
                 buildTableNameParameter(table, context.config)
                     .forEach { addSuperclassConstructorParameter(it) }
 
                 buildClassTable(table, this)
-
             }
             .run(emitter)
     }
