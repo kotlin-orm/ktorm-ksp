@@ -80,6 +80,9 @@ public fun EntitySequence<Student, Students>.update(entity: Student): Int { /*Ig
 public val Database.students: EntitySequence<Student, Students> get() = this.sequenceOf(Students)
 ```
 
+> Why use class as a table type instead of an object singleton? Please refer to the documentation:  [Self-Joining-amp-Table-Aliases](https://www.ktorm.org/en/joining.html#Self-Joining-amp-Table-Aliases)
+
+
 - [Quick Start](#quick-start)
 - [Define Entities](#define-entities)
     - [Define Entities Of Any Kind Of Class](#define-entities-of-any-kind-of-class)

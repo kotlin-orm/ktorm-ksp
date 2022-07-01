@@ -77,6 +77,8 @@ public fun EntitySequence<Student, Students>.update(entity: Student): Int { /*�
 public val Database.students: EntitySequence<Student, Students> get() = this.sequenceOf(Students)
 ```
 
+> 为什么使用class作为表类型，而不是object单例？ 请查阅文档说明:  [自连接查询与表别名](https://www.ktorm.org/zh-cn/joining.html#%E8%87%AA%E8%BF%9E%E6%8E%A5%E6%9F%A5%E8%AF%A2%E4%B8%8E%E8%A1%A8%E5%88%AB%E5%90%8D)
+
 - [快速入门](#快速入门)
 - [实体定义](#实体定义)
     - [任意类的实体类定义](#任意类的实体类定义)
