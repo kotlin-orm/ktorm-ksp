@@ -278,6 +278,7 @@ alias | 指定BaseTable.alias的参数值
 catalog | 指定BaseTable.catalog的参数值
 schema | 指定BaseTable.schema的参数值
 ignoreColumns | 指定要忽略的属性名称列表，被忽略的属性将不会在生成的Table类中，生成对应的列定义
+sequenceName  | 指定生成EntitySequence的扩展属性名称，默认取tableClassName首字母小写转换后的名称。
 
 #### 主键定义
 

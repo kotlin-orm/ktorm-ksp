@@ -75,8 +75,7 @@ public annotation class Table(
     val ignoreColumns: Array<String> = [],
 
     /**
-     * The sequence name，By default, the first character lowercase of the [tableClassName], and the value
-     * will not be an empty string.
+     * Specify the sequence name，By default, the first character lowercase of the [tableClassName].
      */
     val sequenceName: String = "",
 )
