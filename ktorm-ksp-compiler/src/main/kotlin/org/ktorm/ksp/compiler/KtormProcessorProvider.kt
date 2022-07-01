@@ -32,6 +32,7 @@ import com.squareup.kotlinpoet.MemberName
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toClassName
+import org.atteo.evo.inflector.English
 import org.ktorm.entity.Entity
 import org.ktorm.ksp.api.*
 import org.ktorm.ksp.codegen.CodeGenerateConfig
@@ -228,7 +229,7 @@ public class KtormProcessor(
                 }
                 val table = classDeclaration.getAnnotationsByType(Table::class).first()
                 val tableClassName = if (table.tableClassName.isEmpty()) {
-                    ClassName(entityClassName.packageName, entityClassName.simpleName.pluralNoun())
+                    ClassName(entityClassName.packageName, English.plural(entityClassName.simpleName))
                 } else {
                     ClassName(entityClassName.packageName, table.tableClassName)
                 }
@@ -307,29 +308,5 @@ public class KtormProcessor(
             }
         }
 
-
-        internal fun String.pluralNoun(): String {
-            when {
-                this.endsWith("x") or
-                        this.endsWith("s") or
-                        this.endsWith("sh") or
-                        this.endsWith("ch") -> {
-                    return this + "es"
-                }
-
-                this.endsWith("y") -> {
-                    return this.substring(0, this.length - 1) + "ies"
-                }
-
-                this.endsWith("o") -> {
-                    return this + "es"
-                }
-
-                else -> {
-                    return this + "s"
-                }
-
-            }
-        }
     }
 }
