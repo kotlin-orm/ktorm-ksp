@@ -49,20 +49,26 @@ public data class Student(
 Auto generate code ▼
 
 ```kotlin
-public object Students : BaseTable<Student>(tableName = "Student", entityClass = Student::class,) {
+public open class Students(
+    alias: String? = null,
+) : BaseTable<Student>(tableName = "Student", alias = alias, entityClass = Student::class) {
     public val id: Column<Int> = int("id").primaryKey()
 
     public val name: Column<String> = varchar("name")
 
     public val age: Column<Int> = int("age")
 
+    public override fun aliased(alias: String): Students = Students(alias)
+
     public override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean): Student {
         return Student(
-            id = row[id],
-            name = row[name]!!,
-            age = row[age]!!,
+            id = row[this.id],
+            name = row[this.name]!!,
+            age = row[this.age]!!,
         )
     }
+
+    public companion object : Students()
 }
 
 public fun EntitySequence<Student, Students>.add(entity: Student): Int { /*Ignore code*/
@@ -223,7 +229,9 @@ public data class Student(
 Generate code：
 
 ```kotlin
-public object Students : BaseTable<Student>(tableName = "Student", entityClass = Student::class) {
+public open class Students(
+    alias: String? = null,
+) : BaseTable<Student>(tableName = "Student", alias = alias, entityClass = Student::class) {
     // Ignore code
 }
 
@@ -256,7 +264,9 @@ public interface Student : Entity<Student> {
 Generate code：
 
 ```kotlin
-public object Students : Table<Student>(tableName = "Student", entityClass = Student::class) {
+public open class Students(
+    alias: String? = null,
+) : Table<Student>(tableName = "Student", alias = alias, entityClass = Student::class) {
     // Ignore code
 }
 
@@ -279,15 +289,17 @@ Adding the @Table annotation to the entity class will automatically generate the
 
 The parameters of @Table are as follows:
 
-| Parameter      |   Description
-|----------------|:----------:|
-tableName      | Specify the parameter value of  ```BaseTable.tableName```
-tableClassName | Specifies the type name of the generated table type, which defaults to the plural form of the noun of the entity class
-alias          | Specify the parameter value of  ```BaseTable.alias```
-catalog        | Specify the parameter value of  ```BaseTable.catalog```
-schema         | Specify the parameter value of  ```BaseTable.schema```
-ignoreColumns  | Specifies a list of property names to ignore. The ignored properties will not generate corresponding column definitions in the generated Table class
-sequenceName  | The sequence name，By default, the first character lowercase of the tableClassName
+
+| Parameter      | Description                                                                                                                                          |
+|----------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| tableName      | Specify the parameter value of  ```BaseTable.tableName```                                                                                            |
+| tableClassName | Specifies the type name of the generated table type, which defaults to the plural form of the noun of the entity class                               |
+| alias          | Specify the parameter value of  ```BaseTable.alias```                                                                                                |
+| catalog        | Specify the parameter value of  ```BaseTable.catalog```                                                                                              |
+| schema         | Specify the parameter value of  ```BaseTable.schema```                                                                                               |
+| ignoreColumns  | Specifies a list of property names to ignore. The ignored properties will not generate corresponding column definitions in the generated Table class |
+| sequenceName   | The sequence name，By default, the first character lowercase of the tableClassName                                                                   |
+
 
 #### Define Primary Key
 
@@ -299,12 +311,12 @@ Add the @Column annotation to the entity class property to configure the generat
 
 The parameters of @Column are as follows:
 
-| Parameter            |   Description
-|----------|:----------:|
-columnName | Specify column names in SQL
-converter | Specify the column converter. For the converter, please refer to the type converter description at the bottom of the document
-propertyName | Specifies the property name of the corresponding column definition in the generated table class.
-isReferences | Specifies whether this property is a reference column. Only ```entity class based on the Entity interface``` can be assigned a value of true. When this value is true, the generated column definition will automatically call the references method
+| Parameter    | Description                                                                                                                                                                                                                                          |
+|--------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| columnName   | Specify column names in SQL                                                                                                                                                                                                                          |
+| converter    | Specify the column converter. For the converter, please refer to the type converter description at the bottom of the document                                                                                                                        |
+| propertyName | Specifies the property name of the corresponding column definition in the generated table class.                                                                                                                                                     |
+| isReferences | Specifies whether this property is a reference column. Only ```entity class based on the Entity interface``` can be assigned a value of true. When this value is true, the generated column definition will automatically call the references method |
 
 #### Ignore The Specified Properties
 
@@ -316,21 +328,21 @@ definition of this property. Properties to ignore can also be specified in the i
 Add the @KtormKspConfig annotation to any class for global configuration (this annotation can only be added once), and
 the annotation parameters are as follows:
 
-| Parameter            |   Description
-|----------|:----------:|
-allowReflectionCreateClassEntity | Whether to allow the creation of instance objects of ```entity of any kind class``` through reflection in the ```doCreateEntity``` method. If true, the instance will be created using reflection when the entity class constructor parameter has a default value parameter (reflection means a slight performance penalty, although in most cases this penalty is negligible). If it is false, the method will be directly constructed to create an instance, and the default value of the default value parameter in the construction will not take effect.
-enumConverter |Global enum converter, which is automatically used by enum type properties in entity classes. For converters, please refer to the description of type converters below
-singleTypeConverters | Global single-type converter, which is automatically used by properties of the corresponding type in the entity class. For converters, please refer to the description of type converters below
-namingStrategy | Global naming style configuration. For the naming style, please refer to the description of the naming style below
-extension | Generation options for extension methods/properties. For specific extension descriptions, please refer to the related descriptions of method/property generators below
+| Parameter                        | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+|----------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| allowReflectionCreateClassEntity | Whether to allow the creation of instance objects of ```entity of any kind class``` through reflection in the ```doCreateEntity``` method. If true, the instance will be created using reflection when the entity class constructor parameter has a default value parameter (reflection means a slight performance penalty, although in most cases this penalty is negligible). If it is false, the method will be directly constructed to create an instance, and the default value of the default value parameter in the construction will not take effect. |
+| enumConverter                    | Global enum converter, which is automatically used by enum type properties in entity classes. For converters, please refer to the description of type converters below                                                                                                                                                                                                                                                                                                                                                                                        |
+| singleTypeConverters             | Global single-type converter, which is automatically used by properties of the corresponding type in the entity class. For converters, please refer to the description of type converters below                                                                                                                                                                                                                                                                                                                                                               |
+| namingStrategy                   | Global naming style configuration. For the naming style, please refer to the description of the naming style below                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| extension                        | Generation options for extension methods/properties. For specific extension descriptions, please refer to the related descriptions of method/property generators below                                                                                                                                                                                                                                                                                                                                                                                        |
 
 extension parameter description
 
-| Parameter                          |   Description
-|------------------------------------|:----------:|
-enableSequenceOf                   | whether to generate ```entity sequence``` extensions
-enableClassEntitySequenceAddFun    | Whether to generate ```entity sequence``` ```add``` method extension
-enableClassEntitySequenceUpdateFun | Whether to generate ```entity sequence``` ```update``` method extension
+| Parameter                          | Description                                                             |
+|------------------------------------|:------------------------------------------------------------------------|
+| enableSequenceOf                   | whether to generate ```entity sequence``` extensions                    |
+| enableClassEntitySequenceAddFun    | Whether to generate ```entity sequence``` ```add``` method extension    |
+| enableClassEntitySequenceUpdateFun | Whether to generate ```entity sequence``` ```update``` method extension |
 
 ### Naming Style
 
@@ -360,10 +372,14 @@ public interface Student : Entity<Student> {
 Generate code：
 
 ```kotlin
-public object Students : Table<Student>(tableName = "t_student", entityClass = Student::class) {
+public open class Students(
+    alias: String? = null,
+) : Table<Student>(tableName = "t_student", alias = alias, entityClass = Student::class) {
     public val id: Column<Int> = int("id").bindTo { it.id }.primaryKey()
     public val name: Column<String> = varchar("student_name").bindTo { it.name }
     public val age: Column<Int> = int("age").bindTo { it.age }
+    public override fun aliased(alias: String): Students = Students(alias)
+    public companion object : Students()
 }
 ```
 
@@ -386,7 +402,7 @@ public class KtormConfig
 public interface Student : Entity<Student> {
     @PrimaryKey
     public var id: Int?
-    public var name: String
+    public var firstName: String
     public var age: Int
 }
 ```
@@ -394,13 +410,18 @@ public interface Student : Entity<Student> {
 Generate code：
 
 ```kotlin
-public object StudentProfiles :
-    Table<StudentProfile>(tableName = "student_profile", entityClass = StudentProfile::class) {
+public open class Students(
+    alias: String? = null,
+) : Table<Student>(tableName = "student", alias = alias, entityClass = Student::class) {
     public val id: Column<Int> = int("id").bindTo { it.id }.primaryKey()
+
     public val firstName: Column<String> = varchar("first_name").bindTo { it.firstName }
-    public val lastName: Column<String> = varchar("last_name").bindTo { it.lastName }
-    public val telephoneNumber: Column<String> =
-        varchar("telephone_number").bindTo { it.telephoneNumber }
+
+    public val age: Column<Int> = int("age").bindTo { it.age }
+
+    public override fun aliased(alias: String): Students = Students(alias)
+
+    public companion object : Students()
 }
 ```
 
@@ -408,29 +429,29 @@ public object StudentProfiles :
 
 The data types supported by default in ktorm-ksp are as follows:
 
-| kotlin Type             | Function Name | Underlying SQL Type | JDBC Type Code (java.sql.Types)
-|-------------------------|:-------------:|------:|------:|
-kotlin.Boolean          |    boolean    | boolean | Types.BOOLEAN
-kotlin.Int              |      int      | int | Types.INTEGER
-kotlin.Short            |     short     | smallint | Types.SMALLINT
-kotlin.Long             |     long      | bigint | Types.BIGINT
-kotlin.Float            |     float     | float | Types.FLOAT
-kotlin.Double           |    double     | double | Types.DOUBLE
-kotlin.BigDecimal       |    decimal    | decimal | Types.DECIMAL
-kotlin.String           |    varchar    | varchar | Types.VARCHAR
-java.sql.Date           |   jdbcDate    | date | Types.DATE
-java.sql.Time           |   jdbcTime    | time | Types.TIME
-java.sql.Timestamp      | jdbcTimestamp | timestamp | Types.TIMESTAMP
-java.time.LocalDateTime |   datetime    | datetime | Types.TIMESTAMP
-java.time.LocalDate     |     date      | date | Types.DATE
-java.time.LocalTime     |     time      | time | Types.TIME
-java.time.MonthDay      |   monthDay    | varchar | Types.VARCHAR
-java.time.YearMonth     |   yearMonth   | varchar | Types.VARCHAR
-java.time.Year          |     year      | int | Types.INTEGER
-java.time.Instant       |   timestamp   | timestamp | Types.TIMESTAMP
-java.util.UUID          |     uuid      | uuid | Types.OTHER
-kotlin.ByteArray        |     bytes     | bytes | Types.BINARY
-kotlin.Enum             |     enum      | enum | Types.VARCHAR
+| kotlin Type             | Function Name | Underlying SQL Type | JDBC Type Code (java.sql.Types) |
+|-------------------------|:-------------:|--------------------:|--------------------------------:|
+| kotlin.Boolean          |    boolean    |             boolean |                   Types.BOOLEAN |
+| kotlin.Int              |      int      |                 int |                   Types.INTEGER |
+| kotlin.Short            |     short     |            smallint |                  Types.SMALLINT |
+| kotlin.Long             |     long      |              bigint |                    Types.BIGINT |
+| kotlin.Float            |     float     |               float |                     Types.FLOAT |
+| kotlin.Double           |    double     |              double |                    Types.DOUBLE |
+| kotlin.BigDecimal       |    decimal    |             decimal |                   Types.DECIMAL |
+| kotlin.String           |    varchar    |             varchar |                   Types.VARCHAR |
+| java.sql.Date           |   jdbcDate    |                date |                      Types.DATE |
+| java.sql.Time           |   jdbcTime    |                time |                      Types.TIME |
+| java.sql.Timestamp      | jdbcTimestamp |           timestamp |                 Types.TIMESTAMP |
+| java.time.LocalDateTime |   datetime    |            datetime |                 Types.TIMESTAMP |
+| java.time.LocalDate     |     date      |                date |                      Types.DATE |
+| java.time.LocalTime     |     time      |                time |                      Types.TIME |
+| java.time.MonthDay      |   monthDay    |             varchar |                   Types.VARCHAR |
+| java.time.YearMonth     |   yearMonth   |             varchar |                   Types.VARCHAR |
+| java.time.Year          |     year      |                 int |                   Types.INTEGER |
+| java.time.Instant       |   timestamp   |           timestamp |                 Types.TIMESTAMP |
+| java.util.UUID          |     uuid      |                uuid |                     Types.OTHER |
+| kotlin.ByteArray        |     bytes     |               bytes |                    Types.BINARY |
+| kotlin.Enum             |     enum      |                enum |                   Types.VARCHAR |
 
 If you need to use a type that is not listed above, or if you want to override the default type behavior, you need to
 use a type converter
@@ -517,11 +538,17 @@ object IntEnumConverter : EnumConverter {
 Generate Code:
 
 ```kotlin
-public object Users : BaseTable<User>(tableName = "User", entityClass = User::class) {
+public open class Users(
+    alias: String? = null,
+) : BaseTable<User>(tableName = "User", alias = alias, entityClass = User::class) {
     public val id: Column<Int> = int("id").primaryKey()
-    public val username: Column<Username> = UsernameConverter.convert(this, "username", Username::class)
+
+    public val username: Column<Username> =
+        UsernameConverter.convert(this,"username",Username::class)
+
     public val age: Column<Int> = int("age")
-    public val gender: Column<Gender> = IntEnumConverter.convert(this, "gender", Gender::class)
+
+    public val gender: Column<Gender> = IntEnumConverter.convert(this,"gender",Gender::class)
     // ...
 }
 ```
@@ -537,6 +564,11 @@ Type converters can be added to the singleTypeConverters and enumConverter param
 - enumConverter: Receives a type of EnumConverter, all enumeration types will automatically use the converter.
 
 ```kotlin
+enum class Gender {
+    MALE,
+    FEMALE
+}
+
 @Table
 data class User(
     @PrimaryKey
@@ -587,11 +619,17 @@ object IntEnumConverter : EnumConverter {
 Generate code：
 
 ```kotlin
-public object Users : BaseTable<User>(tableName = "User", entityClass = User::class) {
+public open class Users(
+    alias: String? = null,
+) : BaseTable<User>(tableName = "User", alias = alias, entityClass = User::class) {
     public val id: Column<Int> = int("id").primaryKey()
-    public val username: Column<Username> = UsernameConverter.convert(this, "username", Username::class)
+
+    public val username: Column<Username> =
+        UsernameConverter.convert(this,"username",Username::class)
+
     public val age: Column<Int> = int("age")
-    public val gender: Column<Gender> = IntEnumConverter.convert(this, "gender", Gender::class)
+
+    public val gender: Column<Gender> = IntEnumConverter.convert(this,"gender",Gender::class)
     // ...
 }
 ```

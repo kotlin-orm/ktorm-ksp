@@ -58,9 +58,7 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
         }
         val result = mutableListOf<CodeBlock>()
         result.add(CodeBlock.of("tableName·=·%S", tableName))
-        if (table.alias.isNotEmpty()) {
-            result.add(CodeBlock.of("alias·=·%S", table.alias))
-        }
+        result.add(CodeBlock.of("alias·=·alias"))
         if (table.catalog.isNotEmpty()) {
             result.add(CodeBlock.of("catalog·=·%S", table.catalog))
         }
@@ -73,22 +71,54 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
 
     public open fun generateEntityInterfaceEntity(context: TableGenerateContext, emitter: (TypeSpec.Builder) -> Unit) {
         val table = context.table
-        TypeSpec.objectBuilder(table.tableClassName)
+        TypeSpec.classBuilder(table.tableClassName)
             .superclass(Table::class.asClassName().parameterizedBy(table.entityClassName))
             .apply {
                 buildTableNameParameter(table, context.config)
                     .forEach { addSuperclassConstructorParameter(it) }
+
+                buildClassTable(table, this)
             }
             .run(emitter)
     }
 
+    private fun buildClassTable(table: TableDefinition, typeSpec: TypeSpec.Builder) {
+        typeSpec.addModifiers(KModifier.OPEN)
+            .primaryConstructor(
+                FunSpec.constructorBuilder()
+                    .addParameter(
+                        ParameterSpec.builder("alias", typeNameOf<String?>())
+                            .defaultValue(if (table.alias.isNotEmpty()) "\"${table.alias}\"" else "null")
+                            .build()
+                    )
+                    .build()
+            )
+            .addType(
+                TypeSpec.companionObjectBuilder(null)
+                    .superclass(table.tableClassName)
+                    .build()
+            )
+            .addFunction(
+                FunSpec.builder("aliased")
+                    .returns(table.tableClassName)
+                    .addParameter(ParameterSpec.builder("alias", typeNameOf<String>()).build())
+                    .addModifiers(KModifier.OVERRIDE)
+                    .addCode(
+                        "return %T(alias)", table.tableClassName
+                    )
+                    .build()
+            )
+    }
+
     public open fun generateAnyKindClassEntity(context: TableGenerateContext, emitter: (TypeSpec.Builder) -> Unit) {
         val table = context.table
-        TypeSpec.objectBuilder(table.tableClassName)
+        TypeSpec.classBuilder(table.tableClassName)
             .superclass(BaseTable::class.asClassName().parameterizedBy(table.entityClassName))
             .apply {
                 buildTableNameParameter(table, context.config)
                     .forEach { addSuperclassConstructorParameter(it) }
+
+                buildClassTable(table, this)
             }
             .run(emitter)
     }
@@ -291,10 +321,10 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
                         }
                         val notNullOperator = if (column.isNullable) "" else "!!"
                         addStatement(
-                            "entity.%L·=·%L[%M]%L",
+                            "entity.%L·=·%L[this.%L]%L",
                             property,
                             row,
-                            column.tablePropertyName,
+                            column.tablePropertyName.simpleName,
                             notNullOperator
                         )
                     }

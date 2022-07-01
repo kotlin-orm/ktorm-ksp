@@ -31,7 +31,7 @@ import org.ktorm.logging.LogLevel
 import org.ktorm.schema.*
 import java.io.File
 import java.lang.reflect.InvocationTargetException
-import kotlin.reflect.full.functions
+import kotlin.reflect.full.*
 
 public class KtormKspTest {
 
@@ -91,6 +91,35 @@ public class KtormKspTest {
     }
 
     @Test
+    public fun `test non constructor properties with data class`() {
+        val (result1, result2) = twiceCompile(
+            SourceFile.kotlin(
+                "source.kt",
+                """
+                import org.ktorm.ksp.api.PrimaryKey
+                import org.ktorm.ksp.api.Table
+                
+                @Table(tableName = "t_user","UserTable","t_user_alias","catalog","schema")
+                data class User(
+                    @PrimaryKey
+                    var id: Int,
+                    var username: String,
+                ) {
+                    var age: Int = 10
+                }
+                """,
+            )
+        )
+        assertThat(result1.exitCode).isEqualTo(ExitCode.OK)
+        assertThat(result2.exitCode).isEqualTo(ExitCode.OK)
+        val baseTable = result2.getBaseTable("UserTable")
+        assertThat(baseTable.tableName).isEqualTo("t_user")
+        assertThat(baseTable.alias).isEqualTo("t_user_alias")
+        assertThat(baseTable.catalog).isEqualTo("catalog")
+        assertThat(baseTable.columns.map { it.name }.toSet()).isEqualTo(setOf("id", "username", "age"))
+    }
+
+    @Test
     public fun `data class constructor with default parameters column`() {
         val (result1, result2) = twiceCompile(
             SourceFile.kotlin(
@@ -109,7 +138,7 @@ public class KtormKspTest {
             )
         ) {
             // use reflection create instance
-            assertThat(it).contains("object Users", "constructor.callBy(parameterMap)")
+            assertThat(it).contains("public open class Users", "constructor.callBy(parameterMap)")
         }
         assertThat(result1.exitCode).isEqualTo(ExitCode.OK)
         assertThat(result2.exitCode).isEqualTo(ExitCode.OK)
@@ -1342,7 +1371,7 @@ public class KtormKspTest {
     private fun KotlinCompilation.Result.getBaseTable(className: String): BaseTable<*> {
         val clazz = classLoader.loadClass(className)
         assertThat(clazz).isNotNull
-        val table = clazz.kotlin.objectInstance
+        val table = clazz.kotlin.createInstance()
         assertThat(table).isInstanceOf(BaseTable::class.java)
         return table as BaseTable<*>
     }
@@ -1350,7 +1379,7 @@ public class KtormKspTest {
     private fun KotlinCompilation.Result.getTable(className: String): BaseTable<*> {
         val clazz = classLoader.loadClass(className)
         assertThat(clazz).isNotNull
-        val table = clazz.kotlin.objectInstance
+        val table = clazz.kotlin.createInstance()
         assertThat(table).isInstanceOf(Table::class.java)
         return table as Table<*>
     }
