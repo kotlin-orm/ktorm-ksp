@@ -2,7 +2,7 @@ create table "user"
 (
     "id"       int          not null primary key auto_increment,
     "username" varchar(128) not null,
-    "age"      int          not null,
+    "age"      int          not null
 );
 
 

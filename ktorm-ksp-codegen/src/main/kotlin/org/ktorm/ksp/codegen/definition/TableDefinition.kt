@@ -41,6 +41,13 @@ public data class TableDefinition(
     val tableClassName: ClassName,
 
     /**
+     * The sequence name，By default, the first character lowercase of the [tableClassName], and the value
+     * will not be an empty string.
+     */
+    val sequenceName: String,
+
+
+    /**
      * The Table alias, Corresponding to the [org.ktorm.ksp.api.Table.alias] property, may be an empty string.
      */
     val alias: String,

@@ -830,7 +830,7 @@ public class KtormKspTest {
                 import org.ktorm.entity.EntitySequence
                 import org.ktorm.ksp.api.*
                 import java.time.LocalDate
-                    
+
                 @Table
                 data class User(
                     @PrimaryKey
@@ -881,6 +881,52 @@ public class KtormKspTest {
             ).isEqualTo("[Employee{id=1, name=vince, job=engineer, hireDate=2018-01-01}, Employee{id=2, name=marry, job=trainee, hireDate=2019-01-01}, Employee{id=3, name=tom, job=director, hireDate=2018-01-01}, Employee{id=4, name=penny, job=assistant, hireDate=2019-01-01}]")
         }
     }
+
+    @Test
+    public fun `custom sequence name `() {
+        val (result1, result2) = twiceCompile(
+            SourceFile.kotlin(
+                "source.kt",
+                """
+                import org.ktorm.database.Database
+                import org.ktorm.entity.Entity
+                import org.ktorm.entity.EntitySequence
+                import org.ktorm.ksp.api.*
+                import java.time.LocalDate
+
+                @Table(sequenceName = "aUsers")
+                data class User(
+                    @PrimaryKey
+                    var id: Int,
+                    var username: String,
+                    var age: Int
+                )
+
+                @KtormKspConfig(namingStrategy = CamelCaseToSnakeCaseNamingStrategy::class)
+                class KtormConfig
+
+                object TestBridge {
+                    fun getUsers(database:Database): EntitySequence<User,Users> {
+                        return database.aUsers
+                    }
+                }
+                """,
+            )
+        )
+        assertThat(result1.exitCode).isEqualTo(ExitCode.OK)
+        assertThat(result2.exitCode).isEqualTo(ExitCode.OK)
+        val bridgeClass = result2.classLoader.loadClass("TestBridge")
+        val bridge = bridgeClass.kotlin.objectInstance
+        useDatabase { database ->
+            val users =
+                bridgeClass.kotlin.functions.first { it.name == "getUsers" }
+                    .call(bridge, database) as EntitySequence<*, *>
+            assertThat(users.sourceTable.tableName).isEqualTo("user")
+            val toList = users.toList()
+            assertThat(toList.toString()).isEqualTo("[User(id=1, username=jack, age=20), User(id=2, username=lucy, age=22), User(id=3, username=mike, age=22)]")
+        }
+    }
+
 
     @Test
     public fun `sequence add function`() {
