@@ -4,6 +4,7 @@ plugins {
 
 dependencies {
     api(project(":ktorm-ksp-codegen"))
+    implementation(libs.evoInflector)
     testImplementation(libs.junit)
     testImplementation(libs.assertj.core)
     testImplementation(libs.kotlinCompileTesting)

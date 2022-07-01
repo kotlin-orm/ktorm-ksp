@@ -32,6 +32,7 @@ import com.squareup.kotlinpoet.MemberName
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toClassName
+import org.atteo.evo.inflector.English
 import org.ktorm.entity.Entity
 import org.ktorm.ksp.api.*
 import org.ktorm.ksp.codegen.CodeGenerateConfig
@@ -51,7 +52,7 @@ public class KtormProcessorProvider : SymbolProcessorProvider {
 }
 
 public class KtormProcessor(
-    private val environment: SymbolProcessorEnvironment
+    private val environment: SymbolProcessorEnvironment,
 ) : SymbolProcessor {
     private val logger = environment.logger
 
@@ -204,7 +205,7 @@ public class KtormProcessor(
 
     public inner class EntityVisitor(
         private val tableDefinitions: MutableList<TableDefinition>,
-        private val entityTableMap: MutableMap<ClassName, ClassName>
+        private val entityTableMap: MutableMap<ClassName, ClassName>,
     ) : KSVisitorVoid() {
 
         @OptIn(KspExperimental::class, KotlinPoetKspPreview::class)
@@ -222,12 +223,13 @@ public class KtormProcessor(
                             ?: error("wrong entity class declaration: ${entityClassName.canonicalName}, Entity of interface type must inherit [${entityQualifiedName}]")
                         KtormEntityType.ENTITY_INTERFACE
                     }
+
                     ClassKind.CLASS -> KtormEntityType.ANY_KIND_CLASS
                     else -> error("wrong entity class declaration: ${entityClassName.canonicalName}, classKind must to be Interface or Class")
                 }
                 val table = classDeclaration.getAnnotationsByType(Table::class).first()
                 val tableClassName = if (table.tableClassName.isEmpty()) {
-                    ClassName(entityClassName.packageName, entityClassName.simpleName.pluralNoun())
+                    ClassName(entityClassName.packageName, English.plural(entityClassName.simpleName))
                 } else {
                     ClassName(entityClassName.packageName, table.tableClassName)
                 }
@@ -237,6 +239,7 @@ public class KtormProcessor(
                 val tableDef = TableDefinition(
                     tableName,
                     tableClassName,
+                    table.sequenceName,
                     table.alias,
                     table.catalog,
                     table.schema,
@@ -305,26 +308,5 @@ public class KtormProcessor(
             }
         }
 
-
-        internal fun String.pluralNoun(): String {
-            when {
-                this.endsWith("x") or
-                        this.endsWith("s") or
-                        this.endsWith("sh") or
-                        this.endsWith("ch") -> {
-                    return this + "es"
-                }
-                this.endsWith("y") -> {
-                    return this.substring(0, this.length - 1) + "ies"
-                }
-                this.endsWith("o") -> {
-                    return this + "es"
-                }
-                else -> {
-                    return this + "s"
-                }
-
-            }
-        }
     }
 }

@@ -289,6 +289,7 @@ Adding the @Table annotation to the entity class will automatically generate the
 
 The parameters of @Table are as follows:
 
+
 | Parameter      | Description                                                                                                                                          |
 |----------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------|
 | tableName      | Specify the parameter value of  ```BaseTable.tableName```                                                                                            |
@@ -297,6 +298,8 @@ The parameters of @Table are as follows:
 | catalog        | Specify the parameter value of  ```BaseTable.catalog```                                                                                              |
 | schema         | Specify the parameter value of  ```BaseTable.schema```                                                                                               |
 | ignoreColumns  | Specifies a list of property names to ignore. The ignored properties will not generate corresponding column definitions in the generated Table class |
+| sequenceName   | The sequence name，By default, the first character lowercase of the tableClassName                                                                   |
+
 
 #### Define Primary Key
 
