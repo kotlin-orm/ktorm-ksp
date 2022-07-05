@@ -19,6 +19,7 @@ package org.ktorm.ksp.compiler.generator
 import com.google.devtools.ksp.processing.KSPLogger
 import com.squareup.kotlinpoet.FileSpec
 import org.ktorm.ksp.codegen.*
+import org.ktorm.ksp.codegen.generator.*
 import java.util.*
 
 public class TableFileGenerator(config: CodeGenerateConfig, logger: KSPLogger) {
