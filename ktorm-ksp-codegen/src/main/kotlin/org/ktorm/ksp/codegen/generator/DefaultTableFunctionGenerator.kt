@@ -40,22 +40,34 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
                 val constructor = entityClassDeclaration.primaryConstructor!!
                 val constructorParameters = constructor.parameters
                 val constructorParameterNames = constructorParameters.map { it.name!!.asString() }.toSet()
-                val nonConstructorParameterNames = table.columns
+                val nonConstructorColumnPropertyNames = table.columns
                     .map { it.entityPropertyName.simpleName }
                     .filter { it !in constructorParameterNames }
                     .toSet()
                 // propertyName -> columnMember
                 val columnMap = table.columns.associateBy { it.entityPropertyName.simpleName }
+                // Constructor parameters must be column or have default value
                 val unknownParameters = constructor.parameters.filter {
-                    !it.hasDefault && it.name?.asString() !in constructorParameterNames
+                    !it.hasDefault && it.name?.asString() !in columnMap.keys
                 }
                 if (unknownParameters.isNotEmpty()) {
                     error(
-                        "unknown constructor parameter for ${table.entityClassName.canonicalName} : " +
-                                "${unknownParameters.map { it.name?.asString() }}"
+                        "Construct parameter not exists in tableDefinition: " +
+                                "${unknownParameters.map { it.name!!.asString() }}, If the parameter is " +
+                                "not a sql column, add a default value. If the parameter is a sql column, " +
+                                "please remove the Ignore annotation or ignoreColumns in the Table annotation " +
+                                "to remove the parameter"
                     )
                 }
-                if (config.allowReflectionCreateEntity && constructorParameters.any { it.hasDefault }) {
+                val constructorColumnParameters =
+                    constructorParameters.filter { it.name!!.asString() in columnMap.keys }
+
+                logger.info(
+                    "constructorColumnParameters:$constructorColumnParameters " +
+                            "nonConstructorColumnProperties: $nonConstructorColumnPropertyNames"
+                )
+                if (config.allowReflectionCreateEntity && constructorColumnParameters.any { it.hasDefault }) {
+                    // Create an instance using reflection
                     addStatement(
                         "val constructor = %T::class.%M!!",
                         table.entityClassName,
@@ -66,18 +78,13 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
                         ClassNames.hashMap,
                         ClassNames.kParameter,
                         ClassNames.any,
-                        constructorParameters.size
+                        constructorColumnParameters.size
                     )
                     withControlFlow("for (parameter in constructor.parameters)") {
                         withControlFlow("when(parameter.name)") {
-                            for (parameter in constructorParameters) {
+                            for (parameter in constructorColumnParameters) {
                                 val parameterName = parameter.name!!.asString()
-                                val column = columnMap[parameterName]
-                                    ?: if (parameter.hasDefault) {
-                                        continue
-                                    } else {
-                                        error("not found column definition: $parameterName")
-                                    }
+                                val column = columnMap[parameterName]!!
                                 withControlFlow("%S -> ", arrayOf(parameterName)) {
                                     addStatement("val value = %L[this.%L]", row, column.tablePropertyName.simpleName)
                                     // hasDefault
@@ -93,47 +100,43 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
                             }
                         }
                     }
-                    if (nonConstructorParameterNames.isEmpty()) {
+                    if (nonConstructorColumnPropertyNames.isEmpty()) {
                         addStatement("return constructor.callBy(parameterMap)", table.entityClassName)
                     } else {
                         addStatement("val entity = constructor.callBy(parameterMap)", table.entityClassName)
                     }
                 } else {
-                    // Create instance with code when construct has no default value parameter
-                    if (nonConstructorParameterNames.isEmpty()) {
-                        addStatement(" return·%T(", table.entityClassName)
+                    // Create an instance using the constructor
+                    if (constructorColumnParameters.isEmpty()) {
+                        // nonConstructorColumnPropertyNames will not be empty
+                        addStatement("val·entity·=·%T()", table.entityClassName)
                     } else {
-                        addStatement("val·entity·=·%T(", table.entityClassName)
-                    }
-                    logger.info("constructorParameter:${constructorParameters.map { it.name!!.asString() }}")
-                    withIndent {
-                        for (parameter in constructorParameters) {
-                            val column =
-                                table.columns.firstOrNull {
-                                    it.entityPropertyName.simpleName == parameter.name!!.asString()
-                                } ?: error(
-                                    "Construct parameter not exists in tableDefinition: " +
-                                            "${parameter.name!!.asString()}, If the parameter is not a sql column, " +
-                                            "add a default value. If the parameter is a sql column, please remove " +
-                                            "the Ignore annotation or ignoreColumns in the Table annotation to " +
-                                            "remove the parameter"
-                                )
-                            val notNullOperator = if (column.isNullable) "" else "!!"
-                            addStatement(
-                                "%L·=·%L[this.%L]%L,",
-                                parameter.name!!.asString(),
-                                row,
-                                column.tablePropertyName.simpleName,
-                                notNullOperator
-                            )
+                        if (nonConstructorColumnPropertyNames.isEmpty()) {
+                            addStatement(" return·%T(", table.entityClassName)
+                        } else {
+                            addStatement("val·entity·=·%T(", table.entityClassName)
                         }
+                        withIndent {
+                            for (parameter in constructorColumnParameters) {
+                                val column = table.columns.first {
+                                    it.entityPropertyName.simpleName == parameter.name!!.asString()
+                                }
+                                val notNullOperator = if (column.isNullable) "" else "!!"
+                                addStatement(
+                                    "%L·=·%L[this.%L]%L,",
+                                    parameter.name!!.asString(),
+                                    row,
+                                    column.tablePropertyName.simpleName,
+                                    notNullOperator
+                                )
+                            }
+                        }
+                        addStatement(")")
                     }
-                    addStatement(")")
                 }
-                context.logger.info("constructorParameter:$constructorParameters")
-                if (nonConstructorParameterNames.isNotEmpty()) {
+                if (nonConstructorColumnPropertyNames.isNotEmpty()) {
                     // non-structural property
-                    for (property in nonConstructorParameterNames) {
+                    for (property in nonConstructorColumnPropertyNames) {
                         val column = columnMap[property]!!
                         if (!column.isMutable) {
                             continue
