@@ -43,10 +43,12 @@ public class InterfaceEntityCopyFunGenerator : TopLevelFunctionGenerator {
                 val format = buildString {
                     append("return·%L(")
                     append(
-                        table.columns.joinToString(", ") {
-                            val propertyName = it.entityPropertyName.simpleName
-                            "$propertyName·=·$propertyName"
-                        }
+                        table.columns
+                            .filter { it.isMutable }
+                            .joinToString(", ") {
+                                val propertyName = it.entityPropertyName.simpleName
+                                "$propertyName·=·$propertyName"
+                            }
                     )
                     append(")")
                 }
@@ -57,17 +59,19 @@ public class InterfaceEntityCopyFunGenerator : TopLevelFunctionGenerator {
     }
 
     private fun buildParameters(table: TableDefinition): List<ParameterSpec> {
-        return table.columns.map {
-            MemberNames
-            ParameterSpec.builder(it.entityPropertyName.simpleName, it.parameterType())
-                .defaultValue(
-                    "%M(this, %T.%L.binding!!)",
-                    MemberNames.getValueOrUndefined,
-                    table.tableClassName,
-                    it.tablePropertyName.simpleName
-                )
-                .build()
-        }
+        return table.columns
+            .filter { it.isMutable }
+            .map {
+                MemberNames
+                ParameterSpec.builder(it.entityPropertyName.simpleName, it.parameterType())
+                    .defaultValue(
+                        "%M(this, %T.%L.binding!!)",
+                        MemberNames.getValueOrUndefined,
+                        table.tableClassName,
+                        it.tablePropertyName.simpleName
+                    )
+                    .build()
+            }
     }
 
     private fun ColumnDefinition.parameterType(): TypeName {
