@@ -20,8 +20,20 @@ import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.MemberName
 import com.squareup.kotlinpoet.asClassName
+import org.ktorm.entity.Entity
 import org.ktorm.expression.*
 import kotlin.reflect.KParameter
+
+public val primitiveTypes: List<ClassName> = listOf(
+    Byte::class.asClassName(),
+    Int::class.asClassName(),
+    Short::class.asClassName(),
+    Long::class.asClassName(),
+    Char::class.asClassName(),
+    Boolean::class.asClassName(),
+    Float::class.asClassName(),
+    Double::class.asClassName()
+)
 
 public object MemberNames {
     public val update: MemberName = MemberName("org.ktorm.dsl", "update", true)
@@ -35,6 +47,8 @@ public object MemberNames {
     public val bindTo: MemberName = MemberName("", "bindTo")
     public val primaryKey: MemberName = MemberName("", "primaryKey")
     public val references: MemberName = MemberName("", "references")
+    public val undefined: MemberName = MemberName("org.ktorm.ksp.api.EntityUtil", "undefined")
+    public val getValueOrUndefined: MemberName = MemberName("org.ktorm.ksp.api.EntityUtil", "getValueOrUndefined")
 }
 
 public object ClassNames {
@@ -46,6 +60,9 @@ public object ClassNames {
     public val hashMap: ClassName = HashMap::class.asClassName()
     public val kParameter: ClassName = KParameter::class.asClassName()
     public val any: ClassName = Any::class.asClassName()
+    public val suppress: ClassName = Suppress::class.asClassName()
+    public val entity: ClassName = Entity::class.asClassName()
+    public val entityImplementation: ClassName = ClassName("org.ktorm.entity", "EntityImplementation")
 }
 
 

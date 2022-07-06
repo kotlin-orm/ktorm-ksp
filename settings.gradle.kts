@@ -40,6 +40,7 @@ dependencyResolutionManagement {
             val junitVersion: String by settings
             val assertjVersion: String by settings
             val evoInflectorVersion: String by settings
+            val cglibVersion: String by settings
             library("ktorm-core", "org.ktorm:ktorm-core:$ktormVersion")
             library("kotlinpoet-ksp", "com.squareup:kotlinpoet-ksp:$kotlinpoetKspVersion")
             library("ksp-api", "com.google.devtools.ksp:symbol-processing-api:$googleKspVersion")
@@ -55,6 +56,7 @@ dependencyResolutionManagement {
             library("junit", "junit:junit:$junitVersion")
             library("assertj-core", "org.assertj:assertj-core:${assertjVersion}")
             library("evoInflector", "org.atteo:evo-inflector:${evoInflectorVersion}")
+            library("cglib", "cglib:cglib:${cglibVersion}")
         }
     }
 }
