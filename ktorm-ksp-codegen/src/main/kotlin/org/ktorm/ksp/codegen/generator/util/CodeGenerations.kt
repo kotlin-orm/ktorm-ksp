@@ -63,6 +63,12 @@ public object ClassNames {
     public val entity: ClassName = Entity::class.asClassName()
 }
 
+public object SuppressAnnotations {
+    public val localVariableName: AnnotationSpec =
+        AnnotationSpec.builder(Suppress::class).addMember("\"LocalVariableName\"").build()
+    public val functionName: AnnotationSpec =
+        AnnotationSpec.builder(Suppress::class).addMember("\"FunctionName\"").build()
+}
 
 public inline fun CodeBlock.Builder.withControlFlow(
     controlFlow: String,
@@ -87,7 +93,7 @@ public object CodeFactory {
      * return entity
      * ```
      */
-    public fun buildEntityAssignCode(context: TableGenerateContext): CodeBlock {
+    public fun buildEntityAssignCode(context: TableGenerateContext, entityVar: String): CodeBlock {
         val table = context.table
         return buildCodeBlock {
             table.columns
@@ -99,21 +105,31 @@ public object CodeFactory {
                         arrayOf(propertyName, MemberNames.undefined, column.constructorParameterType())
                     ) {
                         if (!column.isNullable && column.propertyClassName in primitiveTypes) {
-                            addStatement("entity.%1L·=·%1L·?:·error(\"`%1L` should not be null.\")", propertyName)
+                            addStatement(
+                                "%1L.%2L·=·%2L·?:·error(\"`%1L` should not be null.\")",
+                                entityVar,
+                                propertyName
+                            )
                         } else {
-                            addStatement("entity.%1L·=·%1L", propertyName)
+                            addStatement("%1L.%2L·=·%2L", entityVar, propertyName)
                         }
                     }
                 }
-            addStatement("return entity")
+            addStatement("return %L", entityVar)
         }
     }
 
-    public fun buildEntityConstructorParameters(context: TableGenerateContext): List<ParameterSpec> {
+    public fun buildEntityConstructorParameters(
+        context: TableGenerateContext,
+        nameAllocator: NameAllocator
+    ): List<ParameterSpec> {
         return context.table.columns
             .filter { it.isMutable }
             .map {
-                ParameterSpec.builder(it.entityPropertyName.simpleName, it.constructorParameterType())
+                ParameterSpec.builder(
+                    nameAllocator.newName(it.entityPropertyName.simpleName),
+                    it.constructorParameterType()
+                )
                     .defaultValue("%M()", MemberNames.undefined)
                     .build()
             }

@@ -17,6 +17,7 @@
 package org.ktorm.ksp.codegen.generator
 
 import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.NameAllocator
 import com.squareup.kotlinpoet.buildCodeBlock
 import org.ktorm.ksp.codegen.TableGenerateContext
 import org.ktorm.ksp.codegen.TopLevelFunctionGenerator
@@ -30,13 +31,15 @@ public class InterfaceEntityCopyFunGenerator : TopLevelFunctionGenerator {
         if (table.ktormEntityType != KtormEntityType.ENTITY_INTERFACE) {
             return
         }
+        val nameAllocator = NameAllocator()
         FunSpec.builder("copy")
             .returns(table.entityClassName)
             .receiver(table.entityClassName)
-            .addParameters(CodeFactory.buildEntityConstructorParameters(context))
+            .addParameters(CodeFactory.buildEntityConstructorParameters(context, nameAllocator))
             .addCode(buildCodeBlock {
-                addStatement("val entity = this.copy()")
-                add(CodeFactory.buildEntityAssignCode(context))
+                val entityVar = nameAllocator.newName("entity")
+                addStatement("val·%L·=·this.copy()", entityVar)
+                add(CodeFactory.buildEntityAssignCode(context, entityVar))
             })
             .build()
             .run(emitter)

@@ -16,14 +16,15 @@
 
 package org.ktorm.ksp.codegen.generator
 
-import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.NameAllocator
 import com.squareup.kotlinpoet.buildCodeBlock
 import org.ktorm.ksp.codegen.TableGenerateContext
 import org.ktorm.ksp.codegen.TopLevelFunctionGenerator
 import org.ktorm.ksp.codegen.definition.KtormEntityType
 import org.ktorm.ksp.codegen.generator.util.ClassNames
 import org.ktorm.ksp.codegen.generator.util.CodeFactory
+import org.ktorm.ksp.codegen.generator.util.SuppressAnnotations
 
 public class InterfaceEntityConstructorFunGenerator : TopLevelFunctionGenerator {
 
@@ -32,18 +33,15 @@ public class InterfaceEntityConstructorFunGenerator : TopLevelFunctionGenerator 
         if (table.ktormEntityType != KtormEntityType.ENTITY_INTERFACE) {
             return
         }
+        val nameAllocator = NameAllocator()
         FunSpec.builder(table.entityClassName.simpleName)
-            .addAnnotation(
-                AnnotationSpec.builder(ClassNames.suppress)
-                    .addMember("\"FunctionName\"")
-                    .build()
-            )
+            .addAnnotation(SuppressAnnotations.functionName)
             .returns(table.entityClassName)
-            .addParameters(CodeFactory.buildEntityConstructorParameters(context))
+            .addParameters(CodeFactory.buildEntityConstructorParameters(context, nameAllocator))
             .addCode(buildCodeBlock {
-                addStatement("val·entity·=·%T.create<%T>()", ClassNames.entity, table.entityClassName)
-                addStatement("")
-                add(CodeFactory.buildEntityAssignCode(context))
+                val entityVar = nameAllocator.newName("entity")
+                addStatement("val·%L·=·%T.create<%T>()", entityVar, ClassNames.entity, table.entityClassName)
+                add(CodeFactory.buildEntityAssignCode(context, entityVar))
             })
             .build()
             .apply(emitter)
