@@ -62,7 +62,6 @@ public class InterfaceEntityCopyFunGenerator : TopLevelFunctionGenerator {
         return table.columns
             .filter { it.isMutable }
             .map {
-                MemberNames
                 ParameterSpec.builder(it.entityPropertyName.simpleName, it.parameterType())
                     .defaultValue(
                         "%M(this, %T.%L.binding!!)",
