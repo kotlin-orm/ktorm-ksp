@@ -20,10 +20,10 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.buildCodeBlock
-import org.ktorm.ksp.codegen.MemberNames
 import org.ktorm.ksp.codegen.TableGenerateContext
 import org.ktorm.ksp.codegen.TablePropertyGenerator
 import org.ktorm.ksp.codegen.definition.KtormEntityType
+import org.ktorm.ksp.codegen.generator.util.MemberNames
 import org.ktorm.schema.Column
 
 public open class DefaultTablePropertyGenerator : TablePropertyGenerator {

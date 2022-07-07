@@ -17,9 +17,14 @@
 package org.ktorm.ksp.codegen.generator
 
 import com.squareup.kotlinpoet.*
-import org.ktorm.ksp.codegen.*
+import org.ktorm.ksp.codegen.TableGenerateContext
+import org.ktorm.ksp.codegen.TopLevelFunctionGenerator
 import org.ktorm.ksp.codegen.definition.ColumnDefinition
 import org.ktorm.ksp.codegen.definition.KtormEntityType
+import org.ktorm.ksp.codegen.generator.util.ClassNames
+import org.ktorm.ksp.codegen.generator.util.MemberNames
+import org.ktorm.ksp.codegen.generator.util.primitiveTypes
+import org.ktorm.ksp.codegen.generator.util.withControlFlow
 
 public class InterfaceEntityConstructorFunGenerator : TopLevelFunctionGenerator {
 

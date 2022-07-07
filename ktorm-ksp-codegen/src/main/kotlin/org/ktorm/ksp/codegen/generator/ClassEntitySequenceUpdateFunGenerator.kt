@@ -21,11 +21,11 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.buildCodeBlock
 import org.ktorm.entity.EntitySequence
-import org.ktorm.ksp.codegen.MemberNames
 import org.ktorm.ksp.codegen.TableGenerateContext
 import org.ktorm.ksp.codegen.TopLevelFunctionGenerator
 import org.ktorm.ksp.codegen.definition.KtormEntityType
-import org.ktorm.ksp.codegen.withControlFlow
+import org.ktorm.ksp.codegen.generator.util.MemberNames
+import org.ktorm.ksp.codegen.generator.util.withControlFlow
 
 /**
  * Generate update extend function to [EntitySequence].

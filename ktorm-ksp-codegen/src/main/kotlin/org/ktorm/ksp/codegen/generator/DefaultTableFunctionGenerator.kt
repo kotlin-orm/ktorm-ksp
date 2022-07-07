@@ -18,8 +18,12 @@ package org.ktorm.ksp.codegen.generator
 
 import com.squareup.kotlinpoet.*
 import org.ktorm.dsl.QueryRowSet
-import org.ktorm.ksp.codegen.*
+import org.ktorm.ksp.codegen.TableFunctionGenerator
+import org.ktorm.ksp.codegen.TableGenerateContext
 import org.ktorm.ksp.codegen.definition.KtormEntityType
+import org.ktorm.ksp.codegen.generator.util.ClassNames
+import org.ktorm.ksp.codegen.generator.util.MemberNames
+import org.ktorm.ksp.codegen.generator.util.withControlFlow
 
 public class DefaultTableFunctionGenerator : TableFunctionGenerator {
 

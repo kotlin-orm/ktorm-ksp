@@ -20,13 +20,13 @@ import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.buildCodeBlock
-import org.ktorm.ksp.codegen.MemberNames
 import org.ktorm.ksp.codegen.TableGenerateContext
 import org.ktorm.ksp.codegen.TopLevelFunctionGenerator
 import org.ktorm.ksp.codegen.definition.ColumnDefinition
 import org.ktorm.ksp.codegen.definition.KtormEntityType
 import org.ktorm.ksp.codegen.definition.TableDefinition
-import org.ktorm.ksp.codegen.primitiveTypes
+import org.ktorm.ksp.codegen.generator.util.MemberNames
+import org.ktorm.ksp.codegen.generator.util.primitiveTypes
 
 public class InterfaceEntityCopyFunGenerator : TopLevelFunctionGenerator {
 
