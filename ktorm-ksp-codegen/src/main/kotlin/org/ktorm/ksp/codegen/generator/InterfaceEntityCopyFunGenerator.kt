@@ -17,16 +17,11 @@
 package org.ktorm.ksp.codegen.generator
 
 import com.squareup.kotlinpoet.FunSpec
-import com.squareup.kotlinpoet.ParameterSpec
-import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.buildCodeBlock
 import org.ktorm.ksp.codegen.TableGenerateContext
 import org.ktorm.ksp.codegen.TopLevelFunctionGenerator
-import org.ktorm.ksp.codegen.definition.ColumnDefinition
 import org.ktorm.ksp.codegen.definition.KtormEntityType
-import org.ktorm.ksp.codegen.definition.TableDefinition
-import org.ktorm.ksp.codegen.generator.util.MemberNames
-import org.ktorm.ksp.codegen.generator.util.primitiveTypes
+import org.ktorm.ksp.codegen.generator.util.CodeFactory
 
 public class InterfaceEntityCopyFunGenerator : TopLevelFunctionGenerator {
 
@@ -38,47 +33,12 @@ public class InterfaceEntityCopyFunGenerator : TopLevelFunctionGenerator {
         FunSpec.builder("copy")
             .returns(table.entityClassName)
             .receiver(table.entityClassName)
-            .addParameters(buildParameters(table))
+            .addParameters(CodeFactory.buildEntityConstructorParameters(context))
             .addCode(buildCodeBlock {
-                val format = buildString {
-                    append("return·%L(")
-                    append(
-                        table.columns
-                            .filter { it.isMutable }
-                            .joinToString(", ") {
-                                val propertyName = it.entityPropertyName.simpleName
-                                "$propertyName·=·$propertyName"
-                            }
-                    )
-                    append(")")
-                }
-                addStatement(format, table.entityClassName.simpleName)
+                addStatement("val entity = this.copy()")
+                add(CodeFactory.buildEntityAssignCode(context))
             })
             .build()
             .run(emitter)
-    }
-
-    private fun buildParameters(table: TableDefinition): List<ParameterSpec> {
-        return table.columns
-            .filter { it.isMutable }
-            .map {
-                ParameterSpec.builder(it.entityPropertyName.simpleName, it.parameterType())
-                    .defaultValue(
-                        "%M(this, %T.%L.binding!!)",
-                        MemberNames.getValueOrUndefined,
-                        table.tableClassName,
-                        it.tablePropertyName.simpleName
-                    )
-                    .build()
-            }
-    }
-
-    private fun ColumnDefinition.parameterType(): TypeName {
-        val type = this.propertyClassName
-        return if (type in primitiveTypes) {
-            type.copy(nullable = true)
-        } else {
-            type.copy(this.isNullable)
-        }
     }
 }

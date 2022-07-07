@@ -16,12 +16,11 @@
 
 package org.ktorm.ksp.codegen.generator.util
 
-import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.CodeBlock
-import com.squareup.kotlinpoet.MemberName
-import com.squareup.kotlinpoet.asClassName
+import com.squareup.kotlinpoet.*
 import org.ktorm.entity.Entity
 import org.ktorm.expression.*
+import org.ktorm.ksp.codegen.TableGenerateContext
+import org.ktorm.ksp.codegen.definition.ColumnDefinition
 import kotlin.reflect.KParameter
 
 public val primitiveTypes: List<ClassName> = listOf(
@@ -74,4 +73,60 @@ public inline fun CodeBlock.Builder.withControlFlow(
     beginControlFlow(controlFlow, *args)
     block(this)
     endControlFlow()
+}
+
+
+public object CodeFactory {
+
+    /**
+     * generate code:
+     * ```kotlin
+     * if (id !== undefined<Int?>()) {
+     *     entity.id = id
+     * }
+     * // other property ...
+     * return entity
+     * ```
+     */
+    public fun buildEntityAssignCode(context: TableGenerateContext): CodeBlock {
+        val table = context.table
+        return buildCodeBlock {
+//            addStatement("val·entity·=·%T.create<%T>()", ClassNames.entity, table.entityClassName)
+            table.columns
+                .filter { it.isMutable }
+                .forEach { column ->
+                    val propertyName = column.entityPropertyName.simpleName
+                    withControlFlow(
+                        "if·(%L·!==·%M<%T>())",
+                        arrayOf(propertyName, MemberNames.undefined, column.constructorParameterType())
+                    ) {
+                        if (!column.isNullable && column.propertyClassName in primitiveTypes) {
+                            addStatement("entity.%1L·=·%1L·?:·error(\"`%1L` should not be null.\")", propertyName)
+                        } else {
+                            addStatement("entity.%1L·=·%1L", propertyName)
+                        }
+                    }
+                }
+            addStatement("return entity")
+        }
+    }
+
+    public fun buildEntityConstructorParameters(context: TableGenerateContext): List<ParameterSpec> {
+        return context.table.columns
+            .filter { it.isMutable }
+            .map {
+                ParameterSpec.builder(it.entityPropertyName.simpleName, it.constructorParameterType())
+                    .defaultValue("%M()", MemberNames.undefined)
+                    .build()
+            }
+    }
+
+    private fun ColumnDefinition.constructorParameterType(): TypeName {
+        val type = this.propertyClassName
+        return if (type in primitiveTypes) {
+            type.copy(nullable = true)
+        } else {
+            type.copy(this.isNullable)
+        }
+    }
 }

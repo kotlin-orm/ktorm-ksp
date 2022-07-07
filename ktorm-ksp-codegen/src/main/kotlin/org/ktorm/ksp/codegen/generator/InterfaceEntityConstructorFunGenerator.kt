@@ -16,15 +16,14 @@
 
 package org.ktorm.ksp.codegen.generator
 
-import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.AnnotationSpec
+import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.buildCodeBlock
 import org.ktorm.ksp.codegen.TableGenerateContext
 import org.ktorm.ksp.codegen.TopLevelFunctionGenerator
-import org.ktorm.ksp.codegen.definition.ColumnDefinition
 import org.ktorm.ksp.codegen.definition.KtormEntityType
 import org.ktorm.ksp.codegen.generator.util.ClassNames
-import org.ktorm.ksp.codegen.generator.util.MemberNames
-import org.ktorm.ksp.codegen.generator.util.primitiveTypes
-import org.ktorm.ksp.codegen.generator.util.withControlFlow
+import org.ktorm.ksp.codegen.generator.util.CodeFactory
 
 public class InterfaceEntityConstructorFunGenerator : TopLevelFunctionGenerator {
 
@@ -40,46 +39,14 @@ public class InterfaceEntityConstructorFunGenerator : TopLevelFunctionGenerator 
                     .build()
             )
             .returns(table.entityClassName)
-            .addParameters(buildParameters(context))
+            .addParameters(CodeFactory.buildEntityConstructorParameters(context))
             .addCode(buildCodeBlock {
                 addStatement("val·entity·=·%T.create<%T>()", ClassNames.entity, table.entityClassName)
-                table.columns
-                    .filter { it.isMutable }
-                    .forEach { column ->
-                        val propertyName = column.entityPropertyName.simpleName
-                        withControlFlow(
-                            "if·(%L·!==·%M<%T>())",
-                            arrayOf(propertyName, MemberNames.undefined, column.parameterType())
-                        ) {
-                            if (!column.isNullable && column.propertyClassName in primitiveTypes) {
-                                addStatement("entity.%1L·=·%1L·?:·error(\"`%1L` should not be null.\")", propertyName)
-                            } else {
-                                addStatement("entity.%1L·=·%1L", propertyName)
-                            }
-                        }
-                    }
-                addStatement("return entity")
+                addStatement("")
+                add(CodeFactory.buildEntityAssignCode(context))
             })
             .build()
             .apply(emitter)
     }
 
-    private fun buildParameters(context: TableGenerateContext): List<ParameterSpec> {
-        return context.table.columns
-            .filter { it.isMutable }
-            .map {
-                ParameterSpec.builder(it.entityPropertyName.simpleName, it.parameterType())
-                    .defaultValue("%M()", MemberNames.undefined)
-                    .build()
-            }
-    }
-
-    private fun ColumnDefinition.parameterType(): TypeName {
-        val type = this.propertyClassName
-        return if (type in primitiveTypes) {
-            type.copy(nullable = true)
-        } else {
-            type.copy(this.isNullable)
-        }
-    }
 }
