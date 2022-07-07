@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalStdlibApi::class, KotlinPoetKspPreview::class, KspExperimental::class)
+@file:OptIn(KotlinPoetKspPreview::class, KspExperimental::class)
 
 package org.ktorm.ksp.compiler
 
