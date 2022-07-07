@@ -30,6 +30,23 @@ import java.lang.reflect.Proxy
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 
+public class CreateUndefinedException : Exception {
+    public constructor() : super()
+    public constructor(message: String?) : super(message)
+    public constructor(message: String?, cause: Throwable?) : super(message, cause)
+    public constructor(cause: Throwable?) : super(cause)
+    public constructor(
+        message: String?,
+        cause: Throwable?,
+        enableSuppression: Boolean,
+        writableStackTrace: Boolean
+    ) : super(
+        message,
+        cause,
+        enableSuppression,
+        writableStackTrace
+    )
+}
 
 public object EntityUtil {
 
@@ -52,32 +69,44 @@ public object EntityUtil {
                         }
                     }
                 }
-                Proxy.newProxyInstance(cls.classLoader, arrayOf(cls), handler)
+                try {
+                    Proxy.newProxyInstance(cls.classLoader, arrayOf(cls), handler)
+                } catch (e: Exception) {
+                    throw CreateUndefinedException("Failed to create instance with jdk dynamic proxy", e)
+                }
             } else if (Modifier.isAbstract(cls.modifiers)) {
-                val enhancer = Enhancer()
-                enhancer.setSuperclass(cls)
-                enhancer.classLoader = cls.classLoader
-                enhancer.setCallback(object : MethodInterceptor {
-                    override fun intercept(
-                        obj: Any?,
-                        method: Method,
-                        args: Array<out Any>?,
-                        proxy: MethodProxy
-                    ): Any? {
-                        if (method.name == "hashCode"
-                            || method.name == "equals"
-                            || method.name == "toString"
-                        ) {
-                            return proxy.invokeSuper(obj, args)
+                try {
+                    val enhancer = Enhancer()
+                    enhancer.setSuperclass(cls)
+                    enhancer.classLoader = cls.classLoader
+                    enhancer.setCallback(object : MethodInterceptor {
+                        override fun intercept(
+                            obj: Any?,
+                            method: Method,
+                            args: Array<out Any>?,
+                            proxy: MethodProxy
+                        ): Any? {
+                            if (method.name == "hashCode"
+                                || method.name == "equals"
+                                || method.name == "toString"
+                            ) {
+                                return proxy.invokeSuper(obj, args)
+                            }
+                            throw NotImplementedError()
                         }
-                        throw NotImplementedError()
-                    }
-                })
-                enhancer.create()
+                    })
+                    enhancer.create()
+                } catch (e: Exception) {
+                    throw CreateUndefinedException("Failed to create instance with cglib", e)
+                }
             } else {
-                val field = Unsafe::class.java.getDeclaredField("theUnsafe")
-                field.isAccessible = true
-                (field.get(null) as Unsafe).allocateInstance(cls)
+                try {
+                    val field = Unsafe::class.java.getDeclaredField("theUnsafe")
+                    field.isAccessible = true
+                    (field.get(null) as Unsafe).allocateInstance(cls)
+                } catch (e: Exception) {
+                    throw CreateUndefinedException("Failed to create instance with Unsafe", e)
+                }
             }
         } as T
     }
