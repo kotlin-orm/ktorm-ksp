@@ -91,7 +91,6 @@ public object CodeFactory {
     public fun buildEntityAssignCode(context: TableGenerateContext): CodeBlock {
         val table = context.table
         return buildCodeBlock {
-//            addStatement("val·entity·=·%T.create<%T>()", ClassNames.entity, table.entityClassName)
             table.columns
                 .filter { it.isMutable }
                 .forEach { column ->
