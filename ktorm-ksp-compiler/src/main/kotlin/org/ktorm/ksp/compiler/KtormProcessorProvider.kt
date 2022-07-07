@@ -46,7 +46,7 @@ import org.ktorm.ksp.compiler.generator.KtormCodeGenerator
 
 public class KtormProcessorProvider : SymbolProcessorProvider {
     override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {
-        environment.logger.info("create ktorm symbolProcessor")
+        environment.logger.info("create KtormKspProcessor")
         return KtormProcessor(environment)
     }
 }
@@ -63,10 +63,21 @@ public class KtormProcessor(
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
         logger.info("start ktorm ksp processor")
-        // parse config
+        // process config and entity class
+        val (config, configRets) = processKtormKspConfig(resolver)
+        val (tableDefinitions, tableRets) = processEntity(resolver)
+        // start generate
+        KtormCodeGenerator.generate(
+            tableDefinitions, environment.codeGenerator, config, ColumnInitializerGenerator(config, logger), logger
+        )
+        return configRets + tableRets
+    }
+
+    private fun processKtormKspConfig(resolver: Resolver): Pair<CodeGenerateConfig, List<KSAnnotated>> {
+        logger.info("start process KtormKspConfig")
         val configSymbols = resolver.getSymbolsWithAnnotation(KtormKspConfig::class.qualifiedName!!)
         val configRet = configSymbols.filter { !it.ktormValidate() }.toList()
-        logger.info("ktormKspConfigSymbols:${configSymbols.toList()}")
+        logger.info("KtormKspConfigSymbols:${configSymbols.toList()}")
         val configClasses = configSymbols.filter { it is KSClassDeclaration && it.ktormValidate() }.toList()
         if (configClasses.size > 1) {
             error("@KtormKspConfig can only be added to a class")
@@ -78,13 +89,15 @@ public class KtormProcessor(
             configBuilder.configDependencyFile = configAnnotated.containingFile
         }
         val config = configBuilder.build()
-        logger.info("config:$config")
+        logger.info("CodeGenerateConfig:$config")
+        return config to configRet
+    }
 
-        // parse entity
-        // entityClassName -> tableClassName
+    private fun processEntity(resolver: Resolver): Pair<List<TableDefinition>, List<KSAnnotated>> {
+        logger.info("start process entity")
         val entityTableMap = mutableMapOf<ClassName, ClassName>()
         val symbols = resolver.getSymbolsWithAnnotation(Table::class.qualifiedName!!)
-        logger.info("symbols:${symbols.toList()}")
+        logger.info("entity symbols:${symbols.toList()}")
         val tableDefinitions = mutableListOf<TableDefinition>()
         val tableRet = symbols.filter { !it.ktormValidate() }.toList()
         symbols.filter { it is KSClassDeclaration && it.ktormValidate() }
@@ -119,11 +132,7 @@ public class KtormProcessor(
                 }
                 it.referencesColumn = primaryKeyColumns.first()
             }
-        // start generate
-        KtormCodeGenerator.generate(
-            tableDefinitions, environment.codeGenerator, config, ColumnInitializerGenerator(config, logger), logger
-        )
-        return configRet + tableRet
+        return tableDefinitions to tableRet
     }
 
     public inner class KtormKspConfigVisitor(
