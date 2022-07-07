@@ -61,7 +61,6 @@ public object ClassNames {
     public val any: ClassName = Any::class.asClassName()
     public val suppress: ClassName = Suppress::class.asClassName()
     public val entity: ClassName = Entity::class.asClassName()
-    public val entityImplementation: ClassName = ClassName("org.ktorm.entity", "EntityImplementation")
 }
 
 
