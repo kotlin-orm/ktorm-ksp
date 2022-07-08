@@ -5,7 +5,7 @@ plugins {
 
 dependencies {
     ksp(project(":ktorm-ksp-compiler"))
-    ksp(project(":ktorm-ksp-ext:ktorm-ksp-ext-sequence-batch"))
+    ksp(project(":ktorm-ksp-ext:ktorm-ksp-sequence-batch"))
     implementation(project(":ktorm-ksp-api"))
     implementation(project(":ktorm-ksp-example:ktorm-ksp-example-common"))
 }

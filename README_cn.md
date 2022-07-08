@@ -763,12 +763,12 @@ dependencies {
 
 #### 可用的生成器扩展
 
-- [ktorm-ksp-ext-sequence-batch](ktorm-ksp-ext/ktorm-ksp-ext-sequence-batch)
+- [ktorm-ksp-sequence-batch](ktorm-ksp-ext/ktorm-ksp-sequence-batch)
 
 针对```任意类的实体类```实体序列生成批量添加，批量更新的方法。依赖：
 
 ```groovy
-ksp 'org.ktorm:ktorm-ksp-ext-sequence-batch:${ktorm-ksp.version}'
+ksp 'org.ktorm:ktorm-ksp-sequence-batch:${ktorm-ksp.version}'
 ```
 
 生成以下扩展方法:

@@ -23,9 +23,8 @@ import org.ktorm.ksp.example.common.DatabaseFactory
 public val database: Database = DatabaseFactory.database
 
 public fun main() {
-    query()
-    add()
-    update()
+    val employee = Employee(id = 0)
+    println(employee)
 }
 
 public fun query() {
