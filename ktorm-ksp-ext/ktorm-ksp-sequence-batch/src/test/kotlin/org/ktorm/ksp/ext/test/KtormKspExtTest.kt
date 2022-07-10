@@ -1,42 +1,29 @@
 /*
- *  Copyright 2018-2021 the original author or authors.
+ * Copyright 2018-2021 the original author or authors.
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.ktorm.ksp.ext.test
 
-import com.tschuchort.compiletesting.*
 import com.tschuchort.compiletesting.KotlinCompilation.ExitCode
+import com.tschuchort.compiletesting.SourceFile
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
-import org.ktorm.database.Database
-import org.ktorm.ksp.compiler.KtormProcessorProvider
-import org.ktorm.logging.ConsoleLogger
-import org.ktorm.logging.LogLevel
-import org.ktorm.schema.BaseTable
-import org.ktorm.schema.Table
-import java.io.File
+import org.ktorm.ksp.tests.BaseKspTest
 import java.lang.reflect.InvocationTargetException
-import kotlin.reflect.full.functions
 
-public class KtormKspExtTest {
-
-    @Rule
-    @JvmField
-    public val temporaryFolder: TemporaryFolder = TemporaryFolder()
+public class KtormKspExtTest : BaseKspTest() {
 
     @Test
     public fun `sequence addAll function`() {
@@ -84,10 +71,8 @@ public class KtormKspExtTest {
         )
         assertThat(result1.exitCode).isEqualTo(ExitCode.OK)
         assertThat(result2.exitCode).isEqualTo(ExitCode.OK)
-        val bridgeClass = result2.classLoader.loadClass("TestBridge")
-        val bridge = bridgeClass.kotlin.objectInstance!!
         useDatabase { database ->
-            bridge.reflectionCall("test", database)
+            result2.invokeBridge("test", database)
         }
     }
 
@@ -135,10 +120,8 @@ public class KtormKspExtTest {
         )
         assertThat(result1.exitCode).isEqualTo(ExitCode.OK)
         assertThat(result2.exitCode).isEqualTo(ExitCode.OK)
-        val bridgeClass = result2.classLoader.loadClass("TestBridge")
-        val bridge = bridgeClass.kotlin.objectInstance!!
         useDatabase { database ->
-            bridge.reflectionCall("test", database)
+            result2.invokeBridge("test", database)
         }
     }
 
@@ -179,11 +162,9 @@ public class KtormKspExtTest {
         )
         assertThat(result1.exitCode).isEqualTo(ExitCode.OK)
         assertThat(result2.exitCode).isEqualTo(ExitCode.OK)
-        val bridgeClass = result2.classLoader.loadClass("TestBridge")
-        val bridge = bridgeClass.kotlin.objectInstance!!
         useDatabase { database ->
             try {
-                bridge.reflectionCall("testAddAll", database)
+                result2.invokeBridge("testAddAll", database)
             } catch (e: InvocationTargetException) {
                 assertThat(e.targetException.message).contains("Please call on the origin sequence returned from database.sequenceOf(table)")
                 return
@@ -205,7 +186,7 @@ public class KtormKspExtTest {
                 import org.ktorm.dsl.eq
                 import org.ktorm.entity.filter
                 
-                 @Table
+                @Table
                 data class User(
                     @PrimaryKey
                     var id: Int?,
@@ -229,11 +210,9 @@ public class KtormKspExtTest {
         )
         assertThat(result1.exitCode).isEqualTo(ExitCode.OK)
         assertThat(result2.exitCode).isEqualTo(ExitCode.OK)
-        val bridgeClass = result2.classLoader.loadClass("TestBridge")
-        val bridge = bridgeClass.kotlin.objectInstance!!
         useDatabase { database ->
             try {
-                bridge.reflectionCall("testUpdateAll", database)
+                result2.invokeBridge("testUpdateAll", database)
             } catch (e: InvocationTargetException) {
                 assertThat(e.targetException.message).contains("Please call on the origin sequence returned from database.sequenceOf(table)")
                 return
@@ -287,10 +266,8 @@ public class KtormKspExtTest {
         )
         assertThat(result1.exitCode).isEqualTo(ExitCode.OK)
         assertThat(result2.exitCode).isEqualTo(ExitCode.OK)
-        val bridgeClass = result2.classLoader.loadClass("TestBridge")
-        val bridge = bridgeClass.kotlin.objectInstance!!
         useDatabase { database ->
-            bridge.reflectionCall("testAddAll", database)
+            result2.invokeBridge("testAddAll", database)
         }
     }
 
@@ -341,102 +318,8 @@ public class KtormKspExtTest {
         )
         assertThat(result1.exitCode).isEqualTo(ExitCode.OK)
         assertThat(result2.exitCode).isEqualTo(ExitCode.OK)
-        val bridgeClass = result2.classLoader.loadClass("TestBridge")
-        val bridge = bridgeClass.kotlin.objectInstance!!
         useDatabase { database ->
-            bridge.reflectionCall("testUpdateAll", database)
-        }
-    }
-
-    private fun Any.reflectionCall(functionName: String, vararg args: Any) {
-        this::class.functions.first { it.name == functionName }.call(this, *(args))
-    }
-
-    private fun createCompiler(vararg sourceFiles: SourceFile, useKsp: Boolean = true): KotlinCompilation {
-        return KotlinCompilation().apply {
-            workingDir = temporaryFolder.root
-            sources = sourceFiles.toList()
-            if (useKsp) {
-                symbolProcessorProviders = listOf(KtormProcessorProvider())
-            }
-            inheritClassPath = true
-            messageOutputStream = System.out
-            kspIncremental = true
-        }
-    }
-
-    private inline fun twiceCompile(
-        vararg sourceFiles: SourceFile,
-        sourceFileBlock: (String) -> Unit = {},
-    ): Pair<KotlinCompilation.Result, KotlinCompilation.Result> {
-        val compiler1 = createCompiler(*sourceFiles)
-        val result1 = compiler1.compile()
-        val result2 =
-            createCompiler(*(compiler1.kspGeneratedSourceFiles + sourceFiles).toTypedArray(), useKsp = false).compile()
-        compiler1.kspGeneratedFiles.forEach { sourceFileBlock(it.readText()) }
-        return result1 to result2
-    }
-
-    private fun compile(
-        vararg sourceFiles: SourceFile,
-        printKspGenerateFile: Boolean = false
-    ): KotlinCompilation.Result {
-        val compilation = createCompiler(*sourceFiles)
-        val result = compilation.compile()
-        if (printKspGenerateFile) {
-            compilation.kspSourcesDir.walkTopDown()
-                .filter { it.extension == "kt" }
-                .forEach { println(it.readText()) }
-        }
-        return result
-    }
-
-    private val KotlinCompilation.kspGeneratedSourceFiles: List<SourceFile>
-        get() = kspSourcesDir.resolve("kotlin")
-            .walk()
-            .filter { it.isFile }
-            .map { SourceFile.fromPath(it.absoluteFile) }
-            .toList()
-
-
-    private val KotlinCompilation.kspGeneratedFiles: List<File>
-        get() = kspSourcesDir.resolve("kotlin")
-            .walk()
-            .filter { it.isFile }
-            .toList()
-
-    private fun KotlinCompilation.Result.getBaseTable(className: String): BaseTable<*> {
-        val clazz = classLoader.loadClass(className)
-        assertThat(clazz).isNotNull
-        val table = clazz.kotlin.objectInstance
-        assertThat(table).isInstanceOf(BaseTable::class.java)
-        return table as BaseTable<*>
-    }
-
-    private fun KotlinCompilation.Result.getTable(className: String): BaseTable<*> {
-        val clazz = classLoader.loadClass(className)
-        assertThat(clazz).isNotNull
-        val table = clazz.kotlin.objectInstance
-        assertThat(table).isInstanceOf(Table::class.java)
-        return table as Table<*>
-    }
-
-    private inline fun useDatabase(action: (Database) -> Unit) {
-        Database.connect(
-            url = "jdbc:h2:mem:ktorm;",
-            driver = "org.h2.Driver",
-            logger = ConsoleLogger(threshold = LogLevel.TRACE),
-            alwaysQuoteIdentifiers = true
-        ).apply {
-            this.useConnection {
-                it.createStatement().use { statement ->
-                    val sql =
-                        KtormKspExtTest::class.java.classLoader.getResourceAsStream("init-data.sql")!!.bufferedReader()
-                            .readText()
-                    statement.executeUpdate(sql)
-                }
-                action(this)
-            }
+            result2.invokeBridge("testUpdateAll", database)
         }
     }
 }

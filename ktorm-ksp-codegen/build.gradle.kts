@@ -8,6 +8,7 @@ dependencies {
     api(libs.ktorm.core)
     api(libs.ksp.api)
     api(libs.kotlinpoet.ksp)
+    testImplementation(project(":ktorm-ksp-tests"))
 }
 
 configureMavenPublishing()

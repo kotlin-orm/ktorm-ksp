@@ -64,10 +64,13 @@ public object ClassNames {
 }
 
 public object SuppressAnnotations {
-    public val localVariableName: AnnotationSpec =
-        AnnotationSpec.builder(Suppress::class).addMember("\"LocalVariableName\"").build()
-    public val functionName: AnnotationSpec =
-        AnnotationSpec.builder(Suppress::class).addMember("\"FunctionName\"").build()
+    public const val localVariableName: String = "\"LocalVariableName\""
+    public const val functionName: String = "\"FunctionName\""
+    public const val unusedParameter: String = "\"UNUSED_PARAMETER\""
+
+    public fun buildSuppress(vararg names: String): AnnotationSpec {
+        return AnnotationSpec.builder(Suppress::class).addMember(names.joinToString(",")).build()
+    }
 }
 
 public inline fun CodeBlock.Builder.withControlFlow(
@@ -142,5 +145,9 @@ public object CodeFactory {
         } else {
             type.copy(this.isNullable)
         }
+    }
+
+    public fun convertDefaultImplementationFunName(functionName: String): String {
+        return "$${functionName}\$implementation"
     }
 }

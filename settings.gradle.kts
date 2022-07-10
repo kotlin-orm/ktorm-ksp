@@ -30,8 +30,10 @@ pluginManagement {
 }
 
 dependencyResolutionManagement {
+    @Suppress("UnstableApiUsage")
     versionCatalogs {
         create("libs") {
+            val kotlinVersion: String by settings
             val ktormVersion: String by settings
             val kotlinpoetKspVersion: String by settings
             val googleKspVersion: String by settings
@@ -57,6 +59,8 @@ dependencyResolutionManagement {
             library("assertj-core", "org.assertj:assertj-core:${assertjVersion}")
             library("evoInflector", "org.atteo:evo-inflector:${evoInflectorVersion}")
             library("cglib", "cglib:cglib:${cglibVersion}")
+            library("kotlin-compiler-embeddable", "org.jetbrains.kotlin:kotlin-compiler-embeddable:${kotlinVersion}")
+            library("kotlin-gradle-plugin-api", "org.jetbrains.kotlin:kotlin-gradle-plugin-api:${kotlinVersion}")
         }
     }
 }
@@ -66,7 +70,10 @@ include("ktorm-ksp-compiler")
 include("ktorm-ksp-codegen")
 include("ktorm-ksp-ext")
 include("ktorm-ksp-ext:ktorm-ksp-sequence-batch")
+include("ktorm-ksp-ext:ktorm-ksp-interface-entity-enhance")
 include("ktorm-ksp-example")
 include("ktorm-ksp-example:ktorm-ksp-example-common")
 include("ktorm-ksp-example:ktorm-ksp-example-simple")
 include("ktorm-ksp-example:ktorm-ksp-example-ext")
+include("ktorm-ksp-enhance")
+include("ktorm-ksp-tests")

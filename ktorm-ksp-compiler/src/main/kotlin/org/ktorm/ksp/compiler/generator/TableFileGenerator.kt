@@ -44,11 +44,6 @@ public class TableFileGenerator(config: CodeGenerateConfig, logger: KSPLogger) {
         if (extensionGenerator.enableClassEntitySequenceUpdateFun) {
             topLevelFunctionGenerator.add(ClassEntitySequenceUpdateFunGenerator())
         }
-        if (extensionGenerator.enableInterfaceEntitySimulationDataClass) {
-            topLevelFunctionGenerator.add(InterfaceEntityConstructorFunGenerator())
-            topLevelFunctionGenerator.add(InterfaceEntityComponentFunGenerator())
-            topLevelFunctionGenerator.add(InterfaceEntityCopyFunGenerator())
-        }
         logger.info("typeGenerator: ${typeGenerator::class.simpleName}")
         logger.info("propertyGenerator: ${propertyGenerator::class.simpleName}")
         logger.info("functionGenerator: ${functionGenerator::class.simpleName}")
@@ -92,7 +87,7 @@ public class TableFileGenerator(config: CodeGenerateConfig, logger: KSPLogger) {
         val table = context.table
         return FileSpec.builder(table.tableClassName.packageName, table.tableClassName.simpleName)
             .addFileComment("auto-generated code, don't modify it")
-            .addAnnotation(SuppressAnnotations.localVariableName)
+            .addAnnotation(SuppressAnnotations.buildSuppress(SuppressAnnotations.localVariableName))
             .indent("    ")
     }
 }

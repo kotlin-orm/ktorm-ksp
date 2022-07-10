@@ -20,8 +20,9 @@ import com.tschuchort.compiletesting.KotlinCompilation.ExitCode
 import com.tschuchort.compiletesting.SourceFile
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
+import org.ktorm.ksp.tests.BaseKspTest
 
-public class KtormKspTest : BaseTest() {
+public class KtormKspTest : BaseKspTest() {
 
     @Test
     public fun `multi primary key`() {
