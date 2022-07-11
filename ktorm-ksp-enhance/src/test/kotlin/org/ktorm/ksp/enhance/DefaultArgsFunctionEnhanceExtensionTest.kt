@@ -25,7 +25,7 @@ import org.junit.Test
 import org.ktorm.ksp.enhance.kotlin.KtormKspEnhanceComponentRegistrar
 import org.ktorm.ksp.tests.BaseTest
 
-public class DefaultArgsFunEnhanceGenerationExtensionTest : BaseTest() {
+public class DefaultArgsFunctionEnhanceExtensionTest : BaseTest() {
 
     @Test
     public fun `default args function enhance`() {
