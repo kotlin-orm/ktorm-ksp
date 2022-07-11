@@ -54,8 +54,6 @@ public class InterfaceEntityConstructorFunGeneratorTest : BaseKspTest() {
                 var birthday: LocalDate
             }
             
-            public data class UserWrapper(val user: User = User())
-
             object TestBridge {
                 public fun callNoArgs(): String {
                     return User().toString()
@@ -85,8 +83,6 @@ public class InterfaceEntityConstructorFunGeneratorTest : BaseKspTest() {
         assertThat(oneArgs).isEqualTo("User{id=null}")
         val allArgs = result2.invokeBridge("callAllArgs")
         assertThat(allArgs).isEqualTo("User{id=null, username=jack, age=10, birthday=${LocalDate.MIN}}")
-        val userWrapper = result2.invokeBridge("userWrapper")
-        println(userWrapper)
     }
 
     @Test
