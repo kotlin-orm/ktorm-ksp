@@ -28,6 +28,10 @@ subprojects {
         options.encoding = "UTF-8"
     }
 
+    tasks.withType<Test>().configureEach {
+        maxParallelForks = Runtime.getRuntime().availableProcessors()
+    }
+
     repositories {
         mavenCentral()
         jcenter()
