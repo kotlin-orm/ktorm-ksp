@@ -19,11 +19,15 @@ rootProject.name = "ktorm-ksp"
 pluginManagement {
     val kotlinVersion: String by settings
     val googleKspVersion: String by settings
+    val pluginPublishVersion: String by settings
+    val buildconfigVersion: String by settings
     resolutionStrategy {
         eachPlugin {
             when (requested.id.id) {
                 "org.jetbrains.kotlin.jvm" -> useVersion(kotlinVersion)
                 "com.google.devtools.ksp" -> useVersion(googleKspVersion)
+                "com.gradle.plugin-publish" -> useVersion(pluginPublishVersion)
+                "com.github.gmazzo.buildconfig" -> useVersion(buildconfigVersion)
             }
         }
     }

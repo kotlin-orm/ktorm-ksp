@@ -21,6 +21,7 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilerPluginSupportPlugin
 import org.jetbrains.kotlin.gradle.plugin.SubpluginArtifact
 import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
+import org.ktorm.ktorm_ksp_enhance.BuildConfig
 
 
 public class KtormKspEnhanceGradlePlugin : KotlinCompilerPluginSupportPlugin {
@@ -32,7 +33,11 @@ public class KtormKspEnhanceGradlePlugin : KotlinCompilerPluginSupportPlugin {
     override fun getCompilerPluginId(): String = "org.ktorm.ksp.enhance"
 
     override fun getPluginArtifact(): SubpluginArtifact =
-        SubpluginArtifact("org.ktorm", "ktorm-ksp-enhance")
+        SubpluginArtifact(
+            "org.ktorm",
+            "ktorm-ksp-enhance",
+            BuildConfig.PLUGIN_VERSION
+        )
 
     override fun isApplicable(kotlinCompilation: KotlinCompilation<*>): Boolean = true
 
