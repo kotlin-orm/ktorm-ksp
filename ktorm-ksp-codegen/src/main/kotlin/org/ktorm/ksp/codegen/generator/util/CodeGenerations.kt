@@ -69,7 +69,7 @@ public object SuppressAnnotations {
     public const val unusedParameter: String = "\"UNUSED_PARAMETER\""
 
     public fun buildSuppress(vararg names: String): AnnotationSpec {
-        return AnnotationSpec.builder(Suppress::class).addMember(names.joinToString(",")).build()
+        return AnnotationSpec.builder(Suppress::class).addMember(names.joinToString(", ")).build()
     }
 }
 
