@@ -39,9 +39,9 @@ import org.ktorm.ksp.api.DefaultArgsVirtualFunction
 import org.ktorm.ksp.codegen.generator.util.CodeFactory
 import kotlin.math.ceil
 
-public class DefaultArgsFunEnhanceExtension : IrGenerationExtension {
+public class DefaultArgsFunctionEnhanceExtension : IrGenerationExtension {
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
-        moduleFragment.accept(DefaultArgsFunEnhanceInjector(pluginContext), null)
+        moduleFragment.accept(DefaultArgsFunctionEnhanceInjector(pluginContext), null)
     }
 }
 
@@ -89,7 +89,7 @@ public class DefaultArgsFunEnhanceExtension : IrGenerationExtension {
  * This compiler plugin borrows kotlin compiler default parameter implementation.
  * @see org.jetbrains.kotlin.backend.common.lower.DefaultParameterInjector
  */
-public class DefaultArgsFunEnhanceInjector(
+public class DefaultArgsFunctionEnhanceInjector(
     private val pluginContext: IrPluginContext
 ) : IrElementTransformerVoid() {
 
