@@ -25,7 +25,7 @@ public annotation class DefaultArgsVirtualFunction
 public annotation class DefaultArgsImplementationFunction
 
 /**
- * Modify the compiled function visibility to public through the ktorm-ksp-enhance compiler plugin
+ * Modify the compiled function visibility to public through the ktorm-ksp-enhance compiler plugin.
  */
 @Retention(AnnotationRetention.SOURCE)
 @Target(AnnotationTarget.FUNCTION)
