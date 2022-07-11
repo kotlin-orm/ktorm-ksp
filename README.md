@@ -678,7 +678,7 @@ uses it to participate in ```code generator```, to achieve the purpose of custom
 
 #### Steps To Customize The Generator
 
-Please refer to the code implementation of this [module](ktorm-ksp-ext/ktorm-ksp-ext-sequence-batch)
+Please refer to the code implementation of this [module](ktorm-ksp-ext/ktorm-ksp-sequence-batch)
 
 Create a new module that implements the generator (corresponding to ```your-ext-module``` in the above figure), and add
 dependencies in ```build.gradle``` or ```pom.xml```

@@ -647,7 +647,7 @@ ktorm-ksp-compiler模块通过SPI自动加载your-ext-module中定义的生成�
 
 #### 自定义生成器的步骤
 
-（请参考此[模块](ktorm-ksp-ext/ktorm-ksp-ext-sequence-batch) 的代码实现）
+（请参考此[模块](ktorm-ksp-ext/ktorm-ksp-sequence-batch) 的代码实现）
 
 新建实现生成器的module（对应上图中的your-ext-module），在```build.gradle```或```pom.xml```中添加依赖
 
