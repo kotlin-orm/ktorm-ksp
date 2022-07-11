@@ -66,10 +66,6 @@ public class InterfaceEntityConstructorFunGeneratorTest : BaseKspTest() {
                 public fun callAllArgs(): String {
                     return User(id = null, username = "jack", age = 10, birthday = LocalDate.MIN).toString()
                 }
-
-                public fun userWrapper(): String {
-                    return UserWrapper(User()).toString()
-                }
             }
         """
             )
