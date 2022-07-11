@@ -34,20 +34,20 @@ import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
-import org.ktorm.ksp.api.KtormKspDefaultArgsImplementationFunction
-import org.ktorm.ksp.api.KtormKspDefaultArgsVirtualFunction
+import org.ktorm.ksp.api.DefaultArgsImplementationFunction
+import org.ktorm.ksp.api.DefaultArgsVirtualFunction
 import org.ktorm.ksp.codegen.generator.util.CodeFactory
 import kotlin.math.ceil
 
-public class DefaultArgsFunEnhanceGenerationExtension : IrGenerationExtension {
+public class DefaultArgsFunEnhanceExtension : IrGenerationExtension {
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
         moduleFragment.accept(DefaultArgsFunEnhanceInjector(pluginContext), null)
     }
 }
 
 /**
- * Replace expressions that call functions annotated with [KtormKspDefaultArgsVirtualFunction] with calls to
- * corresponding expressions annotated with [KtormKspDefaultArgsImplementationFunction].
+ * Replace expressions that call functions annotated with [DefaultArgsVirtualFunction] with calls to
+ * corresponding expressions annotated with [DefaultArgsImplementationFunction].
  *
  * e.g:
  * ```kotlin
@@ -93,9 +93,9 @@ public class DefaultArgsFunEnhanceInjector(
     private val pluginContext: IrPluginContext
 ) : IrElementTransformerVoid() {
 
-    private val virtualFunctionAnnotation = FqName(KtormKspDefaultArgsVirtualFunction::class.java.canonicalName)
+    private val virtualFunctionAnnotation = FqName(DefaultArgsVirtualFunction::class.java.canonicalName)
     private val implementationFunctionAnnotation =
-        FqName(KtormKspDefaultArgsImplementationFunction::class.java.canonicalName)
+        FqName(DefaultArgsImplementationFunction::class.java.canonicalName)
 
     override fun visitCall(expression: IrCall): IrExpression {
         expression.transformChildrenVoid()

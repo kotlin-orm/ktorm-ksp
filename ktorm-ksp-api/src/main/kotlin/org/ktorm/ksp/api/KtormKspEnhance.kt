@@ -18,8 +18,15 @@ package org.ktorm.ksp.api
 
 @Retention(AnnotationRetention.SOURCE)
 @Target(AnnotationTarget.FUNCTION)
-public annotation class KtormKspDefaultArgsVirtualFunction
+public annotation class DefaultArgsVirtualFunction
 
 @Retention(AnnotationRetention.SOURCE)
 @Target(AnnotationTarget.FUNCTION)
-public annotation class KtormKspDefaultArgsImplementationFunction
+public annotation class DefaultArgsImplementationFunction
+
+/**
+ * Modify the compiled function visibility to public through the ktorm-ksp-enhance compiler plugin
+ */
+@Retention(AnnotationRetention.SOURCE)
+@Target(AnnotationTarget.FUNCTION)
+public annotation class PublishFunction

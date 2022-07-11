@@ -16,12 +16,10 @@
 
 package org.ktorm.ksp.ext
 
-import com.squareup.kotlinpoet.FunSpec
-import com.squareup.kotlinpoet.NameAllocator
-import com.squareup.kotlinpoet.asClassName
-import com.squareup.kotlinpoet.buildCodeBlock
-import org.ktorm.ksp.api.KtormKspDefaultArgsImplementationFunction
-import org.ktorm.ksp.api.KtormKspDefaultArgsVirtualFunction
+import com.squareup.kotlinpoet.*
+import org.ktorm.ksp.api.DefaultArgsImplementationFunction
+import org.ktorm.ksp.api.DefaultArgsVirtualFunction
+import org.ktorm.ksp.api.PublishFunction
 import org.ktorm.ksp.codegen.TableGenerateContext
 import org.ktorm.ksp.codegen.TopLevelFunctionGenerator
 import org.ktorm.ksp.codegen.definition.KtormEntityType
@@ -46,7 +44,7 @@ public class InterfaceEntityConstructorFunGenerator : TopLevelFunctionGenerator 
         val nameAllocator = NameAllocator()
         return FunSpec.builder(table.entityClassName.simpleName)
             .addAnnotation(SuppressAnnotations.buildSuppress(functionName, unusedParameter))
-            .addAnnotation(KtormKspDefaultArgsVirtualFunction::class)
+            .addAnnotation(DefaultArgsVirtualFunction::class)
             .returns(table.entityClassName)
             .addParameters(InterfaceEntityEnhanceCodes.buildVirtualConstructorParameters(context, nameAllocator))
             .addCode(buildCodeBlock {
@@ -61,7 +59,9 @@ public class InterfaceEntityConstructorFunGenerator : TopLevelFunctionGenerator 
         val flagVars = mutableListOf<String>()
         return FunSpec.builder(InterfaceEntityEnhanceCodes.toImplementationFunName(table.entityClassName.simpleName))
             .addAnnotation(SuppressAnnotations.buildSuppress(functionName))
-            .addAnnotation(KtormKspDefaultArgsImplementationFunction::class)
+            .addAnnotation(DefaultArgsImplementationFunction::class)
+            .addAnnotation(PublishFunction::class)
+            .addModifiers(KModifier.PRIVATE)
             .returns(table.entityClassName)
             .addParameters(
                 InterfaceEntityEnhanceCodes.buildImplementationConstructorParameters(
