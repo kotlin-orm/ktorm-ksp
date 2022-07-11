@@ -158,7 +158,7 @@ public open class ColumnInitializerGenerator(
             return buildCodeBlock {
                 if (actualColumnName.isEmpty()) {
                     add(
-                        "%T.convert(this,%T.toColumnName(%S),%T::class)",
+                        "%T.convert(this,·%T.toColumnName(%S),·%T::class)",
                         actualConverterDefinition.converterName,
                         config.namingStrategy,
                         entityPropertyName.simpleName,
@@ -166,7 +166,7 @@ public open class ColumnInitializerGenerator(
                     )
                 } else {
                     add(
-                        "%T.convert(this,%S,%T::class)",
+                        "%T.convert(this,·%S,·%T::class)",
                         actualConverterDefinition.converterName,
                         actualColumnName,
                         propertyClassName
