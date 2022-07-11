@@ -38,15 +38,15 @@ public class DefaultArgsFunctionEnhanceExtensionTest : BaseTest() {
     public fun `default args function enhance`() {
         val file = SourceFile.kotlin(
             "source.kt", """
-            import org.ktorm.ksp.api.KtormKspDefaultArgsVirtualFunction
-            import org.ktorm.ksp.api.KtormKspDefaultArgsImplementationFunction
+            import org.ktorm.ksp.api.DefaultArgsVirtualFunction
+            import org.ktorm.ksp.api.DefaultArgsImplementationFunction
             
-            @KtormKspDefaultArgsVirtualFunction
+            @DefaultArgsVirtualFunction
             fun user(name: String = error("undefined"), age: Int = error("undefined")): String {
                 throw IllegalArgumentException()
             } 
             
-            @KtormKspDefaultArgsImplementationFunction
+            @DefaultArgsImplementationFunction
             fun `${'$'}user${'$'}implementation`(name: String?, age:Int?, flag:Int): String {
                 val map = mutableMapOf<String, Any?>()
                 if (flag and 1 != 0) {
@@ -88,10 +88,10 @@ public class DefaultArgsFunctionEnhanceExtensionTest : BaseTest() {
     public fun `multi args`() {
         val file = SourceFile.kotlin(
             "source.kt", """
-            import org.ktorm.ksp.api.KtormKspDefaultArgsVirtualFunction
-            import org.ktorm.ksp.api.KtormKspDefaultArgsImplementationFunction
+            import org.ktorm.ksp.api.DefaultArgsVirtualFunction
+            import org.ktorm.ksp.api.DefaultArgsImplementationFunction
             
-            @KtormKspDefaultArgsVirtualFunction
+            @DefaultArgsVirtualFunction
             fun user(arg1: String = error("undefined"),
                      arg2: String = error("undefined"),
                      arg3: String = error("undefined"),
@@ -128,7 +128,7 @@ public class DefaultArgsFunctionEnhanceExtensionTest : BaseTest() {
                 throw IllegalArgumentException()
             } 
 
-            @KtormKspDefaultArgsImplementationFunction
+            @DefaultArgsImplementationFunction
             fun `${'$'}user${'$'}implementation`(
                      arg1: String?,
                      arg2: String?,
@@ -263,14 +263,14 @@ public class DefaultArgsFunctionEnhanceExtensionTest : BaseTest() {
     public fun `extension receiver or args`() {
         val file = SourceFile.kotlin(
             "source.kt", """
-            import org.ktorm.ksp.api.KtormKspDefaultArgsVirtualFunction
-            import org.ktorm.ksp.api.KtormKspDefaultArgsImplementationFunction
-            @KtormKspDefaultArgsVirtualFunction
+            import org.ktorm.ksp.api.DefaultArgsVirtualFunction
+            import org.ktorm.ksp.api.DefaultArgsImplementationFunction
+            @DefaultArgsVirtualFunction
             fun Any.user(name: String = error("undefined"), age: Int = error("undefined")): String {
                 throw IllegalArgumentException()
             } 
 
-            @KtormKspDefaultArgsImplementationFunction
+            @DefaultArgsImplementationFunction
             fun Any.`${'$'}user${'$'}implementation`(name: String?, age:Int?, flag:Int): String {
                 val map = mutableMapOf<String, Any?>()
                 if (flag and 1 != 0) {
@@ -313,19 +313,17 @@ public class DefaultArgsFunctionEnhanceExtensionTest : BaseTest() {
     public fun `dispatch receiver`() {
         val file = SourceFile.kotlin(
             "source.kt", """
-            import org.ktorm.ksp.api.KtormKspDefaultArgsVirtualFunction
-            import org.ktorm.ksp.api.KtormKspDefaultArgsImplementationFunction
-            
-            
+            import org.ktorm.ksp.api.DefaultArgsVirtualFunction
+            import org.ktorm.ksp.api.DefaultArgsImplementationFunction
 
             object TestBridge {
                 
-                @KtormKspDefaultArgsVirtualFunction
+                @DefaultArgsVirtualFunction
                 fun user(name: String = error("undefined"), age: Int = error("undefined")): String {
                     throw IllegalArgumentException()
                 } 
     
-                @KtormKspDefaultArgsImplementationFunction
+                @DefaultArgsImplementationFunction
                 fun `${'$'}user${'$'}implementation`(name: String?, age:Int?, flag:Int): String {
                     val map = mutableMapOf<String, Any?>()
                     if (flag and 1 != 0) {
