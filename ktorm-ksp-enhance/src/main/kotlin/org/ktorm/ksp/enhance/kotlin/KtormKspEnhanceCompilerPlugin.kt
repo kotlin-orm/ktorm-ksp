@@ -23,7 +23,7 @@ import org.jetbrains.kotlin.config.CompilerConfiguration
 
 public class KtormKspEnhanceComponentRegistrar : ComponentRegistrar {
     override fun registerProjectComponents(project: MockProject, configuration: CompilerConfiguration) {
-        IrGenerationExtension.registerExtension(project, PublishFunctionGenerationExtension())
+        IrGenerationExtension.registerExtension(project, PublishFunctionExtension())
         IrGenerationExtension.registerExtension(project, DefaultArgsFunctionEnhanceExtension())
     }
 }

@@ -27,7 +27,7 @@ import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.name.FqName
 import org.ktorm.ksp.api.PublishFunction
 
-public class PublishFunctionGenerationExtension : IrGenerationExtension {
+public class PublishFunctionExtension : IrGenerationExtension {
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
         moduleFragment.accept(PublishFunctionInjector(), null)
     }
