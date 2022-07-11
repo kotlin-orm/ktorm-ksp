@@ -18,6 +18,7 @@
 
 package org.ktorm.ksp.enhance
 
+import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.KotlinCompilation.ExitCode
 import com.tschuchort.compiletesting.SourceFile
 import org.assertj.core.api.Assertions.assertThat
@@ -26,6 +27,12 @@ import org.ktorm.ksp.enhance.kotlin.KtormKspEnhanceComponentRegistrar
 import org.ktorm.ksp.tests.BaseTest
 
 public class DefaultArgsFunctionEnhanceExtensionTest : BaseTest() {
+
+    override fun createCompiler(vararg sourceFiles: SourceFile): KotlinCompilation {
+        val compiler = super.createCompiler(*sourceFiles)
+        compiler.compilerPlugins = listOf(KtormKspEnhanceComponentRegistrar())
+        return compiler
+    }
 
     @Test
     public fun `default args function enhance`() {
@@ -67,7 +74,6 @@ public class DefaultArgsFunctionEnhanceExtensionTest : BaseTest() {
         """
         )
         val compiler = createCompiler(file)
-        compiler.compilerPlugins = listOf(KtormKspEnhanceComponentRegistrar())
         val result = compiler.compile()
         assertThat(result.exitCode).isEqualTo(ExitCode.OK)
         val noArgs = result.invokeBridge("callNoArgs") as String
@@ -242,7 +248,6 @@ public class DefaultArgsFunctionEnhanceExtensionTest : BaseTest() {
         """
         )
         val compiler = createCompiler(file)
-        compiler.compilerPlugins = listOf(KtormKspEnhanceComponentRegistrar())
         val result = compiler.compile()
         assertThat(result.exitCode).isEqualTo(ExitCode.OK)
         val noArgs = result.invokeBridge("callNoArgs") as String
@@ -298,7 +303,6 @@ public class DefaultArgsFunctionEnhanceExtensionTest : BaseTest() {
         """
         )
         val compiler = createCompiler(file)
-        compiler.compilerPlugins = listOf(KtormKspEnhanceComponentRegistrar())
         val result = compiler.compile()
         assertThat(result.exitCode).isEqualTo(ExitCode.OK)
         result.invokeBridge("extension")
@@ -348,7 +352,6 @@ public class DefaultArgsFunctionEnhanceExtensionTest : BaseTest() {
         """
         )
         val compiler = createCompiler(file)
-        compiler.compilerPlugins = listOf(KtormKspEnhanceComponentRegistrar())
         val result = compiler.compile()
         assertThat(result.exitCode).isEqualTo(ExitCode.OK)
         val noArgs = result.invokeBridge("callNoArgs") as String

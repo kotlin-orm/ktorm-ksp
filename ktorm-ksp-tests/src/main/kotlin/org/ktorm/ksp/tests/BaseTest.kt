@@ -35,7 +35,7 @@ public abstract class BaseTest {
     @JvmField
     public val temporaryFolder: TemporaryFolder = TemporaryFolder()
 
-    protected fun createCompiler(vararg sourceFiles: SourceFile): KotlinCompilation {
+    protected open fun createCompiler(vararg sourceFiles: SourceFile): KotlinCompilation {
         return KotlinCompilation().apply {
             workingDir = temporaryFolder.root
             sources = sourceFiles.toList()
