@@ -44,6 +44,11 @@ public class TableFileGenerator(config: CodeGenerateConfig, logger: KSPLogger) {
         if (extensionGenerator.enableClassEntitySequenceUpdateFun) {
             topLevelFunctionGenerator.add(ClassEntitySequenceUpdateFunGenerator())
         }
+        if (extensionGenerator.enableInterfaceEntitySimulationDataClass) {
+            topLevelFunctionGenerator.add(InterfaceEntityConstructorFunGenerator())
+            topLevelFunctionGenerator.add(InterfaceEntityComponentFunGenerator())
+            topLevelFunctionGenerator.add(InterfaceEntityCopyFunGenerator())
+        }
         logger.info("typeGenerator: ${typeGenerator::class.simpleName}")
         logger.info("propertyGenerator: ${propertyGenerator::class.simpleName}")
         logger.info("functionGenerator: ${functionGenerator::class.simpleName}")

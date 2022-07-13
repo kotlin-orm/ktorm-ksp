@@ -49,11 +49,3 @@ jobs:
           GPG_KEY_ID: ${{secrets.GPG_KEY_ID}}
           GPG_PASSWORD: ${{secrets.GPG_PASSWORD}}
           GPG_SECRET_KEY: ${{secrets.GPG_SECRET_KEY}}
-
-      - name: Publish Gradle Plugin
-        run: |
-          if [[ $(cat "ktorm-ksp.version") =~ "SNAPSHOT" ]] || [[ $GITHUB_EVENT_NAME == "release" ]]; then
-            ./gradlew publishPlugins -Pgradle.publish.key=${{secrets.GRADLE_KEY}} -Pgradle.publish.secret=${{secrets.GRADLE_SECRET}}
-          else
-            echo "Skip release publication because this is not a release event"
-          fi

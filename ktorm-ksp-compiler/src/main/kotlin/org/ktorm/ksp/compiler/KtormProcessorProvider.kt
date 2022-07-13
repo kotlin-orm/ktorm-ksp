@@ -151,7 +151,8 @@ public class KtormProcessor(
                 configBuilder.extension = ExtensionGeneratorConfig(
                     kspConfig.extension.enableSequenceOf,
                     kspConfig.extension.enableClassEntitySequenceAddFun,
-                    kspConfig.extension.enableClassEntitySequenceUpdateFun
+                    kspConfig.extension.enableClassEntitySequenceUpdateFun,
+                    kspConfig.extension.enableInterfaceEntitySimulationDataClass
                 )
                 //namingStrategy
                 val namingStrategyType = argumentMap[KtormKspConfig::namingStrategy.name]!!.value as KSType

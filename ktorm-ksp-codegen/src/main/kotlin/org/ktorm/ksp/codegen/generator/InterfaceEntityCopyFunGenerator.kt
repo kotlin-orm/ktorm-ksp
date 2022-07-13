@@ -14,30 +14,34 @@
  * limitations under the License.
  */
 
-package org.ktorm.ksp.ext
+package org.ktorm.ksp.codegen.generator
 
 import com.squareup.kotlinpoet.FunSpec
-import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.NameAllocator
+import com.squareup.kotlinpoet.buildCodeBlock
 import org.ktorm.ksp.codegen.TableGenerateContext
 import org.ktorm.ksp.codegen.TopLevelFunctionGenerator
 import org.ktorm.ksp.codegen.definition.KtormEntityType
+import org.ktorm.ksp.codegen.generator.util.CodeFactory
 
-public class InterfaceEntityComponentFunGenerator : TopLevelFunctionGenerator {
+public class InterfaceEntityCopyFunGenerator : TopLevelFunctionGenerator {
 
     override fun generate(context: TableGenerateContext, emitter: (FunSpec) -> Unit) {
         val table = context.table
         if (table.ktormEntityType != KtormEntityType.ENTITY_INTERFACE) {
             return
         }
-        table.columns.forEachIndexed { index, column ->
-            FunSpec.builder("component${index + 1}")
-                .addModifiers(KModifier.OPERATOR)
-                .returns(column.propertyClassName.copy(nullable = column.isNullable))
-                .receiver(table.entityClassName)
-                .addCode("return·this.%L", column.entityPropertyName.simpleName)
-                .build()
-                .run(emitter)
-        }
+        val nameAllocator = NameAllocator()
+        FunSpec.builder("copy")
+            .returns(table.entityClassName)
+            .receiver(table.entityClassName)
+            .addParameters(CodeFactory.buildEntityConstructorParameters(context, nameAllocator))
+            .addCode(buildCodeBlock {
+                val entityVar = nameAllocator.newName("entity")
+                addStatement("val·%L·=·this.copy()", entityVar)
+                add(CodeFactory.buildEntityAssignCode(context, entityVar))
+            })
+            .build()
+            .run(emitter)
     }
-
 }

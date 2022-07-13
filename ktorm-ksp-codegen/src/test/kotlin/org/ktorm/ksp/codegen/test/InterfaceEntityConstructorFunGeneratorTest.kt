@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.ktorm.ksp.ext
+package org.ktorm.ksp.codegen.test
 
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
@@ -22,10 +22,10 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import org.ktorm.ksp.tests.BaseKspTest
 
-public class InterfaceEntityComponentFunGeneratorTest : BaseKspTest() {
+public class InterfaceEntityConstructorFunGeneratorTest : BaseKspTest() {
 
     @Test
-    public fun `interface entity component function`() {
+    public fun `interface entity constructor function`() {
         val (result1, result2) = twiceCompile(
             SourceFile.kotlin(
                 "source.kt",
@@ -46,18 +46,16 @@ public class InterfaceEntityComponentFunGeneratorTest : BaseKspTest() {
                 }
                 
                 object TestBridge {
-                    fun testComponents(database: Database) {
-                        val date = LocalDate.now()
-                        val employee = Entity.create<Employee>()
-                        employee.id = 1
-                        employee.name = "name"
-                        employee.job = "job"
-                        employee.hireDate = date
-                        val (id, name, job, hireDate) = employee
-                        assert(id == 1)
-                        assert(name == "name")
-                        assert(job == "job")
-                        assert(date == date)
+                    fun createEmployee1(database: Database): Employee {
+                        return Employee()
+                    }
+                    
+                    fun createEmployee2(database: Database): Employee {
+                        return Employee(id = null)
+                    }
+
+                    fun createEmployee3(database: Database): Employee {
+                        return Employee(id = null, name = "")
                     }
                 }
                 """,
@@ -67,7 +65,12 @@ public class InterfaceEntityComponentFunGeneratorTest : BaseKspTest() {
         assertThat(result1.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         assertThat(result2.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         useDatabase { database ->
-            result2.invokeBridge("testComponents", database)
+            val employee1 = result2.invokeBridge("createEmployee1", database) as Any
+            assertThat(employee1.toString()).isEqualTo("Employee{}")
+            val employee2 = result2.invokeBridge("createEmployee2", database) as Any
+            assertThat(employee2.toString()).isEqualTo("Employee{id=null}")
+            val employee3 = result2.invokeBridge("createEmployee3", database) as Any
+            assertThat(employee3.toString()).isEqualTo("Employee{id=null, name=}")
         }
     }
 

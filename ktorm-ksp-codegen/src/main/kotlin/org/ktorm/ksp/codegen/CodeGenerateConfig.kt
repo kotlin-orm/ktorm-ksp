@@ -70,5 +70,6 @@ public data class CodeGenerateConfig(
 public data class ExtensionGeneratorConfig(
     val enableSequenceOf: Boolean = true,
     val enableClassEntitySequenceAddFun: Boolean = true,
-    val enableClassEntitySequenceUpdateFun: Boolean = true
+    val enableClassEntitySequenceUpdateFun: Boolean = true,
+    val enableInterfaceEntitySimulationDataClass: Boolean = true
 )

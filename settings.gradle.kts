@@ -26,8 +26,6 @@ pluginManagement {
             when (requested.id.id) {
                 "org.jetbrains.kotlin.jvm" -> useVersion(kotlinVersion)
                 "com.google.devtools.ksp" -> useVersion(googleKspVersion)
-                "com.gradle.plugin-publish" -> useVersion(pluginPublishVersion)
-                "com.github.gmazzo.buildconfig" -> useVersion(buildconfigVersion)
             }
         }
     }
@@ -74,10 +72,8 @@ include("ktorm-ksp-compiler")
 include("ktorm-ksp-codegen")
 include("ktorm-ksp-ext")
 include("ktorm-ksp-ext:ktorm-ksp-sequence-batch")
-include("ktorm-ksp-ext:ktorm-ksp-interface-entity-enhance")
 include("ktorm-ksp-example")
 include("ktorm-ksp-example:ktorm-ksp-example-common")
 include("ktorm-ksp-example:ktorm-ksp-example-simple")
 include("ktorm-ksp-example:ktorm-ksp-example-ext")
-include("ktorm-ksp-enhance")
 include("ktorm-ksp-tests")
