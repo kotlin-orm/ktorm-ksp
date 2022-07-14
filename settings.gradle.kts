@@ -44,25 +44,25 @@ dependencyResolutionManagement {
             val junitVersion: String by settings
             val assertjVersion: String by settings
             val evoInflectorVersion: String by settings
-            val cglibVersion: String by settings
+            val bytebuddyVersion: String by settings
             library("ktorm-core", "org.ktorm:ktorm-core:$ktormVersion")
             library("kotlinpoet-ksp", "com.squareup:kotlinpoet-ksp:$kotlinpoetKspVersion")
             library("ksp-api", "com.google.devtools.ksp:symbol-processing-api:$googleKspVersion")
             library("h2database", "com.h2database:h2:$h2databaseVersion")
             library(
                 "kotlinCompileTesting",
-                "com.github.tschuchortdev:kotlin-compile-testing:${kotlinCompileTestingVersion}"
+                "com.github.tschuchortdev:kotlin-compile-testing:$kotlinCompileTestingVersion"
             )
             library(
                 "kotlinCompileTesting-ksp",
-                "com.github.tschuchortdev:kotlin-compile-testing-ksp:${kotlinCompileTestingVersion}"
+                "com.github.tschuchortdev:kotlin-compile-testing-ksp:$kotlinCompileTestingVersion"
             )
             library("junit", "junit:junit:$junitVersion")
-            library("assertj-core", "org.assertj:assertj-core:${assertjVersion}")
-            library("evoInflector", "org.atteo:evo-inflector:${evoInflectorVersion}")
-            library("cglib", "cglib:cglib:${cglibVersion}")
-            library("kotlin-compiler-embeddable", "org.jetbrains.kotlin:kotlin-compiler-embeddable:${kotlinVersion}")
-            library("kotlin-gradle-plugin-api", "org.jetbrains.kotlin:kotlin-gradle-plugin-api:${kotlinVersion}")
+            library("assertj-core", "org.assertj:assertj-core:$assertjVersion")
+            library("evoInflector", "org.atteo:evo-inflector:$evoInflectorVersion")
+            library("kotlin-compiler-embeddable", "org.jetbrains.kotlin:kotlin-compiler-embeddable:$kotlinVersion")
+            library("kotlin-gradle-plugin-api", "org.jetbrains.kotlin:kotlin-gradle-plugin-api:$kotlinVersion")
+            library("bytebuddy", "net.bytebuddy:byte-buddy:$bytebuddyVersion")
         }
     }
 }

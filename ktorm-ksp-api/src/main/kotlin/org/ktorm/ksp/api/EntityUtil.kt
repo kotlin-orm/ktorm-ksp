@@ -16,9 +16,8 @@
 
 package org.ktorm.ksp.api
 
-import net.sf.cglib.proxy.Enhancer
-import net.sf.cglib.proxy.MethodInterceptor
-import net.sf.cglib.proxy.MethodProxy
+import net.bytebuddy.ByteBuddy
+import net.bytebuddy.dynamic.loading.ClassLoadingStrategy
 import org.ktorm.entity.Entity
 import org.ktorm.entity.EntityExtensionsApi
 import org.ktorm.schema.ColumnBinding
@@ -61,7 +60,7 @@ public object EntityUtil {
             if (cls.isInterface) {
                 createJdkDynamicProxy(cls)
             } else if (Modifier.isAbstract(cls.modifiers)) {
-                createCglibProxy(cls)
+                createByteBuddyProxy(cls)
             } else {
                 createUnsafeInstance(cls)
             }
@@ -88,30 +87,18 @@ public object EntityUtil {
     }
 
     @PublishedApi
-    internal fun createCglibProxy(cls: Class<*>): Any {
+    internal fun createByteBuddyProxy(cls: Class<*>): Any {
         try {
-            val enhancer = Enhancer()
-            enhancer.setSuperclass(cls)
-            enhancer.classLoader = cls.classLoader
-            enhancer.setCallback(object : MethodInterceptor {
-                override fun intercept(
-                    obj: Any?,
-                    method: Method,
-                    args: Array<out Any>?,
-                    proxy: MethodProxy
-                ): Any? {
-                    if (method.name == "hashCode"
-                        || method.name == "equals"
-                        || method.name == "toString"
-                    ) {
-                        return proxy.invokeSuper(obj, args)
-                    }
-                    throw NotImplementedError()
-                }
-            })
-            return enhancer.create()
+            return ByteBuddy()
+                .subclass(cls)
+                .make()
+                .load(cls.classLoader, ClassLoadingStrategy.Default.INJECTION)
+                .loaded
+                .constructors
+                .first()
+                .newInstance()
         } catch (e: Exception) {
-            throw CreateUndefinedException("Failed to create instance with cglib", e)
+            throw CreateUndefinedException("Failed to create instance with byte-buddy", e)
         }
     }
 
