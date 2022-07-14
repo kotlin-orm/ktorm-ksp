@@ -24,11 +24,11 @@ import org.ktorm.ksp.api.EntityUtil.undefined
 public class EntityUtilTest {
 
     private inline fun <reified T> undefinedValueTest(value: T) {
-        val intUndefined1 = undefined<T>()
-        val intUndefined2 = undefined<T>()
-        assertThat(intUndefined1 !== value).isTrue
-        assertThat(intUndefined2 !== value).isTrue
-        assertThat(intUndefined1 === intUndefined2).isTrue
+        val undefined1 = undefined<T>()
+        val undefined2 = undefined<T>()
+        assertThat(undefined1 !== value).isTrue
+        assertThat(undefined2 !== value).isTrue
+        assertThat(undefined1 === undefined2).isTrue
     }
 
     @Test
