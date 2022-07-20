@@ -20,10 +20,12 @@ import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import org.assertj.core.api.Assertions
 import org.junit.Test
+import org.ktorm.entity.EntitySequence
+import org.ktorm.entity.toList
 import org.ktorm.ksp.tests.BaseKspTest
 import org.ktorm.schema.*
 
-public class ColumnInitializerGeneratorTest : BaseKspTest() {
+public class DefaultTablePropertyGeneratorTest : BaseKspTest() {
 
     @Test
     public fun `default column initializer`() {
@@ -104,4 +106,63 @@ public class ColumnInitializerGeneratorTest : BaseKspTest() {
             }
         }
     }
+
+    @Test
+    public fun `generics column`() {
+        val (result1, result2) = twiceCompile(
+            SourceFile.kotlin(
+                "source.kt",
+                """
+                import org.ktorm.database.Database
+                import org.ktorm.entity.Entity
+                import org.ktorm.entity.EntitySequence
+                import org.ktorm.ksp.api.*
+                import java.time.LocalDate
+                import org.ktorm.schema.BaseTable
+                import org.ktorm.schema.varchar
+                import kotlin.reflect.KClass
+                    
+                @Table
+                data class User(
+                    @PrimaryKey
+                    var id: Int?,
+                    @Column(converter = StringValueWrapperConverter::class)
+                    var username: ValueWrapper<String>,
+                    var age: Int,
+                )
+
+                @KtormKspConfig(namingStrategy = CamelCaseToSnakeCaseNamingStrategy::class)
+                class KtormConfig
+
+                data class ValueWrapper<T>(var value: T)
+                
+                object StringValueWrapperConverter : SingleTypeConverter<ValueWrapper<String>> {
+                    override fun convert(
+                        table: BaseTable<*>,
+                        columnName: String,
+                        propertyType: KClass<ValueWrapper<String>>
+                    ): org.ktorm.schema.Column<ValueWrapper<String>> {
+                        return with(table) {
+                            varchar(columnName).transform({ ValueWrapper(it) }, { it.value })
+                        }
+                    }
+                }
+
+                object TestBridge {
+                    fun getUsers(database:Database): EntitySequence<User,Users> {
+                        return database.users
+                    }
+                }
+                """,
+            )
+        )
+        Assertions.assertThat(result1.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
+        Assertions.assertThat(result2.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
+        useDatabase { database ->
+            val users = result2.invokeBridge("getUsers", database) as EntitySequence<*, *>
+            Assertions.assertThat(users.toList().toString())
+                .isEqualTo("[User(id=1, username=ValueWrapper(value=jack), age=20), User(id=2, username=ValueWrapper(value=lucy), age=22), User(id=3, username=ValueWrapper(value=mike), age=22)]")
+        }
+    }
+
 }
