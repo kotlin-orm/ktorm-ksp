@@ -31,6 +31,9 @@ public class KtormKspTest : BaseKspTest() {
                 "source.kt",
                 """
                 import org.ktorm.ksp.api.*
+                import org.ktorm.dsl.eq
+                import org.ktorm.dsl.and
+                import org.ktorm.entity.first
                 import org.ktorm.database.Database
                 import org.ktorm.entity.toList
                 import kotlin.collections.List
@@ -52,10 +55,10 @@ public class KtormKspTest : BaseKspTest() {
                         assert(provinces.contains(Province("China", "Guangdong", 150000)))
                     }
                     fun testUpdate(database: Database) {
-                        var province = database.provinces.toList().first()
+                        var province = database.provinces.first { (it.country eq "China") and (it.province eq "Hebei") }
                         province.population = 200000
                         database.provinces.update(province)
-                        province = database.provinces.toList().first()
+                        province = database.provinces.first { (it.country eq "China") and (it.province eq "Hebei") }
                         assert(province.population == 200000)
                     }
                 }
