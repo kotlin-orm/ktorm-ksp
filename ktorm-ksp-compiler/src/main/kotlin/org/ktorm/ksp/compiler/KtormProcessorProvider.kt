@@ -18,10 +18,7 @@
 
 package org.ktorm.ksp.compiler
 
-import com.google.devtools.ksp.KspExperimental
-import com.google.devtools.ksp.containingFile
-import com.google.devtools.ksp.getAnnotationsByType
-import com.google.devtools.ksp.isAnnotationPresent
+import com.google.devtools.ksp.*
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
@@ -76,9 +73,9 @@ public class KtormProcessor(
     private fun processKtormKspConfig(resolver: Resolver): Pair<CodeGenerateConfig, List<KSAnnotated>> {
         logger.info("start process KtormKspConfig")
         val configSymbols = resolver.getSymbolsWithAnnotation(KtormKspConfig::class.qualifiedName!!)
-        val configRet = configSymbols.filter { !it.ktormValidate() }.toList()
+        val configRet = configSymbols.filter { !it.validate() }.toList()
         logger.info("KtormKspConfigSymbols:${configSymbols.toList()}")
-        val configClasses = configSymbols.filter { it is KSClassDeclaration && it.ktormValidate() }.toList()
+        val configClasses = configSymbols.filter { it is KSClassDeclaration && it.validate() }.toList()
         if (configClasses.size > 1) {
             error("@KtormKspConfig can only be added to a class")
         }
@@ -99,8 +96,8 @@ public class KtormProcessor(
         val symbols = resolver.getSymbolsWithAnnotation(Table::class.qualifiedName!!)
         logger.info("entity symbols:${symbols.toList()}")
         val tableDefinitions = mutableListOf<TableDefinition>()
-        val tableRet = symbols.filter { !it.ktormValidate() }.toList()
-        symbols.filter { it is KSClassDeclaration && it.ktormValidate() }
+        val tableRet = symbols.filter { !it.validate() }.toList()
+        symbols.filter { it is KSClassDeclaration && it.validate() }
             .forEach { it.accept(EntityVisitor(tableDefinitions, entityTableMap), Unit) }
         val entityClassMap = tableDefinitions.associateBy { it.entityClassName }
         logger.info("tableClassNameMap: $entityClassMap")
