@@ -42,9 +42,9 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
             .map { column ->
                 val columnType = if (column.isReferences) {
                     Column::class.asClassName()
-                        .parameterizedBy(column.referencesColumn!!.propertyClassName.copy(nullable = false))
+                        .parameterizedBy(column.referencesColumn!!.nonNullPropertyTypeName)
                 } else {
-                    Column::class.asClassName().parameterizedBy(column.propertyClassName.copy(nullable = false))
+                    Column::class.asClassName().parameterizedBy(column.nonNullPropertyTypeName)
                 }
                 PropertySpec.Companion.builder(
                     column.tablePropertyName.simpleName,
@@ -83,7 +83,7 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
             .map { column ->
                 PropertySpec.Companion.builder(
                     column.tablePropertyName.simpleName,
-                    Column::class.asClassName().parameterizedBy(column.propertyClassName.copy(nullable = false))
+                    Column::class.asClassName().parameterizedBy(column.nonNullPropertyTypeName)
                 )
                     .initializer(buildCodeBlock {
                         add(columnInitializerGenerator.generate(column, dependencyFiles, config))

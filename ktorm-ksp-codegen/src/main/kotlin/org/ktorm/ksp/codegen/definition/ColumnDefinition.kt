@@ -17,8 +17,8 @@
 package org.ktorm.ksp.codegen.definition
 
 import com.google.devtools.ksp.symbol.*
-import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.MemberName
+import com.squareup.kotlinpoet.TypeName
 
 /**
  * Column definitions, which contain all the information about the column, including column names,
@@ -39,7 +39,7 @@ public data class ColumnDefinition(
     /**
      * Type name of the entity property.
      */
-    val propertyClassName: ClassName,
+    val propertyTypeName: TypeName,
 
     /**
      * Name of the entity property.
@@ -97,9 +97,14 @@ public data class ColumnDefinition(
      */
     val isEnum: Boolean = (propertyType.declaration as KSClassDeclaration).classKind == ClassKind.ENUM_CLASS
 
+    /**
+     * Non-null type name of the entity property.
+     */
+    val nonNullPropertyTypeName: TypeName = propertyTypeName.copy(nullable = false)
+
     override fun toString(): String {
-        return "ColumnDefinition(columnName='$columnName', isPrimaryKey=$isPrimaryKey, propertyClassName=" +
-                "$propertyClassName, entityPropertyName=$entityPropertyName, tablePropertyName=$tablePropertyName, " +
+        return "ColumnDefinition(columnName='$columnName', isPrimaryKey=$isPrimaryKey, propertyTypeName=" +
+                "$propertyTypeName, entityPropertyName=$entityPropertyName, tablePropertyName=$tablePropertyName, " +
                 "converterDefinition=$converterDefinition, referencesColumn=$referencesColumn)"
     }
 }

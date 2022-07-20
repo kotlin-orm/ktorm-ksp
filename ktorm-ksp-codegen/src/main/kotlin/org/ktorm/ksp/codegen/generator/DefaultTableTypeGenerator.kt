@@ -23,6 +23,7 @@ import org.ktorm.ksp.codegen.TableGenerateContext
 import org.ktorm.ksp.codegen.TableTypeGenerator
 import org.ktorm.ksp.codegen.definition.KtormEntityType
 import org.ktorm.ksp.codegen.definition.TableDefinition
+import org.ktorm.ksp.codegen.generator.util.SuppressAnnotations
 import org.ktorm.schema.BaseTable
 import org.ktorm.schema.Table
 
@@ -82,6 +83,12 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
 
     private fun buildClassTable(table: TableDefinition, typeSpec: TypeSpec.Builder) {
         typeSpec.addModifiers(KModifier.OPEN)
+            .addAnnotation(
+                SuppressAnnotations.buildSuppress(
+                    SuppressAnnotations.leakingThis,
+                    SuppressAnnotations.uncheckedCast
+                )
+            )
             .primaryConstructor(
                 FunSpec.constructorBuilder()
                     .addParameter(

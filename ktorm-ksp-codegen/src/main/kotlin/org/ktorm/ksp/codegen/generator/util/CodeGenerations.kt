@@ -21,17 +21,18 @@ import org.ktorm.entity.Entity
 import org.ktorm.expression.*
 import org.ktorm.ksp.codegen.TableGenerateContext
 import org.ktorm.ksp.codegen.definition.ColumnDefinition
+import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
 
-public val primitiveTypes: List<ClassName> = listOf(
-    Byte::class.asClassName(),
-    Int::class.asClassName(),
-    Short::class.asClassName(),
-    Long::class.asClassName(),
-    Char::class.asClassName(),
-    Boolean::class.asClassName(),
-    Float::class.asClassName(),
-    Double::class.asClassName()
+public val primitiveTypes: List<TypeName> = listOf(
+    Byte::class.asTypeName(),
+    Int::class.asTypeName(),
+    Short::class.asTypeName(),
+    Long::class.asTypeName(),
+    Char::class.asTypeName(),
+    Boolean::class.asTypeName(),
+    Float::class.asTypeName(),
+    Double::class.asTypeName()
 )
 
 public object MemberNames {
@@ -61,12 +62,15 @@ public object ClassNames {
     public val any: ClassName = Any::class.asClassName()
     public val suppress: ClassName = Suppress::class.asClassName()
     public val entity: ClassName = Entity::class.asClassName()
+    public val kClass: ClassName = KClass::class.asClassName()
 }
 
 public object SuppressAnnotations {
     public const val localVariableName: String = "\"LocalVariableName\""
     public const val functionName: String = "\"FunctionName\""
     public const val unusedParameter: String = "\"UNUSED_PARAMETER\""
+    public const val uncheckedCast: String = "\"UNCHECKED_CAST\""
+    public const val leakingThis: String = "\"LeakingThis\""
 
     public fun buildSuppress(vararg names: String): AnnotationSpec {
         return AnnotationSpec.builder(Suppress::class).addMember(names.joinToString(", ")).build()
@@ -107,7 +111,7 @@ public object CodeFactory {
                         "if·(%L·!==·%M<%T>())",
                         arrayOf(propertyName, MemberNames.undefined, column.constructorParameterType())
                     ) {
-                        if (!column.isNullable && column.propertyClassName in primitiveTypes) {
+                        if (!column.isNullable && column.nonNullPropertyTypeName in primitiveTypes) {
                             addStatement(
                                 "%1L.%2L·=·%2L·?:·error(\"`%1L` should not be null.\")",
                                 entityVar,
@@ -139,11 +143,10 @@ public object CodeFactory {
     }
 
     private fun ColumnDefinition.constructorParameterType(): TypeName {
-        val type = this.propertyClassName
-        return if (type in primitiveTypes) {
-            type.copy(nullable = true)
+        return if (nonNullPropertyTypeName in primitiveTypes) {
+            nonNullPropertyTypeName.copy(nullable = true)
         } else {
-            type.copy(this.isNullable)
+            propertyTypeName
         }
     }
 

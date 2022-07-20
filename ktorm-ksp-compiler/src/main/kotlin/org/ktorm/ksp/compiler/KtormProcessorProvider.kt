@@ -29,6 +29,7 @@ import com.squareup.kotlinpoet.MemberName
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toClassName
+import com.squareup.kotlinpoet.ksp.toTypeName
 import org.atteo.evo.inflector.English
 import org.ktorm.entity.Entity
 import org.ktorm.ksp.api.*
@@ -98,8 +99,10 @@ public class KtormProcessor(
         val tableRet = symbols.filter { !it.validate() }.toList()
         symbols.filter { it is KSClassDeclaration && it.validate() }
             .forEach { it.accept(EntityVisitor(tableDefinitions), Unit) }
+        // entityClassName -> tableDefinition
         val entityClassMap = tableDefinitions.associateBy { it.entityClassName }
         logger.info("tableClassNameMap: $entityClassMap")
+        // references columns
         tableDefinitions
             .asSequence()
             .flatMap { it.columns }
@@ -108,23 +111,24 @@ public class KtormProcessor(
                 if (it.tableDefinition.ktormEntityType != KtormEntityType.ENTITY_INTERFACE) {
                     error("Wrong references column: ${it.tablePropertyName.canonicalName}, References Column are only allowed for interface entity type")
                 }
-                val table = entityClassMap[it.propertyClassName]
+                val nonNullPropertyTypeName = it.nonNullPropertyTypeName
+                val table = entityClassMap[nonNullPropertyTypeName]
                     ?: error(
-                        "Wrong references column: ${it.tablePropertyName.canonicalName} , Type ${it.propertyClassName} " +
-                                "is not an entity type, please check if a @Table annotation is added to type ${it.propertyClassName}"
+                        "Wrong references column: ${it.tablePropertyName.canonicalName} , Type $nonNullPropertyTypeName " +
+                                "is not an entity type, please check if a @Table annotation is added to type $nonNullPropertyTypeName"
                     )
                 if (table.ktormEntityType != KtormEntityType.ENTITY_INTERFACE) {
                     error(
-                        "Wrong references column: ${it.tablePropertyName.canonicalName}. Type ${it.propertyClassName} is not an interface entity type, " +
+                        "Wrong references column: ${it.tablePropertyName.canonicalName}. Type $nonNullPropertyTypeName is not an interface entity type, " +
                                 "References column must be interface entity type"
                     )
                 }
                 val primaryKeyColumns = table.columns.filter { column -> column.isPrimaryKey }
                 if (primaryKeyColumns.isEmpty()) {
-                    error("Wrong references column: ${it.tablePropertyName.canonicalName} , Table ${it.propertyClassName} must have a primary key")
+                    error("Wrong references column: ${it.tablePropertyName.canonicalName} , Table $nonNullPropertyTypeName must have a primary key")
                 }
                 if (primaryKeyColumns.size > 1) {
-                    error("Wrong references column: ${it.tablePropertyName.canonicalName} , Table ${it.propertyClassName} cannot have more than one primary key")
+                    error("Wrong references column: ${it.tablePropertyName.canonicalName} , Table $nonNullPropertyTypeName cannot have more than one primary key")
                 }
                 it.referencesColumn = primaryKeyColumns.first()
             }
@@ -291,7 +295,7 @@ public class KtormProcessor(
                         val columnDef = ColumnDefinition(
                             columnName,
                             isPrimaryKey,
-                            propertyKSType.toClassName(),
+                            propertyKSType.toTypeName(),
                             MemberName(entityClassName, propertyName),
                             tablePropertyName,
                             converterDefinition,

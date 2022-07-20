@@ -32,7 +32,7 @@ public class InterfaceEntityComponentFunGenerator : TopLevelFunctionGenerator {
         table.columns.forEachIndexed { index, column ->
             FunSpec.builder("component${index + 1}")
                 .addModifiers(KModifier.OPERATOR)
-                .returns(column.propertyClassName.copy(nullable = column.isNullable))
+                .returns(column.propertyTypeName)
                 .receiver(table.entityClassName)
                 .addCode("return·this.%L", column.entityPropertyName.simpleName)
                 .build()
