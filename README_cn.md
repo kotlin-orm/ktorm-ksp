@@ -327,11 +327,73 @@ sequenceName  | 指定生成EntitySequence的扩展属性名称，默认取table
 
 extension参数说明
 
-| 参数                                 | 说明             |
-|------------------------------------|:---------------|
-| enableSequenceOf                   | 是否生成实体序列扩展     |
-| enableClassEntitySequenceAddFun    | 是否生成实体序列添加方法扩展 |
-| enableClassEntitySequenceUpdateFun | 是否生成实体序列更新方法扩展 |
+- enableSequenceOf
+  是否生成```EntitySequence```属性扩展. 生成代码示例: 
+  ```kotlin 
+  val Database.employees: EntitySequence<Employee,Employees>
+  ```
+
+- enableClassEntitySequenceAddFun
+  是否生成```EntitySequence.add```方法扩展. 该方法用于将实体插入到数据库中, 生成代码示例:
+  ```kotlin
+  fun EntitySequence<Employee,Employees>.add(employee: Employee)
+  ```
+
+- enableClassEntitySequenceUpdateFun
+  是否生成```EntitySequence.update```方法扩展. 改方法用于根据主键更新实体字段, 生成代码示例: 
+  ```kotlin
+  fun EntitySequence<Employee,Employees>.update(employee: Employee)
+  ```
+
+- enableInterfaceEntitySimulationDataClass
+  是否生成```构造函数``` ```components``` ```copy```方法. 只会对基于Entity接口的实体类生成, 目的是让实体类变的像```data class```一样好用, 生成代码示例:
+  ```kotlin
+  public fun Employee(
+    id: Int? = undefined(),
+    name: String = undefined(),
+    job: String = undefined(),
+  ): Employee
+  
+  public fun Employee.copy(
+    id: Int? = undefined(),
+    name: String = undefined(),
+    job: String = undefined(),
+  ): Employee 
+  
+  public operator fun Employee.component1(): Int = this.id
+  public operator fun Employee.component2(): String = this.name
+  public operator fun Employee.component3(): String = this.job
+  ```
+  **深入了解参数默认值:**```undefined()```
+
+  在ktorm中创建实体实例后，对实例属性赋值null和未赋值是两种实质上不同的行为。例如:
+  ```kotlin
+  val employee1 = Entity.create<Employee>()
+  employee1.id = null
+  database.employees.add(employee1)
+  // SQL: insert into employee (id) values (null)
+  val employee2 = Entity.create<Employee>()
+  employee2.id = null
+  employee2.name = null
+  database.employees.add(employee2)
+  // SQL: insert into employee (id, name) values (null, null)
+  ```
+  生成的SQL语句中不会包含未赋值的属性。
+  ksp生成的```构造函数```和```copy函数```有类似的效果。
+  ```kotlin
+  val employee = Employee(id = null)
+  // 实际效果相当于下面的写法
+  val employee = Entity.create<Employee>()
+  employee.id = null
+  // 没有赋值name属性: employee.name = null
+  ```
+  调用函数时，创建的实体实例不会赋值没有传参的相应属性。
+  为了实现这一点，```构造函数```和```copy函数```中的参数默认值可能是JDK动态代理对象、由byte-buddy生成的代理对象、由Unsafe创建的对象 
+  (这取决于具体类型是什么) 这个生成的实例是唯一的，不会与调用时传递的参数冲突 (除非你也调用```undefined()```来获取实例) 因此，
+  它可以帮助我们确定哪些参数传递了值，哪些参数在调用方法时没有传递值。  
+  此实现的限制是参数类型不能是非空基本类型。这是因为kotlin中的非空基本类型会被自动拆箱，这将导致我们上述实现失败，并且无法判断调用时传递了
+  哪些参数值。所以在生成的```构造函数```和```copy函数```中，如果属性是非空基本类型，则会自动转换为可空基本类型。并且在实际创建实例的过程中，
+  会判断参数值是否为null，如果为null，则会引发异常
 
 ### 命名风格
 
