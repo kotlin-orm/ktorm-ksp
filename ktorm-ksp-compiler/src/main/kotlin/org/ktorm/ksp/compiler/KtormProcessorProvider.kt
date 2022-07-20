@@ -92,13 +92,12 @@ public class KtormProcessor(
 
     private fun processEntity(resolver: Resolver): Pair<List<TableDefinition>, List<KSAnnotated>> {
         logger.info("start process entity")
-        val entityTableMap = mutableMapOf<ClassName, ClassName>()
         val symbols = resolver.getSymbolsWithAnnotation(Table::class.qualifiedName!!)
         logger.info("entity symbols:${symbols.toList()}")
         val tableDefinitions = mutableListOf<TableDefinition>()
         val tableRet = symbols.filter { !it.validate() }.toList()
         symbols.filter { it is KSClassDeclaration && it.validate() }
-            .forEach { it.accept(EntityVisitor(tableDefinitions, entityTableMap), Unit) }
+            .forEach { it.accept(EntityVisitor(tableDefinitions), Unit) }
         val entityClassMap = tableDefinitions.associateBy { it.entityClassName }
         logger.info("tableClassNameMap: $entityClassMap")
         tableDefinitions
@@ -211,8 +210,7 @@ public class KtormProcessor(
 
 
     public inner class EntityVisitor(
-        private val tableDefinitions: MutableList<TableDefinition>,
-        private val entityTableMap: MutableMap<ClassName, ClassName>,
+        private val tableDefinitions: MutableList<TableDefinition>
     ) : KSVisitorVoid() {
 
         @OptIn(KspExperimental::class, KotlinPoetKspPreview::class)
@@ -305,7 +303,6 @@ public class KtormProcessor(
                         )
                         columnDefs.add(columnDef)
                     }
-                entityTableMap[entityClassName] = tableClassName
             } catch (e: Exception) {
                 logger.error(
                     "EntityVisitor visitClassDeclaration error. className:" +
