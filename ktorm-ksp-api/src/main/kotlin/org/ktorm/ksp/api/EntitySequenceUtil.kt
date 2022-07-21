@@ -40,6 +40,4 @@ public object EntitySequenceUtil {
             )
         }
     }
-
 }
-
