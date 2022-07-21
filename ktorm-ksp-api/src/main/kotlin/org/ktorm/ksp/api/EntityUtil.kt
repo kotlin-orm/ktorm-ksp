@@ -59,12 +59,19 @@ public object EntityUtil {
         return undefinedValues.computeIfAbsent(T::class.java) { cls: Class<*> ->
             if (cls.isInterface) {
                 createJdkDynamicProxy(cls)
+            } else if (cls.isArray) {
+                createArray(cls)
             } else if (Modifier.isAbstract(cls.modifiers)) {
                 createByteBuddyProxy(cls)
             } else {
                 createUnsafeInstance(cls)
             }
         } as T
+    }
+
+    @PublishedApi
+    internal fun createArray(cls: Class<*>): Any? {
+        return java.lang.reflect.Array.newInstance(cls.componentType, 0)
     }
 
     @PublishedApi

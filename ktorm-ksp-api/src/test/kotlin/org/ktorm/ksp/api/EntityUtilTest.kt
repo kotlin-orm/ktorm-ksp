@@ -121,4 +121,10 @@ public class EntityUtilTest {
     public fun `undefined function`() {
         undefinedValueTest<(Int) -> String> { it.toString() }
     }
+
+    @Test
+    public fun `undefined array`() {
+        undefinedValueTest(intArrayOf())
+        undefinedValueTest<Array<School>>(arrayOf())
+    }
 }
