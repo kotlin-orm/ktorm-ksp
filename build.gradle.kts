@@ -4,8 +4,7 @@ plugins {
 
 buildscript {
     dependencies {
-        val gradlePluginVersion: String by project
-        classpath(kotlin("gradle-plugin", version = gradlePluginVersion))
+        classpath(libs.gradlePlugin.kotlin)
     }
 }
 
