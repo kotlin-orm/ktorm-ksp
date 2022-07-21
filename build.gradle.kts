@@ -8,7 +8,7 @@ buildscript {
     }
 }
 
-val fileVersion = file("ktorm-ksp.version").readText()
+val fileVersion = file("ktorm-ksp.version").readText().trim()
 
 allprojects {
     group = "org.ktorm"
