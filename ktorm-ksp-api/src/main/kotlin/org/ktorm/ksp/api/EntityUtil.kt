@@ -71,7 +71,11 @@ public object EntityUtil {
 
     @PublishedApi
     internal fun createArray(cls: Class<*>): Any? {
-        return java.lang.reflect.Array.newInstance(cls.componentType, 0)
+        try {
+            return java.lang.reflect.Array.newInstance(cls.componentType, 0)
+        } catch (e: Exception) {
+            throw CreateUndefinedException("Failed to create instance with array", e)
+        }
     }
 
     @PublishedApi
