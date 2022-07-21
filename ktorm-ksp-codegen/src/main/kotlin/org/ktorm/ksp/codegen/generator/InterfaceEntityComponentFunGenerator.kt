@@ -39,5 +39,4 @@ public class InterfaceEntityComponentFunGenerator : TopLevelFunctionGenerator {
                 .run(emitter)
         }
     }
-
 }

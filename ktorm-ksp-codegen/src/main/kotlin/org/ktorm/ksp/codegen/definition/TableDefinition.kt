@@ -46,7 +46,6 @@ public data class TableDefinition(
      */
     val sequenceName: String,
 
-
     /**
      * The Table alias, Corresponding to the [org.ktorm.ksp.api.Table.alias] property, may be an empty string.
      */

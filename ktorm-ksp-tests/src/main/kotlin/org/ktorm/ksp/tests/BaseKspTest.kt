@@ -22,7 +22,6 @@ import java.io.File
 
 public abstract class BaseKspTest : BaseTest() {
 
-
     protected open fun createKspCompiler(vararg sourceFiles: SourceFile, useKsp: Boolean = true): KotlinCompilation {
         return KotlinCompilation().apply {
             workingDir = temporaryFolder.root
@@ -76,15 +75,9 @@ public abstract class BaseKspTest : BaseTest() {
             .map { SourceFile.fromPath(it.absoluteFile) }
             .toList()
 
-
     protected val KotlinCompilation.kspGeneratedFiles: List<File>
         get() = kspSourcesDir.resolve("kotlin")
             .walk()
             .filter { it.isFile }
             .toList()
-
-
 }
-
-
-

@@ -27,7 +27,6 @@ import org.ktorm.ksp.codegen.TopLevelFunctionGenerator
 import org.ktorm.ksp.codegen.generator.util.MemberNames
 import org.ktorm.ksp.codegen.generator.util.withControlFlow
 
-
 public class SequenceUpdateAllFunctionGenerator : TopLevelFunctionGenerator {
 
     private val batchUpdate = MemberName("org.ktorm.dsl", "batchUpdate", true)

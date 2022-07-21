@@ -80,7 +80,7 @@ public abstract class BaseTest {
     }
 
     private fun Any.reflectionInvoke(methodName: String, vararg args: Any?): Any? {
-        return this::class.functions.first { it.name == methodName }.call(this@reflectionInvoke, *args)
+        return this::class.functions.first { it.name == methodName }.call(this, *args)
     }
 
     protected fun KotlinCompilation.Result.invokeBridge(methodName: String, vararg args: Any?): Any? {
@@ -88,5 +88,4 @@ public abstract class BaseTest {
         val bridge = bridgeClass.kotlin.objectInstance!!
         return bridge.reflectionInvoke(methodName, *args)
     }
-
 }

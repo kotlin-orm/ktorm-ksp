@@ -47,5 +47,4 @@ public class InterfaceEntityConstructorFunGenerator : TopLevelFunctionGenerator 
             .build()
             .apply(emitter)
     }
-
 }

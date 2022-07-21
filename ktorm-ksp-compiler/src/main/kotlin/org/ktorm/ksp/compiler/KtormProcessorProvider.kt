@@ -154,7 +154,7 @@ public class KtormProcessor(
                     kspConfig.extension.enableClassEntitySequenceUpdateFun,
                     kspConfig.extension.enableInterfaceEntitySimulationDataClass
                 )
-                //namingStrategy
+                // namingStrategy
                 val namingStrategyType = argumentMap[KtormKspConfig::namingStrategy.name]!!.value as KSType
                 if (namingStrategyType.toClassName() != Nothing::class.asClassName()) {
                     if ((namingStrategyType.declaration as KSClassDeclaration).classKind != ClassKind.OBJECT) {
@@ -209,9 +209,7 @@ public class KtormProcessor(
                 throw e
             }
         }
-
     }
-
 
     public inner class EntityVisitor(
         private val tableDefinitions: MutableList<TableDefinition>
@@ -229,7 +227,7 @@ public class KtormProcessor(
                     ClassKind.INTERFACE -> {
                         val entityQualifiedName = Entity::class.qualifiedName
                         classDeclaration.findSuperTypeReference(entityQualifiedName!!)
-                            ?: error("wrong entity class declaration: ${entityClassName.canonicalName}, Entity of interface type must inherit [${entityQualifiedName}]")
+                            ?: error("wrong entity class declaration: ${entityClassName.canonicalName}, Entity of interface type must inherit [$entityQualifiedName]")
                         KtormEntityType.ENTITY_INTERFACE
                     }
 
@@ -264,8 +262,9 @@ public class KtormProcessor(
                     .forEach { ksProperty ->
                         val propertyKSType = ksProperty.type.resolve()
                         val propertyName = ksProperty.simpleName.asString()
-                        if (ksProperty.isAnnotationPresent(Ignore::class) || propertyName in table.ignoreColumns
-                            || (tableDef.ktormEntityType == KtormEntityType.ENTITY_INTERFACE && propertyName in ignoreInterfaceEntityProperties)
+                        if (ksProperty.isAnnotationPresent(Ignore::class)
+                            || propertyName in table.ignoreColumns
+                            || tableDef.ktormEntityType == KtormEntityType.ENTITY_INTERFACE && propertyName in ignoreInterfaceEntityProperties
                         ) {
                             logger.info("ignore column: ${tableDef.entityClassName.canonicalName}.$propertyName")
                             return@forEach
@@ -273,7 +272,7 @@ public class KtormProcessor(
                         val columnAnnotation = ksProperty.getAnnotationsByType(Column::class).firstOrNull()
                         val ksColumnAnnotation =
                             ksProperty.annotations.firstOrNull { anno -> anno.annotationType.resolve().declaration.qualifiedName?.asString() == columnQualifiedName }
-                        //converter
+                        // converter
                         val converter =
                             ksColumnAnnotation?.arguments?.firstOrNull { anno -> anno.name?.asString() == Column::converter.name }?.value as KSType?
                         var converterDefinition: ConverterDefinition? = null
@@ -315,6 +314,5 @@ public class KtormProcessor(
                 throw e
             }
         }
-
     }
 }

@@ -128,5 +128,3 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
             .run(emitter)
     }
 }
-
-

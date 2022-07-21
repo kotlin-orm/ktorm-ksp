@@ -38,7 +38,7 @@ public object KtormCodeGenerator {
         logger: KSPLogger,
     ) {
         logger.info("generate tables:${tables.map { it.entityClassName.simpleName }}")
-        logger.info("code generator config:${config}")
+        logger.info("code generator config:$config")
         val tableFileGenerator = TableFileGenerator(config, logger)
         val configDependencyFile = config.configDependencyFile
         for (table in tables) {
@@ -53,5 +53,4 @@ public object KtormCodeGenerator {
             file.writeTo(codeGenerator, Dependencies(true, *dependencyFiles.toTypedArray()))
         }
     }
-
 }
