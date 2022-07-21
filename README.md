@@ -21,8 +21,6 @@
 generate Table objects through entity classes, while making entities defined by data classes easier to use, and supports
 custom extension code generation logic.
 
-- PS： The project is still in development
-
 # Feature
 
 - Just write the entity class and automatically generate the corresponding Table object. Support classes defined based
