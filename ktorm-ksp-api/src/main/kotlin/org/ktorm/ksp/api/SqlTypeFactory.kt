@@ -14,24 +14,18 @@
  * limitations under the License.
  */
 
-package org.ktorm.ksp.codegen.definition
+package org.ktorm.ksp.api
 
-import com.google.devtools.ksp.symbol.KSClassDeclaration
-import com.squareup.kotlinpoet.ClassName
-import org.ktorm.ksp.api.Converter
+import org.ktorm.schema.SqlType
+import kotlin.reflect.KType
 
 /**
- * The definition of the converter, the converter here refers specifically to the [Converter] type.
+ * Factory interface that creates [SqlType] instances from Kotlin [KType].
  */
-public data class ConverterDefinition(
+public interface SqlTypeFactory {
 
     /**
-     * The type name of the converter.
+     * Create a [SqlType] instance.
      */
-    public val converterName: ClassName,
-
-    /**
-     * Type declaration for converters.
-     */
-    public val converterClassDeclaration: KSClassDeclaration
-)
+    public fun createSqlType(kotlinType: KType): SqlType<*>
+}

@@ -170,16 +170,19 @@ public class DefaultTableTypeGeneratorTest : BaseKspTest() {
                 data class User(
                     @PrimaryKey
                     var id: Int,
-                    @Column(columnName = "c_username", propertyName = "p_username", converter = MyStringConverter::class)
+                    @Column(columnName = "c_username", propertyName = "p_username", sqlType = MyStringSqlType::class)
                     var username: String,
                     var age: Int
                 )
 
-                object MyStringConverter: SingleTypeConverter<String> {
-                    public override fun convert(table: BaseTable<*>, columnName: String, propertyType: KClass<String>): org.ktorm.schema.Column<String> {
-                        return with(table) {
-                            varchar(columnName).transform({it.uppercase()},{it.lowercase()})
-                        }
+                object MyStringSqlType : SqlType<String>(Types.VARCHAR, "varchar") {
+        
+                    override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: String) {
+                        ps.setString(index, parameter.lowercase())
+                    }
+            
+                    override fun doGetResult(rs: ResultSet, index: Int): String? {
+                        return rs.getString(index)?.uppercase()
                     }
                 }
                 """,

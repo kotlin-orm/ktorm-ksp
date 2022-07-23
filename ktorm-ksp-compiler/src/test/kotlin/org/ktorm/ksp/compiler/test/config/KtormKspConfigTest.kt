@@ -149,7 +149,7 @@ public class KtormKspConfigTest : BaseKspTest() {
                     var id: Int,
                     var username: String,
                     var age: Int,
-                    @org.ktorm.ksp.api.Column(converter = IntEnumConverter::class)
+                    @org.ktorm.ksp.api.Column(sqlType = IntEnumSqlTypeFactory::class)
                     var gender: Gender
                 )
                 
@@ -158,11 +158,26 @@ public class KtormKspConfigTest : BaseKspTest() {
                     FEMALE
                 }               
 
-                object IntEnumConverter: EnumConverter {
-                    override fun <E : Enum<E>> convert(table: BaseTable<*>, columnName: String, propertyType: KClass<E>): Column<E>{
-                        val values = propertyType.java.enumConstants
-                        return with(table) {
-                            int(columnName).transform( {values[it]} , {it.ordinal} )
+                object IntEnumSqlTypeFactory : SqlTypeFactory {
+
+                    @Suppress("UNCHECKED_CAST")
+                    override fun createSqlType(kotlinType: KType): SqlType<*> {
+                        val cls = kotlinType.jvmErasure.java
+                        if (cls.isEnum) {
+                            return IntEnumSqlType(cls as Class<out Enum<*>>)
+                        } else {
+                            throw IllegalArgumentException("The property is required to be typed of enum but actually: ${"$"}kotlinType")
+                        }
+                    }
+                
+                    private class IntEnumSqlType<E : Enum<E>>(val enumClass: Class<E>) : SqlType<E>(Types.INTEGER, "int") {
+                
+                        override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: E) {
+                            ps.setInt(index, parameter.ordinal)
+                        }
+                
+                        override fun doGetResult(rs: ResultSet, index: Int): E? {
+                            return enumClass.enumConstants[rs.getInt(index)]
                         }
                     }
                 }

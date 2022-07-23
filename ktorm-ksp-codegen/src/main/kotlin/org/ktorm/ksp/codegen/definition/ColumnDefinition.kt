@@ -17,6 +17,7 @@
 package org.ktorm.ksp.codegen.definition
 
 import com.google.devtools.ksp.symbol.*
+import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.MemberName
 import com.squareup.kotlinpoet.TypeName
 
@@ -52,9 +53,9 @@ public data class ColumnDefinition(
     val tablePropertyName: MemberName,
 
     /**
-     * The converter definition, Corresponds to the [org.ktorm.ksp.api.Column.converter] property.
+     * The SQL type for this column.
      */
-    val converterDefinition: ConverterDefinition?,
+    val sqlType: KSType?,
 
     /**
      * Entity property declaration.
@@ -105,6 +106,6 @@ public data class ColumnDefinition(
     override fun toString(): String {
         return "ColumnDefinition(columnName='$columnName', isPrimaryKey=$isPrimaryKey, propertyTypeName=" +
                 "$propertyTypeName, entityPropertyName=$entityPropertyName, tablePropertyName=$tablePropertyName, " +
-                "converterDefinition=$converterDefinition, referencesColumn=$referencesColumn)"
+                "sqlType=$sqlType, referencesColumn=$referencesColumn)"
     }
 }

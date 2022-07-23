@@ -37,7 +37,6 @@ import org.ktorm.ksp.codegen.CodeGenerateConfig
 import org.ktorm.ksp.codegen.ColumnInitializerGenerator
 import org.ktorm.ksp.codegen.ExtensionGeneratorConfig
 import org.ktorm.ksp.codegen.definition.ColumnDefinition
-import org.ktorm.ksp.codegen.definition.ConverterDefinition
 import org.ktorm.ksp.codegen.definition.KtormEntityType
 import org.ktorm.ksp.codegen.definition.TableDefinition
 import org.ktorm.ksp.compiler.generator.KtormCodeGenerator
@@ -66,7 +65,7 @@ public class KtormProcessor(
         val (tableDefinitions, tableRets) = processEntity(resolver)
         // start generate
         KtormCodeGenerator.generate(
-            tableDefinitions, environment.codeGenerator, config, ColumnInitializerGenerator(config, logger), logger
+            tableDefinitions, environment.codeGenerator, config, ColumnInitializerGenerator(logger), logger
         )
         return configRets + tableRets
     }
@@ -169,38 +168,6 @@ public class KtormProcessor(
                         // ignore
                     }
                 }
-
-                // enum converter
-                val enumConverterType = argumentMap[KtormKspConfig::enumConverter.name]!!.value as KSType
-                if (enumConverterType.toClassName() != Nothing::class.asClassName()) {
-                    if ((enumConverterType.declaration as KSClassDeclaration).classKind != ClassKind.OBJECT) {
-                        error("Wrong KtormKspConfig parameter:${KtormKspConfig::enumConverter.name}, converter must be singleton.")
-                    }
-                    configBuilder.enumConverter = ConverterDefinition(
-                        enumConverterType.toClassName(), enumConverterType.declaration as KSClassDeclaration
-                    )
-                }
-
-                // single type converter
-                @Suppress("UNCHECKED_CAST") val singleTypeConverters =
-                    argumentMap[KtormKspConfig::singleTypeConverters.name]!!.value as List<KSType>
-                if (singleTypeConverters.isNotEmpty()) {
-                    val singleTypeConverterMap = singleTypeConverters.asSequence()
-                        .onEach {
-                            if ((it.declaration as KSClassDeclaration).classKind != ClassKind.OBJECT) {
-                                error("Wrong KtormKspConfig parameter:${KtormKspConfig::singleTypeConverters.name} value:${it.declaration.qualifiedName!!.asString()} converter must be singleton.")
-                            }
-                        }.associate {
-                            val singleTypeReference =
-                                (it.declaration as KSClassDeclaration).findSuperTypeReference(SingleTypeConverter::class.qualifiedName!!)!!
-                            val supportType =
-                                singleTypeReference.resolve().arguments.first().type!!.resolve().toClassName()
-                            val converterDefinition =
-                                ConverterDefinition(it.toClassName(), it.declaration as KSClassDeclaration)
-                            supportType to converterDefinition
-                        }
-                    configBuilder.singleTypeConverters = singleTypeConverterMap
-                }
             } catch (e: Exception) {
                 logger.error(
                     "KtormKspConfigVisitor visitClassDeclaration error. className:" +
@@ -272,18 +239,9 @@ public class KtormProcessor(
                         val columnAnnotation = ksProperty.getAnnotationsByType(Column::class).firstOrNull()
                         val ksColumnAnnotation =
                             ksProperty.annotations.firstOrNull { anno -> anno.annotationType.resolve().declaration.qualifiedName?.asString() == columnQualifiedName }
-                        // converter
-                        val converter =
-                            ksColumnAnnotation?.arguments?.firstOrNull { anno -> anno.name?.asString() == Column::converter.name }?.value as KSType?
-                        var converterDefinition: ConverterDefinition? = null
-                        if (converter != null && converter.toClassName() != Nothing::class.asClassName()) {
-                            val converterDeclaration = converter.declaration as KSClassDeclaration
-                            if (converterDeclaration.classKind != ClassKind.OBJECT) {
-                                error("Wrong converter type:${converter.toClassName()}, converter must be singleton.")
-                            }
-                            converterDefinition = ConverterDefinition(converter.toClassName(), converterDeclaration)
-                        }
 
+                        val sqlType =
+                            ksColumnAnnotation?.arguments?.firstOrNull { it.name?.asString() == Column::sqlType.name }?.value as KSType?
                         val isPrimaryKey = ksProperty.getAnnotationsByType(PrimaryKey::class).any()
                         val columnName = columnAnnotation?.columnName ?: ""
                         val tablePropertyName = if (columnAnnotation?.propertyName.isNullOrEmpty()) {
@@ -297,7 +255,7 @@ public class KtormProcessor(
                             propertyKSType.toTypeName(),
                             MemberName(entityClassName, propertyName),
                             tablePropertyName,
-                            converterDefinition,
+                            sqlType?.takeIf { it.toClassName() != Nothing::class.asClassName() },
                             ksProperty,
                             propertyKSType,
                             tableDef,

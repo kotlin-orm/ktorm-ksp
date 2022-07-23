@@ -126,7 +126,7 @@ public class DefaultTablePropertyGeneratorTest : BaseKspTest() {
                 data class User(
                     @PrimaryKey
                     var id: Int?,
-                    @Column(converter = StringValueWrapperConverter::class)
+                    @Column(sqlType = ValueWrapperSqlType::class)
                     var username: ValueWrapper<String>,
                     var age: Int,
                 )
@@ -136,15 +136,14 @@ public class DefaultTablePropertyGeneratorTest : BaseKspTest() {
 
                 data class ValueWrapper<T>(var value: T)
                 
-                object StringValueWrapperConverter : SingleTypeConverter<ValueWrapper<String>> {
-                    override fun convert(
-                        table: BaseTable<*>,
-                        columnName: String,
-                        propertyType: KClass<ValueWrapper<String>>
-                    ): org.ktorm.schema.Column<ValueWrapper<String>> {
-                        return with(table) {
-                            varchar(columnName).transform({ ValueWrapper(it) }, { it.value })
-                        }
+                object ValueWrapperSqlType : SqlType<ValueWrapper<String>>(Types.VARCHAR, "varchar") {
+
+                    override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: ValueWrapper<String>) {
+                        ps.setString(index, parameter.value)
+                    }
+            
+                    override fun doGetResult(rs: ResultSet, index: Int): ValueWrapper<String> {
+                        return ValueWrapper(rs.getString(index))
                     }
                 }
 
