@@ -33,14 +33,15 @@ public class KtormKspConfigTest : BaseKspTest() {
                 "source.kt",
                 """
                 import org.ktorm.ksp.api.*
-                import org.ktorm.schema.varchar
-                import org.ktorm.schema.BaseTable
+                import org.ktorm.schema.SqlType
+                import java.sql.*
                 import kotlin.reflect.KClass
                 
                 @Table
                 data class User(
                     @PrimaryKey
                     var id: Int,
+                    @Column(sqlType = UsernameSqlType::class)
                     var username: Username,
                     var age: Int,
                     
@@ -51,28 +52,20 @@ public class KtormKspConfigTest : BaseKspTest() {
                     val lastName:String
                 )
 
-                @KtormKspConfig(
-                    singleTypeConverters = [UsernameConverter::class]
-                )
-                class KtormConfig
+                object UsernameSqlType : SqlType<Username>(Types.VARCHAR, "varchar") {
 
-                object UsernameConverter: SingleTypeConverter<Username> {
-                    public override fun convert(table: BaseTable<*>, columnName: String, propertyType: KClass<Username>): org.ktorm.schema.Column<Username> {
-                        return with(table) {
-                            varchar(columnName).transform({
-                                val spilt = it.split("#")
-                                Username(spilt[0],spilt[1])
-                            },{
-                                it.firstName +"#" + it.lastName
-                            })
-                        }
+                    override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: Username) {
+                        ps.setString(index, parameter.firstName + "#" + parameter.lastName)
+                    }
+                
+                    override fun doGetResult(rs: ResultSet, index: Int): Username? {
+                        val (firstName, lastName) = rs.getString(index)?.split("#") ?: return null
+                        return Username(firstName, lastName)
                     }
                 }
                 """,
             )
-        ) {
-            assertThat(it).contains("UsernameConverter.convert")
-        }
+        )
         assertThat(result1.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         assertThat(result2.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         val baseTable = result2.getBaseTable("Users")
@@ -82,66 +75,16 @@ public class KtormKspConfigTest : BaseKspTest() {
     }
 
     @Test
-    public fun `non singleton single type converter in ktormKspConfig`() {
-        val result = compile(
-            SourceFile.kotlin(
-                "source.kt",
-                """
-                import org.ktorm.ksp.api.*
-                import org.ktorm.schema.varchar
-                import org.ktorm.schema.BaseTable
-                import kotlin.reflect.KClass
-                
-                @Table
-                data class User(
-                    @PrimaryKey
-                    var id: Int,
-                    var username: Username,
-                    var age: Int,
-                    
-                )
-                
-                data class Username(
-                    val firstName:String,
-                    val lastName:String
-                )
-
-                @KtormKspConfig(
-                    singleTypeConverters = [UsernameConverter::class]
-                )
-                class KtormConfig
-
-                class UsernameConverter: SingleTypeConverter<Username> {
-                    public override fun convert(table: BaseTable<*>, columnName: String, propertyType: KClass<Username>): org.ktorm.schema.Column<Username> {
-                        return with(table) {
-                            varchar(columnName).transform({
-                                val spilt = it.split("#")
-                                Username(spilt[0],spilt[1])
-                            },{
-                                it.firstName +"#" + it.lastName
-                            })
-                        }
-                    }
-                }
-                """,
-            )
-        )
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains("converter must be singleton")
-    }
-
-    @Test
     public fun `singleton enum converter in ktormKspConfig`() {
         val (result1, result2) = twiceCompile(
             SourceFile.kotlin(
                 "source.kt",
                 """
                 import org.ktorm.ksp.api.*
-                import org.ktorm.schema.varchar
-                import org.ktorm.schema.BaseTable
-                import org.ktorm.schema.Column
-                import org.ktorm.schema.int
-                import kotlin.reflect.KClass
+                import org.ktorm.schema.SqlType
+                import java.sql.*
+                import kotlin.reflect.KProperty1
+                import kotlin.reflect.jvm.jvmErasure
                 
                 @Table
                 data class User(
@@ -149,7 +92,7 @@ public class KtormKspConfigTest : BaseKspTest() {
                     var id: Int,
                     var username: String,
                     var age: Int,
-                    @org.ktorm.ksp.api.Column(sqlType = IntEnumSqlTypeFactory::class)
+                    @Column(sqlType = IntEnumSqlTypeFactory::class)
                     var gender: Gender
                 )
                 
@@ -159,14 +102,14 @@ public class KtormKspConfigTest : BaseKspTest() {
                 }               
 
                 object IntEnumSqlTypeFactory : SqlTypeFactory {
-
+                
                     @Suppress("UNCHECKED_CAST")
-                    override fun createSqlType(kotlinType: KType): SqlType<*> {
-                        val cls = kotlinType.jvmErasure.java
-                        if (cls.isEnum) {
-                            return IntEnumSqlType(cls as Class<out Enum<*>>)
+                    override fun <T : Any> createSqlType(property: KProperty1<*, T?>): SqlType<T> {
+                        val returnType = property.returnType.jvmErasure.java
+                        if (returnType.isEnum) {
+                            return IntEnumSqlType(returnType as Class<out Enum<*>>) as SqlType<T>
                         } else {
-                            throw IllegalArgumentException("The property is required to be typed of enum but actually: ${"$"}kotlinType")
+                            throw IllegalArgumentException("The property is required to be typed of enum but actually: ${"$"}returnType")
                         }
                     }
                 
@@ -183,10 +126,7 @@ public class KtormKspConfigTest : BaseKspTest() {
                 }
                 """,
             )
-        ) {
-            println(it)
-            assertThat(it).contains("IntEnumConverter.convert")
-        }
+        )
         assertThat(result1.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         assertThat(result2.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         val baseTable = result2.getBaseTable("Users")
@@ -194,53 +134,4 @@ public class KtormKspConfigTest : BaseKspTest() {
         assertThat(column).isNotNull
         assertThat(column!!.sqlType.typeCode).isEqualTo(IntSqlType.typeCode)
     }
-
-    @Test
-    public fun `non singleton enum converter in ktormKspConfig`() {
-        val result = compile(
-            SourceFile.kotlin(
-                "source.kt",
-                """
-                import org.ktorm.ksp.api.*
-                import org.ktorm.schema.varchar
-                import org.ktorm.schema.BaseTable
-                import org.ktorm.schema.Column
-                import org.ktorm.schema.int
-                import kotlin.reflect.KClass
-                
-                @Table
-                data class User(
-                    @PrimaryKey
-                    var id: Int,
-                    var username: String,
-                    var age: Int,
-                    var gender: Gender
-                )
-                
-                enum class Gender {
-                    MALE,
-                    FEMALE
-                }               
-
-                @KtormKspConfig(
-                    enumConverter = IntEnumConverter::class
-                )
-                class KtormConfig
-
-                class IntEnumConverter: EnumConverter {
-                    override fun <E : Enum<E>> convert(table: BaseTable<*>, columnName: String, propertyType: KClass<E>): Column<E>{
-                        val values = propertyType.java.enumConstants
-                        return with(table) {
-                            int(columnName).transform( {values[it]} , {it.ordinal} )
-                        }
-                    }
-                }
-                """,
-            )
-        )
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains("converter must be singleton")
-    }
-
-
 }

@@ -27,7 +27,6 @@ import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toClassName
 import org.ktorm.ksp.codegen.definition.ColumnDefinition
 import org.ktorm.ksp.compiler.findSuperTypeReference
-import org.ktorm.schema.SqlType
 import java.math.BigDecimal
 import java.sql.Date
 import java.sql.Time
@@ -168,22 +167,20 @@ public open class ColumnInitializerGenerator(private val logger: KSPLogger) {
             return buildCodeBlock {
                 if (actualColumnName.isEmpty()) {
                     add(
-                        "registerColumn(%T.toColumnName(%S),·%T.createSqlType(typeOf<%L>) as %T<%L>)",
+                        "registerColumn(%T.toColumnName(%S),·%T.createSqlType(%T::%L))",
                         config.namingStrategy,
                         entityPropertyName.simpleName,
                         sqlType.toClassName(),
-                        propertyTypeName,
-                        SqlType::class.asClassName(),
-                        propertyTypeName
+                        entityPropertyName.enclosingClassName,
+                        entityPropertyName.simpleName
                     )
                 } else {
                     add(
-                        "registerColumn(%S,·%T.createSqlType(typeOf<%L>) as %T<%L>)",
+                        "registerColumn(%S,·%T.createSqlType(%T::%L))",
                         actualColumnName,
                         sqlType.toClassName(),
-                        propertyTypeName,
-                        SqlType::class.asClassName(),
-                        propertyTypeName
+                        entityPropertyName.enclosingClassName,
+                        entityPropertyName.simpleName
                     )
                 }
             }

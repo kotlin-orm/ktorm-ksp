@@ -17,15 +17,15 @@
 package org.ktorm.ksp.api
 
 import org.ktorm.schema.SqlType
-import kotlin.reflect.KType
+import kotlin.reflect.KProperty1
 
 /**
- * Factory interface that creates [SqlType] instances from Kotlin [KType].
+ * Factory interface that creates [SqlType] instances from entity properties.
  */
 public interface SqlTypeFactory {
 
     /**
      * Create a [SqlType] instance.
      */
-    public fun createSqlType(kotlinType: KType): SqlType<*>
+    public fun <T : Any> createSqlType(property: KProperty1<*, T?>): SqlType<T>
 }

@@ -162,8 +162,8 @@ public class DefaultTableTypeGeneratorTest : BaseKspTest() {
                 "source.kt",
                 """
                 import org.ktorm.ksp.api.*
-                import org.ktorm.schema.varchar
-                import org.ktorm.schema.BaseTable
+                import org.ktorm.schema.SqlType
+                import java.sql.*
                 import kotlin.reflect.KClass
                 
                 @Table
@@ -187,10 +187,7 @@ public class DefaultTableTypeGeneratorTest : BaseKspTest() {
                 }
                 """,
             )
-        ) {
-            it.contains("""MyStringConverter.convert(this,"c_username",String::class)""")
-            it.contains("""val p_username: Column<String>""")
-        }
+        )
         assertThat(result1.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         assertThat(result2.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         val baseTable = result2.getBaseTable("Users")

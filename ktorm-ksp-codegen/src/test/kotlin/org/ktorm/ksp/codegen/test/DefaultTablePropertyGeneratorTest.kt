@@ -116,7 +116,9 @@ public class DefaultTablePropertyGeneratorTest : BaseKspTest() {
                 import org.ktorm.database.Database
                 import org.ktorm.entity.Entity
                 import org.ktorm.entity.EntitySequence
+                import org.ktorm.schema.SqlType
                 import org.ktorm.ksp.api.*
+                import java.sql.*
                 import java.time.LocalDate
                 import org.ktorm.schema.BaseTable
                 import org.ktorm.schema.varchar

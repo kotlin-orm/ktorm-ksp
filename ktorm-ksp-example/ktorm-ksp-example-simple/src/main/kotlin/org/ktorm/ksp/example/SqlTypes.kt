@@ -17,11 +17,11 @@
 package org.ktorm.ksp.example
 
 import org.ktorm.ksp.api.SqlTypeFactory
-import org.ktorm.schema.*
+import org.ktorm.schema.SqlType
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.sql.Types
-import kotlin.reflect.KType
+import kotlin.reflect.KProperty1
 import kotlin.reflect.jvm.jvmErasure
 
 public object LocationWrapperSqlType : SqlType<LocationWrapper>(Types.VARCHAR, "varchar") {
@@ -38,12 +38,12 @@ public object LocationWrapperSqlType : SqlType<LocationWrapper>(Types.VARCHAR, "
 public object IntEnumSqlTypeFactory : SqlTypeFactory {
 
     @Suppress("UNCHECKED_CAST")
-    override fun createSqlType(kotlinType: KType): SqlType<*> {
-        val cls = kotlinType.jvmErasure.java
-        if (cls.isEnum) {
-            return IntEnumSqlType(cls as Class<out Enum<*>>)
+    override fun <T : Any> createSqlType(property: KProperty1<*, T?>): SqlType<T> {
+        val returnType = property.returnType.jvmErasure.java
+        if (returnType.isEnum) {
+            return IntEnumSqlType(returnType as Class<out Enum<*>>) as SqlType<T>
         } else {
-            throw IllegalArgumentException("The property is required to be typed of enum but actually: $kotlinType")
+            throw IllegalArgumentException("The property is required to be typed of enum but actually: $returnType")
         }
     }
 
