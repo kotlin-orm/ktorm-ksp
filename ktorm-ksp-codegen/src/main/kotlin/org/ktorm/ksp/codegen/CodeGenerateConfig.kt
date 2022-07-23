@@ -20,15 +20,12 @@ import com.google.devtools.ksp.symbol.KSFile
 import com.squareup.kotlinpoet.ClassName
 import org.ktorm.ksp.api.KtormKspConfig
 import org.ktorm.ksp.api.NamingStrategy
-import org.ktorm.ksp.codegen.definition.ConverterDefinition
 
 /**
  * @see [KtormKspConfig]
  */
 public data class CodeGenerateConfig(
     public val allowReflectionCreateEntity: Boolean,
-    public val enumConverter: ConverterDefinition?,
-    public val singleTypeConverters: Map<ClassName, ConverterDefinition>,
     public val configDependencyFile: KSFile?,
     public val namingStrategy: ClassName?,
     public val localNamingStrategy: NamingStrategy?,
@@ -40,8 +37,6 @@ public data class CodeGenerateConfig(
      */
     public class Builder {
         public var allowReflectionCreateEntity: Boolean = true
-        public var enumConverter: ConverterDefinition? = null
-        public var singleTypeConverters: Map<ClassName, ConverterDefinition> = emptyMap()
         public var configDependencyFile: KSFile? = null
         public var namingStrategy: ClassName? = null
         public var localNamingStrategy: NamingStrategy? = null
@@ -53,8 +48,6 @@ public data class CodeGenerateConfig(
         public fun build(): CodeGenerateConfig {
             return CodeGenerateConfig(
                 allowReflectionCreateEntity,
-                enumConverter,
-                singleTypeConverters,
                 configDependencyFile,
                 namingStrategy,
                 localNamingStrategy,

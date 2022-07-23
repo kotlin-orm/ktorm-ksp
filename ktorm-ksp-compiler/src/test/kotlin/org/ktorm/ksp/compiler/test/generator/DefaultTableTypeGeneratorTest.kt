@@ -162,32 +162,32 @@ public class DefaultTableTypeGeneratorTest : BaseKspTest() {
                 "source.kt",
                 """
                 import org.ktorm.ksp.api.*
-                import org.ktorm.schema.varchar
-                import org.ktorm.schema.BaseTable
+                import org.ktorm.schema.SqlType
+                import java.sql.*
                 import kotlin.reflect.KClass
                 
                 @Table
                 data class User(
                     @PrimaryKey
                     var id: Int,
-                    @Column(columnName = "c_username", propertyName = "p_username", converter = MyStringConverter::class)
+                    @Column(columnName = "c_username", propertyName = "p_username", sqlType = MyStringSqlType::class)
                     var username: String,
                     var age: Int
                 )
 
-                object MyStringConverter: SingleTypeConverter<String> {
-                    public override fun convert(table: BaseTable<*>, columnName: String, propertyType: KClass<String>): org.ktorm.schema.Column<String> {
-                        return with(table) {
-                            varchar(columnName).transform({it.uppercase()},{it.lowercase()})
-                        }
+                object MyStringSqlType : SqlType<String>(Types.VARCHAR, "varchar") {
+        
+                    override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: String) {
+                        ps.setString(index, parameter.lowercase())
+                    }
+            
+                    override fun doGetResult(rs: ResultSet, index: Int): String? {
+                        return rs.getString(index)?.uppercase()
                     }
                 }
                 """,
             )
-        ) {
-            it.contains("""MyStringConverter.convert(this,"c_username",String::class)""")
-            it.contains("""val p_username: Column<String>""")
-        }
+        )
         assertThat(result1.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         assertThat(result2.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         val baseTable = result2.getBaseTable("Users")

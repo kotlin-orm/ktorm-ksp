@@ -40,18 +40,6 @@ public annotation class KtormKspConfig(
     val allowReflectionCreateClassEntity: Boolean = true,
 
     /**
-     * The global enum converter, the value can only be the implementation type of Nothing::class or singleton
-     * [EnumConverter], the default conversion rules can be viewed in [Converter].
-     */
-    val enumConverter: KClass<out EnumConverter> = Nothing::class,
-
-    /**
-     * The global single type converter, the value can only be the implementation type of Nothing::class or
-     * singleton [SingleTypeConverter], the default conversion rules can be viewed in [Converter].
-     */
-    val singleTypeConverters: Array<KClass<out SingleTypeConverter<*>>> = [],
-
-    /**
      * Global naming strategy, the value can only be Nothing::class or the implementation type of [NamingStrategy]
      * of a singleton. By default, the table name is the entity class name, and the column name is the entity
      * class attribute name.

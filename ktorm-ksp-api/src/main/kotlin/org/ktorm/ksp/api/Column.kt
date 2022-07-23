@@ -17,6 +17,7 @@
 package org.ktorm.ksp.api
 
 import org.ktorm.entity.Entity
+import org.ktorm.schema.SqlType
 import org.ktorm.schema.Table
 import kotlin.reflect.KClass
 
@@ -42,15 +43,11 @@ public annotation class Column(
     val columnName: String = "",
 
     /**
-     * Column converter，Used to declare the column property in the generated table, value must be a singleton type
-     * or nothing. If the value is a Nothing::class, will try to find the appropriate column type automatically
+     * The SQL type for this column.
      *
-     * This property has the highest priority and overrides the default type conversion rules
-     * and converter properties in [KtormKspConfig]
-     *
-     * @see [Converter]
+     * The specified class must be a Kotlin singleton object and typed of [SqlType] or [SqlTypeFactory].
      */
-    val converter: KClass<out Converter> = Nothing::class,
+    val sqlType: KClass<*> = Nothing::class,
 
     /**
      * property names in generate [Table]. If the value is an empty string, will use the name of the property
