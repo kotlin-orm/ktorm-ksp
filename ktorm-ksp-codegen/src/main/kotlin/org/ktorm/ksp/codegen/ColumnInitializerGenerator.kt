@@ -26,7 +26,6 @@ import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toClassName
 import org.ktorm.ksp.codegen.definition.ColumnDefinition
-import org.ktorm.ksp.compiler.findSuperTypeReference
 import java.math.BigDecimal
 import java.sql.Date
 import java.sql.Time

@@ -39,6 +39,7 @@ import org.ktorm.ksp.codegen.ExtensionGeneratorConfig
 import org.ktorm.ksp.codegen.definition.ColumnDefinition
 import org.ktorm.ksp.codegen.definition.KtormEntityType
 import org.ktorm.ksp.codegen.definition.TableDefinition
+import org.ktorm.ksp.codegen.findSuperTypeReference
 import org.ktorm.ksp.compiler.generator.KtormCodeGenerator
 
 public class KtormProcessorProvider : SymbolProcessorProvider {
