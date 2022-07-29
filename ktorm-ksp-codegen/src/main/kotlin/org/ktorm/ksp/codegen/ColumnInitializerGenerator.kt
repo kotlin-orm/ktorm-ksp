@@ -19,12 +19,9 @@
 package org.ktorm.ksp.codegen
 
 import com.google.devtools.ksp.processing.KSPLogger
-import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
-import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
-import com.squareup.kotlinpoet.ksp.toClassName
 import org.ktorm.ksp.codegen.definition.ColumnDefinition
 import java.math.BigDecimal
 import java.sql.Date
@@ -105,6 +102,7 @@ public open class ColumnInitializerGenerator(private val logger: KSPLogger) {
                 config,
                 referenceColumn.entityPropertyName,
                 referenceColumn.sqlType,
+                referenceColumn.sqlTypeFactory,
                 referenceColumn.isEnum,
                 referenceColumn.propertyTypeName,
                 referenceColumn.nonNullPropertyTypeName
@@ -115,6 +113,7 @@ public open class ColumnInitializerGenerator(private val logger: KSPLogger) {
                 config,
                 column.entityPropertyName,
                 column.sqlType,
+                column.sqlTypeFactory,
                 column.isEnum,
                 column.propertyTypeName,
                 column.nonNullPropertyTypeName
@@ -129,7 +128,8 @@ public open class ColumnInitializerGenerator(private val logger: KSPLogger) {
         columnName: String,
         config: CodeGenerateConfig,
         entityPropertyName: MemberName,
-        sqlType: KSType?,
+        sqlType: ClassName?,
+        sqlTypeFactory: ClassName?,
         isEnum: Boolean,
         propertyTypeName: TypeName,
         nonNullPropertyTypeName: TypeName
@@ -143,33 +143,33 @@ public open class ColumnInitializerGenerator(private val logger: KSPLogger) {
             }
         }
 
-        if (sqlType != null && isSqlType(sqlType)) {
+        if (sqlType != null) {
             return buildCodeBlock {
                 if (actualColumnName.isEmpty()) {
                     add(
                         "registerColumn(%T.toColumnName(%S),·%T)",
                         config.namingStrategy,
                         entityPropertyName.simpleName,
-                        sqlType.toClassName()
+                        sqlType
                     )
                 } else {
                     add(
                         "registerColumn(%S,·%T)",
                         actualColumnName,
-                        sqlType.toClassName()
+                        sqlType
                     )
                 }
             }
         }
 
-        if (sqlType != null && isSqlTypeFactory(sqlType)) {
+        if (sqlTypeFactory != null) {
             return buildCodeBlock {
                 if (actualColumnName.isEmpty()) {
                     add(
                         "registerColumn(%T.toColumnName(%S),·%T.createSqlType(%T::%L))",
                         config.namingStrategy,
                         entityPropertyName.simpleName,
-                        sqlType.toClassName(),
+                        sqlTypeFactory,
                         entityPropertyName.enclosingClassName,
                         entityPropertyName.simpleName
                     )
@@ -177,7 +177,7 @@ public open class ColumnInitializerGenerator(private val logger: KSPLogger) {
                     add(
                         "registerColumn(%S,·%T.createSqlType(%T::%L))",
                         actualColumnName,
-                        sqlType.toClassName(),
+                        sqlTypeFactory,
                         entityPropertyName.enclosingClassName,
                         entityPropertyName.simpleName
                     )
@@ -223,13 +223,5 @@ public open class ColumnInitializerGenerator(private val logger: KSPLogger) {
             "Cannot find column generate function, property:${entityPropertyName.canonicalName} " +
                     "propertyTypeName:$propertyTypeName"
         )
-    }
-
-    private fun isSqlType(type: KSType): Boolean {
-        return (type.declaration as KSClassDeclaration).findSuperTypeReference("org.ktorm.schema.SqlType") != null
-    }
-
-    private fun isSqlTypeFactory(type: KSType): Boolean {
-        return (type.declaration as KSClassDeclaration).findSuperTypeReference("org.ktorm.ksp.api.SqlTypeFactory") != null
     }
 }

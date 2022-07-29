@@ -53,9 +53,14 @@ public data class ColumnDefinition(
     val tablePropertyName: MemberName,
 
     /**
-     * The SQL type for this column.
+     * The SqlType for this column.
      */
-    val sqlType: KSType?,
+    val sqlType: ClassName?,
+
+    /**
+     * The SqlTypeFactory for this column
+     */
+    val sqlTypeFactory: ClassName?,
 
     /**
      * Entity property declaration.

@@ -41,6 +41,7 @@ import org.ktorm.ksp.codegen.definition.KtormEntityType
 import org.ktorm.ksp.codegen.definition.TableDefinition
 import org.ktorm.ksp.codegen.findSuperTypeReference
 import org.ktorm.ksp.compiler.generator.KtormCodeGenerator
+import org.ktorm.schema.SqlType
 
 public class KtormProcessorProvider : SymbolProcessorProvider {
     override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {
@@ -183,6 +184,10 @@ public class KtormProcessor(
         private val tableDefinitions: MutableList<TableDefinition>
     ) : KSVisitorVoid() {
 
+        private val sqlTypeClassName = SqlType::class.qualifiedName!!
+        private val sqlTypeFactoryClassName = SqlTypeFactory::class.qualifiedName!!
+
+
         @OptIn(KspExperimental::class, KotlinPoetKspPreview::class)
         override fun visitClassDeclaration(
             classDeclaration: KSClassDeclaration,
@@ -243,6 +248,33 @@ public class KtormProcessor(
 
                         val sqlType =
                             ksColumnAnnotation?.arguments?.firstOrNull { it.name?.asString() == Column::sqlType.name }?.value as KSType?
+                        var actualSqlType: ClassName? = null
+                        var actualSqlFactoryType: ClassName? = null
+                        if (sqlType != null && sqlType.declaration.qualifiedName!!.asString() != Nothing::class.qualifiedName) {
+                            val sqlTypeDeclaration = sqlType.declaration as KSClassDeclaration
+                            if (sqlTypeDeclaration.classKind != ClassKind.OBJECT) {
+                                error(
+                                    "wrong entity column declaration: ${entityClassName.canonicalName}." +
+                                            "$propertyName, sqlType must be a Kotlin singleton object"
+                                )
+                            }
+                            when {
+                                sqlTypeDeclaration.findSuperTypeReference(sqlTypeClassName) != null -> {
+                                    actualSqlType = sqlType.toClassName()
+                                }
+                                sqlTypeDeclaration.findSuperTypeReference(sqlTypeFactoryClassName) != null -> {
+                                    actualSqlFactoryType = sqlType.toClassName()
+                                }
+                                else -> {
+                                    error(
+                                        "wrong entity column declaration: ${entityClassName.canonicalName}." +
+                                                "$propertyName, sqlType must be typed of [$sqlTypeClassName] or " +
+                                                "[$sqlTypeFactoryClassName]."
+                                    )
+                                }
+                            }
+                        }
+
                         val isPrimaryKey = ksProperty.getAnnotationsByType(PrimaryKey::class).any()
                         val columnName = columnAnnotation?.columnName ?: ""
                         val tablePropertyName = if (columnAnnotation?.propertyName.isNullOrEmpty()) {
@@ -256,7 +288,8 @@ public class KtormProcessor(
                             propertyKSType.toTypeName(),
                             MemberName(entityClassName, propertyName),
                             tablePropertyName,
-                            sqlType?.takeIf { it.toClassName() != Nothing::class.asClassName() },
+                            actualSqlType,
+                            actualSqlFactoryType,
                             ksProperty,
                             propertyKSType,
                             tableDef,
