@@ -16,7 +16,7 @@
 
 package org.ktorm.ksp.codegen.test
 
-import com.tschuchort.compiletesting.KotlinCompilation
+import com.tschuchort.compiletesting.KotlinCompilation.ExitCode
 import com.tschuchort.compiletesting.SourceFile
 import org.assertj.core.api.Assertions
 import org.junit.Test
@@ -77,8 +77,8 @@ public class DefaultTablePropertyGeneratorTest : BaseKspTest() {
                 """,
             )
         )
-        Assertions.assertThat(result1.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-        Assertions.assertThat(result2.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
+        Assertions.assertThat(result1.exitCode).isEqualTo(ExitCode.OK)
+        Assertions.assertThat(result2.exitCode).isEqualTo(ExitCode.OK)
         val table = result2.getBaseTable("Users")
         table.columns.forEach {
             when (it.name) {
@@ -105,6 +105,84 @@ public class DefaultTablePropertyGeneratorTest : BaseKspTest() {
                 "gender" -> Assertions.assertThat(it.sqlType).isInstanceOf(EnumSqlType::class.java)
             }
         }
+    }
+
+    @Test
+    public fun `custom sqlType`() {
+        val (result1, result2) = twiceCompile(
+            SourceFile.kotlin(
+                "source.kt",
+                """
+                import org.ktorm.ksp.api.*
+                import org.ktorm.schema.SqlType
+                import java.sql.Types
+                import kotlin.reflect.jvm.jvmErasure 
+                import java.sql.PreparedStatement
+                import java.sql.ResultSet
+                import kotlin.reflect.KProperty1
+                
+                @Table
+                data class User(
+                    @PrimaryKey
+                    var id: Int?,
+                    @Column(sqlType = LocationWrapperSqlType::class)
+                    var location: LocationWrapper,
+                    @Column(sqlType = IntEnumSqlTypeFactory::class)
+                    var gender: Gender?,
+                    var age: Int,
+                )
+
+                enum class Gender {
+                    MALE,
+                    FEMALE
+                }
+
+                data class LocationWrapper(val underlying: String = "") 
+                
+                object LocationWrapperSqlType : SqlType<LocationWrapper>(Types.VARCHAR, "varchar") {
+
+                    override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: LocationWrapper) {
+                        ps.setString(index, parameter.underlying)
+                    }
+
+                    override fun doGetResult(rs: ResultSet, index: Int): LocationWrapper? {
+                        return rs.getString(index)?.let { LocationWrapper(it) }
+                    } 
+                }
+
+                object IntEnumSqlTypeFactory : SqlTypeFactory {
+                
+                    @Suppress("UNCHECKED_CAST")
+                    override fun <T : Any> createSqlType(property: KProperty1<*, T?>): SqlType<T> {
+                        val returnType = property.returnType.jvmErasure.java
+                        if (returnType.isEnum) {
+                            return IntEnumSqlType(returnType as Class<out Enum<*>>) as SqlType<T>
+                        } else {
+                            throw IllegalArgumentException("The property is required to be typed of enum but actually: ${"$"}returnType")
+                        }
+                    }
+                
+                    private class IntEnumSqlType<E : Enum<E>>(val enumClass: Class<E>) : SqlType<E>(Types.INTEGER, "int") {
+                
+                        override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: E) {
+                            ps.setInt(index, parameter.ordinal)
+                        }
+                
+                        override fun doGetResult(rs: ResultSet, index: Int): E? {
+                            return enumClass.enumConstants[rs.getInt(index)]
+                        }
+                    }
+                }
+                """,
+            )
+        )
+        Assertions.assertThat(result1.exitCode).isEqualTo(ExitCode.OK)
+        Assertions.assertThat(result2.exitCode).isEqualTo(ExitCode.OK)
+
+        val users = result2.getBaseTable("Users")
+        Assertions.assertThat(users["location"].sqlType.javaClass.canonicalName).isEqualTo("LocationWrapperSqlType")
+        Assertions.assertThat(users["gender"].sqlType.javaClass.canonicalName)
+            .isEqualTo("IntEnumSqlTypeFactory.IntEnumSqlType")
     }
 
     @Test
@@ -157,8 +235,8 @@ public class DefaultTablePropertyGeneratorTest : BaseKspTest() {
                 """,
             )
         )
-        Assertions.assertThat(result1.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-        Assertions.assertThat(result2.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
+        Assertions.assertThat(result1.exitCode).isEqualTo(ExitCode.OK)
+        Assertions.assertThat(result2.exitCode).isEqualTo(ExitCode.OK)
         useDatabase { database ->
             val users = result2.invokeBridge("getUsers", database) as EntitySequence<*, *>
             Assertions.assertThat(users.toList().toString())

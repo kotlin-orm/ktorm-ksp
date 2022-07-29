@@ -20,7 +20,9 @@ import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
+import org.ktorm.ksp.api.SqlTypeFactory
 import org.ktorm.ksp.tests.BaseKspTest
+import org.ktorm.schema.SqlType
 
 public class DefaultTableTypeGeneratorTest : BaseKspTest() {
 
@@ -385,6 +387,72 @@ public class DefaultTableTypeGeneratorTest : BaseKspTest() {
         }
         assertThat(result1.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         assertThat(result2.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
+    }
+
+    @Test
+    public fun `sqlType not a subclass of SqlType and SqlTypeFactory`() {
+        val result = compile(
+            SourceFile.kotlin(
+                "source.kt",
+                """
+                import org.ktorm.ksp.api.*
+                
+                @Table
+                data class User(
+                     @PrimaryKey
+                    var id: Int?,
+                    @Column(sqlType = LocationWrapperSqlType::class)
+                    var location: LocationWrapper,
+                    var age: Int,
+                )
+
+                data class LocationWrapper(val underlying: String = "") : Serializable
+
+                object LocationWrapperSqlType 
+                """,
+            )
+        )
+        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result.messages).contains(
+            "sqlType must be typed of [${SqlType::class.qualifiedName}] or " +
+                    "[${SqlTypeFactory::class.qualifiedName}]."
+        )
+    }
+
+    @Test
+    public fun `sqlType not a singleton object`() {
+        val result = compile(
+            SourceFile.kotlin(
+                "source.kt",
+                """
+                import org.ktorm.ksp.api.*
+                
+                @Table
+                data class User(
+                    @PrimaryKey
+                    var id: Int?,
+                    @Column(sqlType = LocationWrapperSqlType::class)
+                    var location: LocationWrapper,
+                    var age: Int,
+                )
+
+                data class LocationWrapper(val underlying: String = "") : Serializable
+                
+                class LocationWrapperSqlType : SqlType<LocationWrapper>(Types.VARCHAR, "varchar") {
+
+                    override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: LocationWrapper) {
+                        ps.setString(index, parameter.underlying)
+                    }
+
+                    override fun doGetResult(rs: ResultSet, index: Int): LocationWrapper? {
+                        return rs.getString(index)?.let { LocationWrapper(it) }
+                    } 
+                }
+                """,
+            )
+        )
+        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result.messages).contains("sqlType must be a Kotlin singleton object")
     }
 
 }
