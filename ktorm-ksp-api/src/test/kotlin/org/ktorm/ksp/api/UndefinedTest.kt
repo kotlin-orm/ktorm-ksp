@@ -28,6 +28,7 @@ public class UndefinedTest {
         assertThat(undefined1 !== value).isTrue
         assertThat(undefined2 !== value).isTrue
         assertThat(undefined1 === undefined2).isTrue
+        println(undefined1!!.javaClass.name)
     }
 
     @Test
@@ -62,12 +63,14 @@ public class UndefinedTest {
     @Test
     public fun `undefined interface`() {
         undefinedValueTest<Employee>(Entity.create())
+        undefinedValueTest<java.io.Serializable?>(null)
     }
 
     @Test
     public fun `undefined abstract class`() {
         undefinedValueTest<Biology>(Dog(0))
         undefinedValueTest<Animal>(Dog(0))
+        undefinedValueTest<Number>(0)
     }
 
     @Test

@@ -79,9 +79,10 @@ private fun createUndefinedValueBySubclassing(cls: Class<*>): Any {
         subclassName = "\$" + subclassName
     }
 
-    synchronized(cls.classLoader) {
+    val classLoader = cls.classLoader ?: Thread.currentThread().contextClassLoader
+    synchronized(classLoader) {
         val bytes = generateByteCode(subclassName.toByteArray(), superClassName.toByteArray())
-        val subclass = defineClassMethod.invoke(cls.classLoader, null, bytes, null) as Class<*>
+        val subclass = defineClassMethod.invoke(classLoader, null, bytes, null) as Class<*>
         return unsafe.allocateInstance(subclass)
     }
 }
