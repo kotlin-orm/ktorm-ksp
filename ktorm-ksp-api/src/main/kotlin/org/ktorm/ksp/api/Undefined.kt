@@ -79,9 +79,11 @@ private fun createUndefinedValueBySubclassing(cls: Class<*>): Any {
         subclassName = "\$" + subclassName
     }
 
-    val bytes = generateByteCode(subclassName.toByteArray(), superClassName.toByteArray())
-    val subclass = defineClassMethod.invoke(cls.classLoader, null, bytes, null) as Class<*>
-    return unsafe.allocateInstance(subclass)
+    synchronized(cls.classLoader) {
+        val bytes = generateByteCode(subclassName.toByteArray(), superClassName.toByteArray())
+        val subclass = defineClassMethod.invoke(cls.classLoader, null, bytes, null) as Class<*>
+        return unsafe.allocateInstance(subclass)
+    }
 }
 
 private fun getDefineClassMethod(): Method {

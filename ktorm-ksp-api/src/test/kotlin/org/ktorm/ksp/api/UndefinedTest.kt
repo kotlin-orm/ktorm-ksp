@@ -67,12 +67,7 @@ public class UndefinedTest {
     @Test
     public fun `undefined abstract class`() {
         undefinedValueTest<Biology>(Dog(0))
-        try {
-            undefined<Animal>()
-        } catch (e: Throwable) {
-            return
-        }
-        error("fail")
+        undefinedValueTest<Animal>(Dog(0))
     }
 
     @Test
