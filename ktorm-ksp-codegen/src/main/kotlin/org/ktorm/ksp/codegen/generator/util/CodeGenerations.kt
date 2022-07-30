@@ -48,7 +48,6 @@ public object MemberNames {
     public val primaryKey: MemberName = MemberName("", "primaryKey")
     public val references: MemberName = MemberName("", "references")
     public val undefined: MemberName = MemberName("org.ktorm.ksp.api.EntityUtil", "undefined")
-    public val getValueOrUndefined: MemberName = MemberName("org.ktorm.ksp.api.EntityUtil", "getValueOrUndefined")
 }
 
 public object ClassNames {

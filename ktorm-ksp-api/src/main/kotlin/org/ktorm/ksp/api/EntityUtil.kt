@@ -18,9 +18,6 @@ package org.ktorm.ksp.api
 
 import net.bytebuddy.ByteBuddy
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy
-import org.ktorm.entity.Entity
-import org.ktorm.entity.EntityExtensionsApi
-import org.ktorm.schema.ColumnBinding
 import sun.misc.Unsafe
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
@@ -29,31 +26,10 @@ import java.lang.reflect.Proxy
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 
-public class CreateUndefinedException : Exception {
-    public constructor() : super()
-    public constructor(message: String?) : super(message)
-    public constructor(message: String?, cause: Throwable?) : super(message, cause)
-    public constructor(cause: Throwable?) : super(cause)
-    public constructor(
-        message: String?,
-        cause: Throwable?,
-        enableSuppression: Boolean,
-        writableStackTrace: Boolean
-    ) : super(
-        message,
-        cause,
-        enableSuppression,
-        writableStackTrace
-    )
-}
-
 public object EntityUtil {
 
     @PublishedApi
     internal val undefinedValues: ConcurrentMap<Class<*>, Any> = ConcurrentHashMap()
-
-    @PublishedApi
-    internal val entityExtensionsApi: EntityExtensionsApi = EntityExtensionsApi()
 
     public inline fun <reified T> undefined(): T {
         return undefinedValues.computeIfAbsent(T::class.java) { cls: Class<*> ->
@@ -71,11 +47,7 @@ public object EntityUtil {
 
     @PublishedApi
     internal fun createArray(cls: Class<*>): Any? {
-        try {
-            return java.lang.reflect.Array.newInstance(cls.componentType, 0)
-        } catch (e: Exception) {
-            throw CreateUndefinedException("Failed to create instance with array", e)
-        }
+        return java.lang.reflect.Array.newInstance(cls.componentType, 0)
     }
 
     @PublishedApi
@@ -90,47 +62,26 @@ public object EntityUtil {
                 }
             }
         }
-        try {
-            return Proxy.newProxyInstance(cls.classLoader, arrayOf(cls), handler)
-        } catch (e: Exception) {
-            throw CreateUndefinedException("Failed to create instance with jdk dynamic proxy", e)
-        }
+
+        return Proxy.newProxyInstance(cls.classLoader, arrayOf(cls), handler)
     }
 
     @PublishedApi
     internal fun createByteBuddyProxy(cls: Class<*>): Any {
-        try {
-            return ByteBuddy()
-                .subclass(cls)
-                .make()
-                .load(cls.classLoader, ClassLoadingStrategy.Default.INJECTION)
-                .loaded
-                .constructors
-                .first()
-                .newInstance()
-        } catch (e: Exception) {
-            throw CreateUndefinedException("Failed to create instance with byte-buddy", e)
-        }
+        return ByteBuddy()
+            .subclass(cls)
+            .make()
+            .load(cls.classLoader, ClassLoadingStrategy.Default.INJECTION)
+            .loaded
+            .constructors
+            .first()
+            .newInstance()
     }
 
     @PublishedApi
     internal fun createUnsafeInstance(cls: Class<*>): Any {
-        try {
-            val field = Unsafe::class.java.getDeclaredField("theUnsafe")
-            field.isAccessible = true
-            return (field.get(null) as Unsafe).allocateInstance(cls)
-        } catch (e: Exception) {
-            throw CreateUndefinedException("Failed to create instance with Unsafe", e)
-        }
-    }
-
-    public inline fun <reified T> getValueOrUndefined(entity: Entity<*>, columnBinding: ColumnBinding): T {
-        with(entityExtensionsApi) {
-            if (entity.hasColumnValue(columnBinding)) {
-                return entity.getColumnValue(columnBinding) as T
-            } else {
-                return undefined()
-            }
-        }
+        val field = Unsafe::class.java.getDeclaredField("theUnsafe")
+        field.isAccessible = true
+        return (field.get(null) as Unsafe).allocateInstance(cls)
     }
 }

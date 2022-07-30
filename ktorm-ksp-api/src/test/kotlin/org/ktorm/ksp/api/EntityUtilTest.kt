@@ -70,7 +70,7 @@ public class EntityUtilTest {
         undefinedValueTest<Biology>(Dog(0))
         try {
             undefined<Animal>()
-        } catch (e: CreateUndefinedException) {
+        } catch (e: Throwable) {
             return
         }
         error("fail")
