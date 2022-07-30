@@ -23,10 +23,12 @@ import java.lang.reflect.Proxy
 import java.nio.ByteBuffer
 import java.security.ProtectionDomain
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 
 private val undefinedValuesCache = ConcurrentHashMap<Class<*>, Any>()
 private val unsafe = getUnsafe()
 private val defineClassMethod = getDefineClassMethod()
+private val subclassCounter = AtomicInteger(0)
 
 public inline fun <reified T> undefined(): T {
     return getUndefinedValue(T::class.java) as T
@@ -74,7 +76,7 @@ private fun createUndefinedValueByJdkProxy(cls: Class<*>): Any {
 private fun createUndefinedValueBySubclassing(cls: Class<*>): Any {
     val superClassName = cls.name.replace(".", "/")
 
-    var subclassName = "$superClassName\$KtormUndefined"
+    var subclassName = "$superClassName\$Undefined\$${subclassCounter.getAndIncrement()}"
     if (superClassName.startsWith("java/")) {
         subclassName = "\$" + subclassName
     }
