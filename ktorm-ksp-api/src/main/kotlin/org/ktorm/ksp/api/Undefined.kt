@@ -85,14 +85,15 @@ private class SubclassingClassLoader(parent: ClassLoader) : ClassLoader(parent) 
         if (!name.endsWith("\$KtormUndefined")) {
             throw ClassNotFoundException(name)
         } else {
-            val superClassName = name.removePrefix("\$").removeSuffix("\$KtormUndefined")
-            val bytes = generateByteCode(name.toByteArray(), superClassName.toByteArray())
+            val subclassName = name.replace(".", "/")
+            val superClassName = subclassName.removePrefix("\$").removeSuffix("\$KtormUndefined")
+            val bytes = generateByteCode(subclassName.toByteArray(), superClassName.toByteArray())
             return defineClass(name, bytes, null)
         }
     }
 
     private fun generateByteCode(className: ByteArray, superClassName: ByteArray): ByteBuffer {
-        val buf = ByteBuffer.allocate(128)
+        val buf = ByteBuffer.allocate(1024)
         buf.putInt(0xCAFEBABE.toInt())                          // magic
         buf.putShort(0)                                         // minor version
         buf.putShort(52)                                        // major version, 52 for JDK1.8
@@ -114,6 +115,7 @@ private class SubclassingClassLoader(parent: ClassLoader) : ClassLoader(parent) 
         buf.putShort(0)                                         // fields count
         buf.putShort(0)                                         // methods count
         buf.putShort(0)                                         // attributes count
+        buf.flip()
         return buf
     }
 }

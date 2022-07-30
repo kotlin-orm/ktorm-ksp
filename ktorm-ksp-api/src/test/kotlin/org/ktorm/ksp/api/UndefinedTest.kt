@@ -19,9 +19,8 @@ package org.ktorm.ksp.api
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import org.ktorm.entity.Entity
-import org.ktorm.ksp.api.EntityUtil.undefined
 
-public class EntityUtilTest {
+public class UndefinedTest {
 
     private inline fun <reified T> undefinedValueTest(value: T) {
         val undefined1 = undefined<T>()
