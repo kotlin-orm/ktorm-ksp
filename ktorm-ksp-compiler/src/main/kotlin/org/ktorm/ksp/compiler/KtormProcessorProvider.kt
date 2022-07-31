@@ -291,10 +291,12 @@ public class KtormProcessor(
                         } else {
                             MemberName(tableClassName, columnAnnotation!!.propertyName)
                         }
+
                         val columnDef = ColumnDefinition(
                             columnName,
                             isPrimaryKey,
                             propertyKSType.toTypeName(),
+                            propertyKSType.isInline(),
                             MemberName(entityClassName, propertyName),
                             tablePropertyName,
                             converterDefinition,
@@ -314,5 +316,10 @@ public class KtormProcessor(
                 throw e
             }
         }
+    }
+
+    private fun KSType.isInline(): Boolean {
+        val cls = declaration as KSClassDeclaration
+        return cls.isAnnotationPresent(JvmInline::class) && cls.modifiers.contains(Modifier.VALUE)
     }
 }

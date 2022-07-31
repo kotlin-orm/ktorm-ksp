@@ -54,6 +54,9 @@ public interface Employee : Entity<Employee> {
     public var hireDate: LocalDate
     public var salary: Long
 
+    @Column(converter = UIntConverter::class)
+    public var age: UInt
+
     @Column(converter = IntEnumConverter::class)
     public var gender: Gender?
 

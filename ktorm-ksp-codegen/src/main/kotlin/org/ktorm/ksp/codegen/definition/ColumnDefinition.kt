@@ -42,6 +42,11 @@ public data class ColumnDefinition(
     val propertyTypeName: TypeName,
 
     /**
+     * Whether the property's type is inline.
+     */
+    val isInlinePropertyType: Boolean,
+
+    /**
      * Name of the entity property.
      */
     val entityPropertyName: MemberName,

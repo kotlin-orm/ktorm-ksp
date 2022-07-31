@@ -30,8 +30,8 @@ private val unsafe = getUnsafe()
 private val defineClassMethod = getDefineClassMethod()
 private val subclassCounter = AtomicInteger(0)
 
-public inline fun <reified T> undefined(): T {
-    return getUndefinedValue(T::class.java) as T
+public inline fun <reified T : Any> undefined(): T? {
+    return getUndefinedValue(T::class.java) as T?
 }
 
 @PublishedApi

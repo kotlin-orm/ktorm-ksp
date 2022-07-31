@@ -18,12 +18,16 @@ package org.ktorm.ksp.example
 
 import org.ktorm.ksp.api.EnumConverter
 import org.ktorm.ksp.api.SingleTypeConverter
-import org.ktorm.schema.BaseTable
-import org.ktorm.schema.Column
-import org.ktorm.schema.int
-import org.ktorm.schema.varchar
+import org.ktorm.schema.*
 import kotlin.reflect.KClass
 
+public object UIntConverter : SingleTypeConverter<UInt> {
+    override fun convert(table: BaseTable<*>, columnName: String, propertyType: KClass<UInt>): Column<UInt> {
+        return with(table) {
+            int(columnName).transform({ it.toUInt() }, { it.toInt() })
+        }
+    }
+}
 
 public object LocationWrapperConverter : SingleTypeConverter<LocationWrapper> {
     override fun convert(

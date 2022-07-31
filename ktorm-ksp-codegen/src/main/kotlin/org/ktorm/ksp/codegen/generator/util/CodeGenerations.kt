@@ -20,20 +20,8 @@ import com.squareup.kotlinpoet.*
 import org.ktorm.entity.Entity
 import org.ktorm.expression.*
 import org.ktorm.ksp.codegen.TableGenerateContext
-import org.ktorm.ksp.codegen.definition.ColumnDefinition
 import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
-
-public val primitiveTypes: List<TypeName> = listOf(
-    Byte::class.asTypeName(),
-    Int::class.asTypeName(),
-    Short::class.asTypeName(),
-    Long::class.asTypeName(),
-    Char::class.asTypeName(),
-    Boolean::class.asTypeName(),
-    Float::class.asTypeName(),
-    Double::class.asTypeName()
-)
 
 public object MemberNames {
     public val update: MemberName = MemberName("org.ktorm.dsl", "update", true)
@@ -102,21 +90,25 @@ public object CodeFactory {
         val table = context.table
         return buildCodeBlock {
             table.columns
-                .filter { it.isMutable }
                 .forEach { column ->
                     val propertyName = column.entityPropertyName.simpleName
-                    withControlFlow(
-                        "if·(%L·!==·%M<%T>())",
-                        arrayOf(propertyName, MemberNames.undefined, column.constructorParameterType())
-                    ) {
-                        if (!column.isNullable && column.nonNullPropertyTypeName in primitiveTypes) {
+
+                    val condition: String
+                    if (column.isInlinePropertyType) {
+                        condition = "if·((%L·as·Any?)·!==·(%M<%T>()·as·Any?))"
+                    } else {
+                        condition = "if·(%L·!==·%M<%T>())"
+                    }
+
+                    withControlFlow(condition, arrayOf(propertyName, MemberNames.undefined, column.nonNullPropertyTypeName)) {
+                        if (!column.isNullable) {
                             addStatement(
-                                "%1L.%2L·=·%2L·?:·error(\"`%1L` should not be null.\")",
+                                "%1L[%2S]·=·%2L·?:·error(\"`%2L` should not be null.\")",
                                 entityVar,
                                 propertyName
                             )
                         } else {
-                            addStatement("%1L.%2L·=·%2L", entityVar, propertyName)
+                            addStatement("%1L[%2S]·=·%2L", entityVar, propertyName)
                         }
                     }
                 }
@@ -129,23 +121,14 @@ public object CodeFactory {
         nameAllocator: NameAllocator
     ): List<ParameterSpec> {
         return context.table.columns
-            .filter { it.isMutable }
             .map {
                 ParameterSpec.builder(
                     nameAllocator.newName(it.entityPropertyName.simpleName),
-                    it.constructorParameterType()
+                    it.nonNullPropertyTypeName.copy(nullable = true)
                 )
                     .defaultValue("%M()", MemberNames.undefined)
                     .build()
             }
-    }
-
-    private fun ColumnDefinition.constructorParameterType(): TypeName {
-        return if (nonNullPropertyTypeName in primitiveTypes) {
-            nonNullPropertyTypeName.copy(nullable = true)
-        } else {
-            propertyTypeName
-        }
     }
 
     public fun convertDefaultImplementationFunName(functionName: String): String {

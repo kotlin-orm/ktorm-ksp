@@ -22,7 +22,7 @@ import org.ktorm.entity.Entity
 
 public class UndefinedTest {
 
-    private inline fun <reified T> undefinedValueTest(value: T) {
+    private inline fun <reified T : Any> undefinedValueTest(value: T?) {
         val undefined1 = undefined<T>()
         val undefined2 = undefined<T>()
         assertThat(undefined1 !== value).isTrue
@@ -31,16 +31,45 @@ public class UndefinedTest {
         println(undefined1!!.javaClass.name)
     }
 
+    private fun testUndefinedInt(haveValue: Boolean, value: Int? = undefined()) {
+        if (haveValue) {
+            assert(value !== undefined<Int>())
+        } else {
+            assert(value === undefined<Int>())
+        }
+    }
+
+    private fun testUndefinedUInt(haveValue: Boolean, value: UInt? = undefined()) {
+        if (haveValue) {
+            assert((value as Any?) !== (undefined<UInt>() as Any?))
+        } else {
+            assert((value as Any?) === (undefined<UInt>() as Any?))
+        }
+    }
+
     @Test
-    public fun `undefined primitive type`() {
-        undefinedValueTest<Byte?>(0)
-        undefinedValueTest<Short?>(0)
-        undefinedValueTest<Int?>(0)
-        undefinedValueTest<Long?>(0)
-        undefinedValueTest<Char?>('0')
-        undefinedValueTest<Boolean?>(false)
-        undefinedValueTest<Float?>(0f)
-        undefinedValueTest<Double?>(0.0)
+    public fun `undefined inlined class type`() {
+        testUndefinedUInt(haveValue = true, value = 1U)
+        testUndefinedUInt(haveValue = true, value = 0U)
+        testUndefinedUInt(haveValue = true, value = null)
+        testUndefinedUInt(haveValue = false)
+    }
+
+    @Test
+    public fun `undefined boxed primitive type`() {
+        testUndefinedInt(haveValue = true, value = 1)
+        testUndefinedInt(haveValue = true, value = 0)
+        testUndefinedInt(haveValue = true, value = null)
+        testUndefinedInt(haveValue = false)
+
+        undefinedValueTest(0.toByte())
+        undefinedValueTest(0.toShort())
+        undefinedValueTest(0)
+        undefinedValueTest(0L)
+        undefinedValueTest('0')
+        undefinedValueTest(false)
+        undefinedValueTest(0f)
+        undefinedValueTest(0.0)
     }
 
     private interface Employee : Entity<Employee>
@@ -62,8 +91,8 @@ public class UndefinedTest {
 
     @Test
     public fun `undefined interface`() {
-        undefinedValueTest<Employee>(Entity.create())
-        undefinedValueTest<java.io.Serializable?>(null)
+        undefinedValueTest(Entity.create<Employee>())
+        undefinedValueTest<java.io.Serializable>(null)
     }
 
     @Test
