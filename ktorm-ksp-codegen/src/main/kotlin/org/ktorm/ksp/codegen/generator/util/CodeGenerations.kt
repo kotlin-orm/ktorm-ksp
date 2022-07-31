@@ -87,31 +87,32 @@ public object CodeFactory {
      * ```
      */
     public fun buildEntityAssignCode(context: TableGenerateContext, entityVar: String): CodeBlock {
-        val table = context.table
         return buildCodeBlock {
-            table.columns
-                .forEach { column ->
-                    val propertyName = column.entityPropertyName.simpleName
+            for (column in context.table.columns) {
+                val propertyName = column.entityPropertyName.simpleName
 
-                    val condition: String
-                    if (column.isInlinePropertyType) {
-                        condition = "if·((%L·as·Any?)·!==·(%M<%T>()·as·Any?))"
-                    } else {
-                        condition = "if·(%L·!==·%M<%T>())"
-                    }
-
-                    withControlFlow(condition, arrayOf(propertyName, MemberNames.undefined, column.nonNullPropertyTypeName)) {
-                        if (!column.isNullable) {
-                            addStatement(
-                                "%1L[%2S]·=·%2L·?:·error(\"`%2L` should not be null.\")",
-                                entityVar,
-                                propertyName
-                            )
-                        } else {
-                            addStatement("%1L[%2S]·=·%2L", entityVar, propertyName)
-                        }
-                    }
+                val condition: String
+                if (column.isInlinePropertyType) {
+                    condition = "if·((%L·as·Any?)·!==·(%M<%T>()·as·Any?))"
+                } else {
+                    condition = "if·(%L·!==·%M<%T>())"
                 }
+
+                withControlFlow(condition, arrayOf(propertyName, MemberNames.undefined, column.nonNullPropertyTypeName)) {
+                    var statement: String
+                    if (column.isMutable) {
+                        statement = "%1L.%2L·=·%2L"
+                    } else {
+                        statement = "%1L[%2S]·=·%2L"
+                    }
+
+                    if (!column.isNullable) {
+                        statement += "·?:·error(\"`%2L` should not be null.\")"
+                    }
+
+                    addStatement(statement, entityVar, propertyName)
+                }
+            }
             addStatement("return %L", entityVar)
         }
     }
@@ -120,15 +121,13 @@ public object CodeFactory {
         context: TableGenerateContext,
         nameAllocator: NameAllocator
     ): List<ParameterSpec> {
-        return context.table.columns
-            .map {
-                ParameterSpec.builder(
-                    nameAllocator.newName(it.entityPropertyName.simpleName),
-                    it.nonNullPropertyTypeName.copy(nullable = true)
-                )
-                    .defaultValue("%M()", MemberNames.undefined)
-                    .build()
-            }
+        return context.table.columns.map {
+            val name = nameAllocator.newName(it.entityPropertyName.simpleName)
+            val type = it.nonNullPropertyTypeName.copy(nullable = true)
+            ParameterSpec.builder(name, type)
+                .defaultValue("%M()", MemberNames.undefined)
+                .build()
+        }
     }
 
     public fun convertDefaultImplementationFunName(functionName: String): String {
