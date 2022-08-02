@@ -23,27 +23,27 @@ import org.ktorm.entity.Entity
 public class UndefinedTest {
 
     private inline fun <reified T : Any> undefinedValueTest(value: T?) {
-        val undefined1 = undefined<T>()
-        val undefined2 = undefined<T>()
+        val undefined1 = Undefined.of<T>()
+        val undefined2 = Undefined.of<T>()
         assertThat(undefined1 !== value).isTrue
         assertThat(undefined2 !== value).isTrue
         assertThat(undefined1 === undefined2).isTrue
         println(undefined1!!.javaClass.name)
     }
 
-    private fun testUndefinedInt(haveValue: Boolean, value: Int? = undefined()) {
+    private fun testUndefinedInt(haveValue: Boolean, value: Int? = Undefined.of()) {
         if (haveValue) {
-            assert(value !== undefined<Int>())
+            assert(value !== Undefined.of<Int>())
         } else {
-            assert(value === undefined<Int>())
+            assert(value === Undefined.of<Int>())
         }
     }
 
-    private fun testUndefinedUInt(haveValue: Boolean, value: UInt? = undefined()) {
+    private fun testUndefinedUInt(haveValue: Boolean, value: UInt? = Undefined.of()) {
         if (haveValue) {
-            assert((value as Any?) !== (undefined<UInt>() as Any?))
+            assert((value as Any?) !== (Undefined.of<UInt>() as Any?))
         } else {
-            assert((value as Any?) === (undefined<UInt>() as Any?))
+            assert((value as Any?) === (Undefined.of<UInt>() as Any?))
         }
     }
 

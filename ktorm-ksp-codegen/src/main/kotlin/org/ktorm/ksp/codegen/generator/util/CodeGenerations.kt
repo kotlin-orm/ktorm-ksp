@@ -19,6 +19,7 @@ package org.ktorm.ksp.codegen.generator.util
 import com.squareup.kotlinpoet.*
 import org.ktorm.entity.Entity
 import org.ktorm.expression.*
+import org.ktorm.ksp.api.Undefined
 import org.ktorm.ksp.codegen.TableGenerateContext
 import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
@@ -31,11 +32,9 @@ public object MemberNames {
         MemberName("org.ktorm.ksp.api.EntitySequenceUtil", "checkIfSequenceModified", false)
     public val primaryConstructor: MemberName = MemberName("kotlin.reflect.full", "primaryConstructor", true)
     public val emptyMap: MemberName = MemberName("kotlin.collections", "emptyMap")
-
     public val bindTo: MemberName = MemberName("", "bindTo")
     public val primaryKey: MemberName = MemberName("", "primaryKey")
     public val references: MemberName = MemberName("", "references")
-    public val undefined: MemberName = MemberName("org.ktorm.ksp.api", "undefined")
 }
 
 public object ClassNames {
@@ -50,6 +49,7 @@ public object ClassNames {
     public val suppress: ClassName = Suppress::class.asClassName()
     public val entity: ClassName = Entity::class.asClassName()
     public val kClass: ClassName = KClass::class.asClassName()
+    public val undefined: ClassName = Undefined::class.asClassName()
 }
 
 public object SuppressAnnotations {
@@ -93,12 +93,15 @@ public object CodeFactory {
 
                 val condition: String
                 if (column.isInlinePropertyType) {
-                    condition = "if·((%L·as·Any?)·!==·(%M<%T>()·as·Any?))"
+                    condition = "if·((%L·as·Any?)·!==·(%T.of<%T>()·as·Any?))"
                 } else {
-                    condition = "if·(%L·!==·%M<%T>())"
+                    condition = "if·(%L·!==·%T.of<%T>())"
                 }
 
-                withControlFlow(condition, arrayOf(propertyName, MemberNames.undefined, column.nonNullPropertyTypeName)) {
+                withControlFlow(
+                    condition,
+                    arrayOf(propertyName, ClassNames.undefined, column.nonNullPropertyTypeName)
+                ) {
                     var statement: String
                     if (column.isMutable) {
                         statement = "%1L.%2L·=·%2L"
@@ -125,7 +128,7 @@ public object CodeFactory {
             val name = nameAllocator.newName(it.entityPropertyName.simpleName)
             val type = it.nonNullPropertyTypeName.copy(nullable = true)
             ParameterSpec.builder(name, type)
-                .defaultValue("%M()", MemberNames.undefined)
+                .defaultValue("%T.of()", ClassNames.undefined)
                 .build()
         }
     }
