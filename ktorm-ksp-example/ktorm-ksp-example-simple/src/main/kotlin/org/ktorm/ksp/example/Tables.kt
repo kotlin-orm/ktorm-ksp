@@ -36,8 +36,8 @@ public interface Department : Entity<Department> {
     @PrimaryKey
     public val id: Int
     public var name: String
+    @Column(sqlType = LocationWrapperSqlType::class)
     public var location: LocationWrapper
-
     @Column(columnName = "mixedCase")
     public var mixedCase: String?
 }
@@ -54,10 +54,10 @@ public interface Employee : Entity<Employee> {
     public var hireDate: LocalDate
     public var salary: Long
 
-    @Column(converter = UIntConverter::class)
+    @Column(sqlType = UIntSqlType::class)
     public var age: UInt
 
-    @Column(converter = IntEnumConverter::class)
+    @Column(sqlType = IntEnumSqlTypeFactory::class)
     public var gender: Gender?
 
     @Column(isReferences = true, columnName = "department_id")

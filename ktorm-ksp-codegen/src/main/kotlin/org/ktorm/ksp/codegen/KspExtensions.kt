@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.ktorm.ksp.compiler
+package org.ktorm.ksp.codegen
 
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSTypeReference

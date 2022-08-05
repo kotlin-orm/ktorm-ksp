@@ -37,10 +37,11 @@ import org.ktorm.ksp.codegen.CodeGenerateConfig
 import org.ktorm.ksp.codegen.ColumnInitializerGenerator
 import org.ktorm.ksp.codegen.ExtensionGeneratorConfig
 import org.ktorm.ksp.codegen.definition.ColumnDefinition
-import org.ktorm.ksp.codegen.definition.ConverterDefinition
 import org.ktorm.ksp.codegen.definition.KtormEntityType
 import org.ktorm.ksp.codegen.definition.TableDefinition
+import org.ktorm.ksp.codegen.findSuperTypeReference
 import org.ktorm.ksp.compiler.generator.KtormCodeGenerator
+import org.ktorm.schema.SqlType
 
 public class KtormProcessorProvider : SymbolProcessorProvider {
     override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {
@@ -66,7 +67,7 @@ public class KtormProcessor(
         val (tableDefinitions, tableRets) = processEntity(resolver)
         // start generate
         KtormCodeGenerator.generate(
-            tableDefinitions, environment.codeGenerator, config, ColumnInitializerGenerator(config, logger), logger
+            tableDefinitions, environment.codeGenerator, config, ColumnInitializerGenerator(logger), logger
         )
         return configRets + tableRets
     }
@@ -169,38 +170,6 @@ public class KtormProcessor(
                         // ignore
                     }
                 }
-
-                // enum converter
-                val enumConverterType = argumentMap[KtormKspConfig::enumConverter.name]!!.value as KSType
-                if (enumConverterType.toClassName() != Nothing::class.asClassName()) {
-                    if ((enumConverterType.declaration as KSClassDeclaration).classKind != ClassKind.OBJECT) {
-                        error("Wrong KtormKspConfig parameter:${KtormKspConfig::enumConverter.name}, converter must be singleton.")
-                    }
-                    configBuilder.enumConverter = ConverterDefinition(
-                        enumConverterType.toClassName(), enumConverterType.declaration as KSClassDeclaration
-                    )
-                }
-
-                // single type converter
-                @Suppress("UNCHECKED_CAST") val singleTypeConverters =
-                    argumentMap[KtormKspConfig::singleTypeConverters.name]!!.value as List<KSType>
-                if (singleTypeConverters.isNotEmpty()) {
-                    val singleTypeConverterMap = singleTypeConverters.asSequence()
-                        .onEach {
-                            if ((it.declaration as KSClassDeclaration).classKind != ClassKind.OBJECT) {
-                                error("Wrong KtormKspConfig parameter:${KtormKspConfig::singleTypeConverters.name} value:${it.declaration.qualifiedName!!.asString()} converter must be singleton.")
-                            }
-                        }.associate {
-                            val singleTypeReference =
-                                (it.declaration as KSClassDeclaration).findSuperTypeReference(SingleTypeConverter::class.qualifiedName!!)!!
-                            val supportType =
-                                singleTypeReference.resolve().arguments.first().type!!.resolve().toClassName()
-                            val converterDefinition =
-                                ConverterDefinition(it.toClassName(), it.declaration as KSClassDeclaration)
-                            supportType to converterDefinition
-                        }
-                    configBuilder.singleTypeConverters = singleTypeConverterMap
-                }
             } catch (e: Exception) {
                 logger.error(
                     "KtormKspConfigVisitor visitClassDeclaration error. className:" +
@@ -214,6 +183,10 @@ public class KtormProcessor(
     public inner class EntityVisitor(
         private val tableDefinitions: MutableList<TableDefinition>
     ) : KSVisitorVoid() {
+
+        private val sqlTypeClassName = SqlType::class.qualifiedName!!
+        private val sqlTypeFactoryClassName = SqlTypeFactory::class.qualifiedName!!
+
 
         @OptIn(KspExperimental::class, KotlinPoetKspPreview::class)
         override fun visitClassDeclaration(
@@ -272,16 +245,34 @@ public class KtormProcessor(
                         val columnAnnotation = ksProperty.getAnnotationsByType(Column::class).firstOrNull()
                         val ksColumnAnnotation =
                             ksProperty.annotations.firstOrNull { anno -> anno.annotationType.resolve().declaration.qualifiedName?.asString() == columnQualifiedName }
-                        // converter
-                        val converter =
-                            ksColumnAnnotation?.arguments?.firstOrNull { anno -> anno.name?.asString() == Column::converter.name }?.value as KSType?
-                        var converterDefinition: ConverterDefinition? = null
-                        if (converter != null && converter.toClassName() != Nothing::class.asClassName()) {
-                            val converterDeclaration = converter.declaration as KSClassDeclaration
-                            if (converterDeclaration.classKind != ClassKind.OBJECT) {
-                                error("Wrong converter type:${converter.toClassName()}, converter must be singleton.")
+
+                        val sqlType =
+                            ksColumnAnnotation?.arguments?.firstOrNull { it.name?.asString() == Column::sqlType.name }?.value as KSType?
+                        var actualSqlType: ClassName? = null
+                        var actualSqlFactoryType: ClassName? = null
+                        if (sqlType != null && sqlType.declaration.qualifiedName!!.asString() != Nothing::class.qualifiedName) {
+                            val sqlTypeDeclaration = sqlType.declaration as KSClassDeclaration
+                            if (sqlTypeDeclaration.classKind != ClassKind.OBJECT) {
+                                error(
+                                    "wrong entity column declaration: ${entityClassName.canonicalName}." +
+                                            "$propertyName, sqlType must be a Kotlin singleton object"
+                                )
                             }
-                            converterDefinition = ConverterDefinition(converter.toClassName(), converterDeclaration)
+                            when {
+                                sqlTypeDeclaration.findSuperTypeReference(sqlTypeClassName) != null -> {
+                                    actualSqlType = sqlType.toClassName()
+                                }
+                                sqlTypeDeclaration.findSuperTypeReference(sqlTypeFactoryClassName) != null -> {
+                                    actualSqlFactoryType = sqlType.toClassName()
+                                }
+                                else -> {
+                                    error(
+                                        "wrong entity column declaration: ${entityClassName.canonicalName}." +
+                                                "$propertyName, sqlType must be typed of [$sqlTypeClassName] or " +
+                                                "[$sqlTypeFactoryClassName]."
+                                    )
+                                }
+                            }
                         }
 
                         val isPrimaryKey = ksProperty.getAnnotationsByType(PrimaryKey::class).any()
@@ -299,7 +290,8 @@ public class KtormProcessor(
                             propertyKSType.isInline(),
                             MemberName(entityClassName, propertyName),
                             tablePropertyName,
-                            converterDefinition,
+                            actualSqlType,
+                            actualSqlFactoryType,
                             ksProperty,
                             propertyKSType,
                             tableDef,

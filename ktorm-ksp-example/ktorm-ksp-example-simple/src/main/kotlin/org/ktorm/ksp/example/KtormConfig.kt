@@ -20,8 +20,7 @@ import org.ktorm.ksp.api.CamelCaseToSnakeCaseNamingStrategy
 import org.ktorm.ksp.api.KtormKspConfig
 
 @KtormKspConfig(
-    namingStrategy = CamelCaseToSnakeCaseNamingStrategy::class,
-    singleTypeConverters = [LocationWrapperConverter::class]
+    namingStrategy = CamelCaseToSnakeCaseNamingStrategy::class
 )
 public class KtormConfig
 

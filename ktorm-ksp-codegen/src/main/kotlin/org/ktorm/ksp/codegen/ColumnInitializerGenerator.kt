@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
+@file:OptIn(KotlinPoetKspPreview::class)
+
 package org.ktorm.ksp.codegen
 
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSFile
 import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import org.ktorm.ksp.codegen.definition.ColumnDefinition
-import org.ktorm.ksp.codegen.definition.ConverterDefinition
-import org.ktorm.ksp.codegen.generator.util.ClassNames
 import java.math.BigDecimal
 import java.sql.Date
 import java.sql.Time
@@ -58,16 +59,9 @@ import java.util.*
  * | kotlin.Enum              | enum           | enum                   | Types.VARCHAR    |
  * +──────────────────────────+────────────────+────────────────────────+──────────────────+
  */
-public open class ColumnInitializerGenerator(
-    config: CodeGenerateConfig,
-    private val logger: KSPLogger
-) {
-
-    private val enumConverterDefinition: ConverterDefinition? = config.enumConverter
-    private val singleTypeConverterMap: Map<ClassName, ConverterDefinition> = config.singleTypeConverters
-
-    private val defaultEnumInitializer = MemberName("org.ktorm.schema", "enum")
-    private val defaultInitializerMap = mapOf<TypeName, MemberName>(
+public open class ColumnInitializerGenerator(private val logger: KSPLogger) {
+    private val enumSqlTypeFunction = MemberName("org.ktorm.schema", "enum", true)
+    private val sqlTypeFunctions = mapOf<TypeName, MemberName>(
         Int::class.asTypeName() to MemberName("org.ktorm.schema", "int", true),
         String::class.asTypeName() to MemberName("org.ktorm.schema", "varchar", true),
         Boolean::class.asTypeName() to MemberName("org.ktorm.schema", "boolean", true),
@@ -107,22 +101,22 @@ public open class ColumnInitializerGenerator(
                 columnName,
                 config,
                 referenceColumn.entityPropertyName,
-                referenceColumn.converterDefinition,
+                referenceColumn.sqlType,
+                referenceColumn.sqlTypeFactory,
                 referenceColumn.isEnum,
                 referenceColumn.propertyTypeName,
-                referenceColumn.nonNullPropertyTypeName,
-                dependencyFiles
+                referenceColumn.nonNullPropertyTypeName
             )
         } else {
             return doGenerate(
                 column.columnName,
                 config,
                 column.entityPropertyName,
-                column.converterDefinition,
+                column.sqlType,
+                column.sqlTypeFactory,
                 column.isEnum,
                 column.propertyTypeName,
-                column.nonNullPropertyTypeName,
-                dependencyFiles
+                column.nonNullPropertyTypeName
             )
         }
     }
@@ -134,14 +128,12 @@ public open class ColumnInitializerGenerator(
         columnName: String,
         config: CodeGenerateConfig,
         entityPropertyName: MemberName,
-        converterDefinition: ConverterDefinition?,
+        sqlType: ClassName?,
+        sqlTypeFactory: ClassName?,
         isEnum: Boolean,
         propertyTypeName: TypeName,
-        nonNullPropertyTypeName: TypeName,
-        dependencyFiles: MutableSet<KSFile>
+        nonNullPropertyTypeName: TypeName
     ): CodeBlock {
-        val isParameterTypeName = propertyTypeName is ParameterizedTypeName
-
         var actualColumnName = columnName
         if (columnName.isEmpty()) {
             if (config.localNamingStrategy != null) {
@@ -151,63 +143,67 @@ public open class ColumnInitializerGenerator(
             }
         }
 
-        val actualConverterDefinition = when {
-            converterDefinition != null -> converterDefinition
-            isEnum && enumConverterDefinition != null -> enumConverterDefinition
-            !isEnum && singleTypeConverterMap.containsKey(nonNullPropertyTypeName) -> {
-                singleTypeConverterMap[nonNullPropertyTypeName]
-            }
-            else -> null
-        }
-        if (actualConverterDefinition != null) {
-            dependencyFiles.add(actualConverterDefinition.converterClassDeclaration.containingFile!!)
+        if (sqlType != null) {
             return buildCodeBlock {
-                val type = if (isParameterTypeName) {
-                    (propertyTypeName as ParameterizedTypeName).rawType
-                } else {
-                    nonNullPropertyTypeName
-                }
-
                 if (actualColumnName.isEmpty()) {
                     add(
-                        "%T.convert(this,·%T.toColumnName(%S),·%T::class",
-                        actualConverterDefinition.converterName,
+                        "registerColumn(%T.toColumnName(%S),·%T)",
                         config.namingStrategy,
                         entityPropertyName.simpleName,
-                        type
+                        sqlType
                     )
                 } else {
                     add(
-                        "%T.convert(this,·%S,·%T::class",
-                        actualConverterDefinition.converterName,
+                        "registerColumn(%S,·%T)",
                         actualColumnName,
-                        type
+                        sqlType
                     )
                 }
-                if (isParameterTypeName) {
-                    add("·as·%T<%T>·", ClassNames.kClass, nonNullPropertyTypeName)
-                }
-                add(")")
             }
         }
+
+        if (sqlTypeFactory != null) {
+            return buildCodeBlock {
+                if (actualColumnName.isEmpty()) {
+                    add(
+                        "registerColumn(%T.toColumnName(%S),·%T.createSqlType(%T::%L))",
+                        config.namingStrategy,
+                        entityPropertyName.simpleName,
+                        sqlTypeFactory,
+                        entityPropertyName.enclosingClassName,
+                        entityPropertyName.simpleName
+                    )
+                } else {
+                    add(
+                        "registerColumn(%S,·%T.createSqlType(%T::%L))",
+                        actualColumnName,
+                        sqlTypeFactory,
+                        entityPropertyName.enclosingClassName,
+                        entityPropertyName.simpleName
+                    )
+                }
+            }
+        }
+
         // default enum initializer
         if (isEnum) {
             return buildCodeBlock {
                 if (actualColumnName.isEmpty()) {
                     add(
                         "%M<%T>(%T.toColumnName(%S))",
-                        defaultEnumInitializer,
+                        enumSqlTypeFunction,
                         nonNullPropertyTypeName,
                         config.namingStrategy,
                         entityPropertyName.simpleName
                     )
                 } else {
-                    add("%M<%T>(%S)", defaultEnumInitializer, nonNullPropertyTypeName, actualColumnName)
+                    add("%M<%T>(%S)", enumSqlTypeFunction, nonNullPropertyTypeName, actualColumnName)
                 }
             }
         }
+
         // default initializer
-        val defaultFunction = defaultInitializerMap[nonNullPropertyTypeName]
+        val defaultFunction = sqlTypeFunctions[nonNullPropertyTypeName]
         if (defaultFunction != null) {
             return buildCodeBlock {
                 if (actualColumnName.isEmpty()) {
@@ -222,6 +218,7 @@ public open class ColumnInitializerGenerator(
                 }
             }
         }
+
         error(
             "Cannot find column generate function, property:${entityPropertyName.canonicalName} " +
                     "propertyTypeName:$propertyTypeName"
