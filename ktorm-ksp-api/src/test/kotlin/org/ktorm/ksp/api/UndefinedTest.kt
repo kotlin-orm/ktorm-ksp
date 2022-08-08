@@ -16,60 +16,86 @@
 
 package org.ktorm.ksp.api
 
-import org.assertj.core.api.Assertions.assertThat
+import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TestName
 import org.ktorm.entity.Entity
 
 public class UndefinedTest {
+    @get:Rule
+    public val testName: TestName = TestName()
 
-    private inline fun <reified T : Any> undefinedValueTest(value: T?) {
+    private inline fun <reified T : Any> testUndefined(value: T?) {
         val undefined1 = Undefined.of<T>()
         val undefined2 = Undefined.of<T>()
-        assertThat(undefined1 !== value).isTrue
-        assertThat(undefined2 !== value).isTrue
-        assertThat(undefined1 === undefined2).isTrue
-        println(undefined1!!.javaClass.name)
+
+        assert(undefined1 is T)
+        assert(undefined2 is T)
+        assert(undefined1 !== value)
+        assert(undefined2 !== value)
+        assert(undefined1 === undefined2)
+
+        println("Undefined Class Name: " + undefined1!!.javaClass.name)
     }
 
     private fun testUndefinedInt(haveValue: Boolean, value: Int? = Undefined.of()) {
+        val undefined = Undefined.of<Int>()
+        println("Undefined Class Name: " + undefined!!.javaClass.name)
+
         if (haveValue) {
-            assert(value !== Undefined.of<Int>())
+            assert(value !== undefined)
         } else {
-            assert(value === Undefined.of<Int>())
+            assert(value === undefined)
         }
     }
 
     private fun testUndefinedUInt(haveValue: Boolean, value: UInt? = Undefined.of()) {
+        val undefined = Undefined.of<UInt>()
+        println("Undefined Class Name: " + undefined!!.javaClass.name)
+
         if (haveValue) {
-            assert((value as Any?) !== (Undefined.of<UInt>() as Any?))
+            assert((value as Any?) !== (undefined as Any?))
         } else {
-            assert((value as Any?) === (Undefined.of<UInt>() as Any?))
+            assert((value as Any?) === (undefined as Any?))
         }
     }
 
+    @Before
+    public fun before() {
+        println("-----------------------------------")
+        println("Test Name : " + testName.methodName)
+        println("JDK Version: " + System.getProperty("java.version"))
+    }
+
     @Test
-    public fun `undefined inlined class type`() {
+    public fun `undefined inlined class`() {
         testUndefinedUInt(haveValue = true, value = 1U)
         testUndefinedUInt(haveValue = true, value = 0U)
         testUndefinedUInt(haveValue = true, value = null)
         testUndefinedUInt(haveValue = false)
+
+        testUndefined(0.toUByte())
+        testUndefined(0.toUShort())
+        testUndefined(0U)
+        testUndefined(0UL)
     }
 
     @Test
-    public fun `undefined boxed primitive type`() {
+    public fun `undefined primitive type`() {
         testUndefinedInt(haveValue = true, value = 1)
         testUndefinedInt(haveValue = true, value = 0)
         testUndefinedInt(haveValue = true, value = null)
         testUndefinedInt(haveValue = false)
 
-        undefinedValueTest(0.toByte())
-        undefinedValueTest(0.toShort())
-        undefinedValueTest(0)
-        undefinedValueTest(0L)
-        undefinedValueTest('0')
-        undefinedValueTest(false)
-        undefinedValueTest(0f)
-        undefinedValueTest(0.0)
+        testUndefined(0.toByte())
+        testUndefined(0.toShort())
+        testUndefined(0)
+        testUndefined(0L)
+        testUndefined('0')
+        testUndefined(false)
+        testUndefined(0f)
+        testUndefined(0.0)
     }
 
     private interface Employee : Entity<Employee>
@@ -91,30 +117,31 @@ public class UndefinedTest {
 
     @Test
     public fun `undefined interface`() {
-        undefinedValueTest(Entity.create<Employee>())
-        undefinedValueTest<java.io.Serializable>(null)
+        testUndefined(Entity.create<Employee>())
+        testUndefined<java.io.Serializable>(null)
     }
 
     @Test
     public fun `undefined abstract class`() {
-        undefinedValueTest<Biology>(Dog(0))
-        undefinedValueTest<Animal>(Dog(0))
-        undefinedValueTest<Number>(0)
+        testUndefined<Biology>(Dog(0))
+        testUndefined<Animal>(Dog(0))
+        testUndefined<Number>(0)
     }
 
     @Test
     public fun `undefined enum`() {
-        undefinedValueTest(Gender.MALE)
+        testUndefined(Gender.MALE)
+        testUndefined(Gender.FEMALE)
     }
 
     @Test
     public fun `undefined class`() {
-        undefinedValueTest(Dog(0))
+        testUndefined(Dog(0))
     }
 
     @Test
     public fun `undefined data class`() {
-        undefinedValueTest(Cat(0))
+        testUndefined(Cat(0))
     }
 
     private class School {
@@ -128,29 +155,29 @@ public class UndefinedTest {
     public fun `undefined inner class`() {
         val school = School()
         val teacher = school.Teacher()
-        undefinedValueTest(teacher)
+        testUndefined(teacher)
         val aClass = school.Class("A")
-        undefinedValueTest(aClass)
+        testUndefined(aClass)
     }
 
     @Test
     public fun `undefined object`() {
-        undefinedValueTest(Unit)
+        testUndefined(Unit)
     }
 
     @Test
     public fun `undefined companion object`() {
-        undefinedValueTest(Int.Companion)
+        testUndefined(Int.Companion)
     }
 
     @Test
     public fun `undefined function`() {
-        undefinedValueTest<(Int) -> String> { it.toString() }
+        testUndefined<(Int) -> String> { it.toString() }
     }
 
     @Test
     public fun `undefined array`() {
-        undefinedValueTest(intArrayOf())
-        undefinedValueTest<Array<School>>(arrayOf())
+        testUndefined(intArrayOf())
+        testUndefined<Array<School>>(arrayOf())
     }
 }
