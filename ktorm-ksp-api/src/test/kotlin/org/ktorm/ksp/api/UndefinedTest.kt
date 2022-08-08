@@ -105,10 +105,10 @@ public class UndefinedTest {
         FEMALE
     }
 
-    private abstract class Biology
+    public abstract class Biology
 
     @Suppress("unused")
-    private abstract class Animal(val name: String) : Biology()
+    public abstract class Animal(public val name: String) : Biology()
 
     @Suppress("unused")
     private class Dog(val age: Int) : Animal("dog")
