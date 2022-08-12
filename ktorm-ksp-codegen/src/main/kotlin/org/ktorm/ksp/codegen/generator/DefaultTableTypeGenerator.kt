@@ -36,7 +36,7 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
         }
     }
 
-    protected open fun buildTableNameParameter(table: TableDefinition, config: CodeGenerateConfig): List<CodeBlock> {
+    protected open fun buildTableConstructorParams(table: TableDefinition, config: CodeGenerateConfig): List<CodeBlock> {
         val tableName = when {
             table.tableName.isNotEmpty() -> table.tableName
             config.namingStrategy != null && config.localNamingStrategy != null -> {
@@ -55,16 +55,20 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
                 )
             }
         }
-        val result = mutableListOf<CodeBlock>()
-        result.add(CodeBlock.of("tableName·=·%S", tableName))
-        result.add(CodeBlock.of("alias·=·alias"))
+
+        val params = ArrayList<CodeBlock>()
+        params += CodeBlock.of("%S", tableName)
+        params += CodeBlock.of("alias")
+
         if (table.catalog.isNotEmpty()) {
-            result.add(CodeBlock.of("catalog·=·%S", table.catalog))
+            params += CodeBlock.of("catalog·=·%S", table.catalog)
         }
+
         if (table.schema.isNotEmpty()) {
-            result.add(CodeBlock.of("schema·=·%S", table.schema))
+            params += CodeBlock.of("schema·=·%S", table.schema)
         }
-        return result
+
+        return params
     }
 
     public open fun generateEntityInterfaceEntity(context: TableGenerateContext, emitter: (TypeSpec.Builder) -> Unit) {
@@ -72,7 +76,7 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
         TypeSpec.classBuilder(table.tableClassName)
             .superclass(Table::class.asClassName().parameterizedBy(table.entityClassName))
             .apply {
-                buildTableNameParameter(table, context.config)
+                buildTableConstructorParams(table, context.config)
                     .forEach { addSuperclassConstructorParameter(it) }
 
                 buildClassTable(table, this)
@@ -90,16 +94,13 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
             )
             .primaryConstructor(
                 FunSpec.constructorBuilder()
-                    .addParameter(
-                        ParameterSpec.builder("alias", typeNameOf<String?>())
-                            .defaultValue(if (table.alias.isNotEmpty()) "\"${table.alias}\"" else "null")
-                            .build()
-                    )
+                    .addParameter(ParameterSpec("alias", typeNameOf<String?>()))
                     .build()
             )
             .addType(
                 TypeSpec.companionObjectBuilder(null)
                     .superclass(table.tableClassName)
+                    .addSuperclassConstructorParameter(CodeBlock.of("alias·=·%S", table.alias.takeIf { it.isNotBlank() }))
                     .build()
             )
             .addFunction(
@@ -119,7 +120,7 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
         TypeSpec.classBuilder(table.tableClassName)
             .superclass(BaseTable::class.asClassName().parameterizedBy(table.entityClassName))
             .apply {
-                buildTableNameParameter(table, context.config)
+                buildTableConstructorParams(table, context.config)
                     .forEach { addSuperclassConstructorParameter(it) }
 
                 buildClassTable(table, this)
