@@ -64,7 +64,6 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
         if (table.schema.isNotEmpty()) {
             result.add(CodeBlock.of("schema·=·%S", table.schema))
         }
-        result.add(CodeBlock.of("entityClass·=·%T::class", table.entityClassName))
         return result
     }
 
