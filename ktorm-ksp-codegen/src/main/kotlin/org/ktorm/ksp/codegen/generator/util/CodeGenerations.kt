@@ -66,11 +66,7 @@ public object ClassNames {
 }
 
 public object SuppressAnnotations {
-    public const val localVariableName: String = "\"LocalVariableName\""
     public const val functionName: String = "\"FunctionName\""
-    public const val unusedParameter: String = "\"UNUSED_PARAMETER\""
-    public const val uncheckedCast: String = "\"UNCHECKED_CAST\""
-    public const val leakingThis: String = "\"LeakingThis\""
 
     public fun buildSuppress(vararg names: String): AnnotationSpec {
         return AnnotationSpec.builder(Suppress::class).addMember(names.joinToString(", ")).build()

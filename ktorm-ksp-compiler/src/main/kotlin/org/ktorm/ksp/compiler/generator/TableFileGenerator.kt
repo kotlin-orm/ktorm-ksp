@@ -20,8 +20,6 @@ import com.google.devtools.ksp.processing.KSPLogger
 import com.squareup.kotlinpoet.FileSpec
 import org.ktorm.ksp.codegen.*
 import org.ktorm.ksp.codegen.generator.*
-import org.ktorm.ksp.codegen.generator.util.SuppressAnnotations.buildSuppress
-import org.ktorm.ksp.codegen.generator.util.SuppressAnnotations.localVariableName
 import java.util.*
 
 public class TableFileGenerator(config: CodeGenerateConfig, logger: KSPLogger) {
@@ -93,7 +91,6 @@ public class TableFileGenerator(config: CodeGenerateConfig, logger: KSPLogger) {
         val table = context.table
         return FileSpec.builder(table.tableClassName.packageName, table.tableClassName.simpleName)
             .addFileComment("auto-generated code, don't modify it")
-            .addAnnotation(buildSuppress(localVariableName))
             .indent("    ")
     }
 }
