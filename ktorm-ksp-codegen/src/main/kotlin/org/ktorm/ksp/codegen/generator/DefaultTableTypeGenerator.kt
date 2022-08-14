@@ -36,27 +36,23 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
     }
 
     protected open fun buildTableConstructorParams(table: TableDefinition, config: CodeGenerateConfig): List<CodeBlock> {
-        val tableName = when {
-            table.tableName.isNotEmpty() -> table.tableName
-            config.namingStrategy != null && config.localNamingStrategy != null -> {
-                config.localNamingStrategy.toTableName(table.entityClassName.simpleName)
+        val tableNameParam = when {
+            table.tableName.isNotEmpty() -> {
+                CodeBlock.of("%S", table.tableName)
             }
             config.namingStrategy == null -> {
-                table.entityClassName.simpleName
+                CodeBlock.of("%S", table.entityClassName.simpleName)
+            }
+            config.localNamingStrategy != null -> {
+                CodeBlock.of("%S", config.localNamingStrategy.toTableName(table.entityClassName.simpleName))
             }
             else -> {
-                return listOf(
-                    CodeBlock.of(
-                        "tableName·=·%T.toTableName(%S)",
-                        config.namingStrategy,
-                        table.entityClassName.simpleName
-                    )
-                )
+                CodeBlock.of("%T.toTableName(%S)", config.namingStrategy, table.entityClassName.simpleName)
             }
         }
 
         val params = ArrayList<CodeBlock>()
-        params += CodeBlock.of("%S", tableName)
+        params += tableNameParam
         params += CodeBlock.of("alias")
 
         if (table.catalog.isNotEmpty()) {
