@@ -42,6 +42,11 @@ public interface Department : Entity<Department> {
     public var mixedCase: String?
 }
 
+/**
+ * This is the kdoc for Employee.
+ *
+ * This is the second line.
+ */
 @Table
 public interface Employee : Entity<Employee> {
     public companion object : Entity.Factory<Employee>()

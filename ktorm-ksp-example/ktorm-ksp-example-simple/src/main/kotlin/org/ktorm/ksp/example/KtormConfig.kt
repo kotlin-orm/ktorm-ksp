@@ -16,10 +16,11 @@
 
 package org.ktorm.ksp.example
 
+import org.ktorm.ksp.api.CamelCaseToSnakeCaseNamingStrategy
 import org.ktorm.ksp.api.KtormKspConfig
 
 @KtormKspConfig(
-    namingStrategy = MyNamingStrategy::class
+    namingStrategy = CamelCaseToSnakeCaseNamingStrategy::class
 )
 public class KtormConfig
 

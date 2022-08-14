@@ -74,13 +74,21 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
                 buildTableConstructorParams(table, context.config)
                     .forEach { addSuperclassConstructorParameter(it) }
 
-                buildClassTable(table, this)
+                buildClassTable(table, context.config, this)
             }
             .run(emitter)
     }
 
-    private fun buildClassTable(table: TableDefinition, typeSpec: TypeSpec.Builder) {
-        typeSpec.addModifiers(KModifier.OPEN)
+    private fun buildClassTable(table: TableDefinition, config: CodeGenerateConfig, typeSpec: TypeSpec.Builder) {
+        val tableName = when {
+            table.tableName.isNotEmpty() -> table.tableName
+            config.localNamingStrategy != null -> config.localNamingStrategy.toTableName(table.entityClassName.simpleName)
+            else -> table.entityClassName.simpleName
+        }
+
+        typeSpec
+            .addKdoc("Table %L. %L", tableName, table.entityClassDeclaration.docString?.trimIndent().orEmpty())
+            .addModifiers(KModifier.OPEN)
             .primaryConstructor(
                 FunSpec.constructorBuilder()
                     .addParameter(ParameterSpec("alias", typeNameOf<String?>()))
@@ -112,7 +120,7 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
                 buildTableConstructorParams(table, context.config)
                     .forEach { addSuperclassConstructorParameter(it) }
 
-                buildClassTable(table, this)
+                buildClassTable(table, context.config, this)
             }
             .run(emitter)
     }
