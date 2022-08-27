@@ -51,6 +51,11 @@ public interface Department : Entity<Department> {
 public interface Employee : Entity<Employee> {
     public companion object : Entity.Factory<Employee>()
 
+    /**
+     * This is the kdoc for id.
+     *
+     * This is the second line.
+     */
     @PrimaryKey
     public var id: Int
     public var name: String
@@ -69,7 +74,6 @@ public interface Employee : Entity<Employee> {
     public val upperName: String
         get() = name.uppercase()
 }
-
 
 @Table(schema = "company")
 public data class Customer(

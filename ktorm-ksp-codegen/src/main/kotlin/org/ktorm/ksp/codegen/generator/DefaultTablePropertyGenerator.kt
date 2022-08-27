@@ -41,15 +41,20 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
             .asSequence()
             .map { column ->
                 val columnType = if (column.isReferences) {
-                    Column::class.asClassName()
-                        .parameterizedBy(column.referencesColumn!!.nonNullPropertyTypeName)
+                    Column::class.asClassName().parameterizedBy(column.referencesColumn!!.nonNullPropertyTypeName)
                 } else {
                     Column::class.asClassName().parameterizedBy(column.nonNullPropertyTypeName)
                 }
-                PropertySpec.Companion.builder(
-                    column.tablePropertyName.simpleName,
-                    columnType
-                )
+
+                val columnName = when {
+                    column.columnName.isNotEmpty() -> column.columnName
+                    config.localNamingStrategy != null -> config.localNamingStrategy.toColumnName(column.entityPropertyName.simpleName)
+                    else -> column.entityPropertyName.simpleName
+                }
+
+                PropertySpec
+                    .builder(column.tablePropertyName.simpleName, columnType)
+                    .addKdoc("Column %L. %L", columnName, column.propertyDeclaration.docString?.trimIndent().orEmpty())
                     .initializer(buildCodeBlock {
                         add(columnInitializerGenerator.generate(column, dependencyFiles, config))
                         val params = mutableMapOf(
@@ -60,13 +65,13 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
                             "entityPropertyName" to column.entityPropertyName.simpleName
                         )
                         val code = buildString {
+                            if (column.isPrimaryKey) {
+                                append(".%primaryKey:M()")
+                            }
                             if (column.isReferences) {
                                 append(".%references:M(%referencesTable:T)·{·it.%entityPropertyName:L·}·")
                             } else {
                                 append(".%bindTo:M·{·it.%entityPropertyName:L·}")
-                            }
-                            if (column.isPrimaryKey) {
-                                append(".%primaryKey:M()")
                             }
                         }
                         addNamed(code, params)
@@ -81,13 +86,22 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
         table.columns
             .asSequence()
             .map { column ->
-                PropertySpec.Companion.builder(
-                    column.tablePropertyName.simpleName,
-                    Column::class.asClassName().parameterizedBy(column.nonNullPropertyTypeName)
-                )
+                val columnType = Column::class.asClassName().parameterizedBy(column.nonNullPropertyTypeName)
+
+                val columnName = when {
+                    column.columnName.isNotEmpty() -> column.columnName
+                    config.localNamingStrategy != null -> config.localNamingStrategy.toColumnName(column.entityPropertyName.simpleName)
+                    else -> column.entityPropertyName.simpleName
+                }
+
+                PropertySpec
+                    .builder(column.tablePropertyName.simpleName, columnType)
+                    .addKdoc("Column %L. %L", columnName, column.propertyDeclaration.docString?.trimIndent().orEmpty())
                     .initializer(buildCodeBlock {
                         add(columnInitializerGenerator.generate(column, dependencyFiles, config))
-                        if (column.isPrimaryKey) add(".%M()", MemberNames.primaryKey)
+                        if (column.isPrimaryKey) {
+                            add(".%M()", MemberNames.primaryKey)
+                        }
                     })
                     .build()
             }

@@ -96,6 +96,8 @@ public open class ColumnInitializerGenerator(private val logger: KSPLogger) {
         if (column.isReferences) {
             val referenceColumn = column.referencesColumn!!
             dependencyFiles.add(referenceColumn.propertyDeclaration.containingFile!!)
+
+            // TODO: why skip naming strategy for reference columns?
             val columnName = column.columnName.ifEmpty { column.entityPropertyName.simpleName }
             return doGenerate(
                 columnName,
