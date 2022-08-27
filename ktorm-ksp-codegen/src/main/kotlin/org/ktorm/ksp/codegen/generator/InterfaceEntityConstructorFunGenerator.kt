@@ -34,8 +34,16 @@ public class InterfaceEntityConstructorFunGenerator : TopLevelFunctionGenerator 
         if (table.ktormEntityType != KtormEntityType.ENTITY_INTERFACE) {
             return
         }
+
         val nameAllocator = NameAllocator()
-        FunSpec.builder(table.entityClassName.simpleName)
+
+        FunSpec
+            .builder(table.entityClassName.simpleName)
+            .addKdoc(
+                "Create an entity of %L and specify the initial values for each properties, " +
+                "properties that doesn't have an initial value will left unassigned. ",
+                table.entityClassName.simpleName
+            )
             .addAnnotation(SuppressAnnotations.buildSuppress(functionName))
             .returns(table.entityClassName)
             .addParameters(CodeFactory.buildEntityConstructorParameters(context, nameAllocator))
