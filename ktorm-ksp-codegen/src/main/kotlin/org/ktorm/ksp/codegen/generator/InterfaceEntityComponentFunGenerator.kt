@@ -29,8 +29,10 @@ public class InterfaceEntityComponentFunGenerator : TopLevelFunctionGenerator {
         if (table.ktormEntityType != KtormEntityType.ENTITY_INTERFACE) {
             return
         }
-        table.columns.forEachIndexed { index, column ->
-            FunSpec.builder("component${index + 1}")
+
+        for ((i, column) in table.columns.withIndex()) {
+            FunSpec.builder("component${i + 1}")
+                .addKdoc("Return the value of [%L.%L]. ", table.entityClassName.simpleName, column.entityPropertyName.simpleName)
                 .addModifiers(KModifier.OPERATOR)
                 .returns(column.propertyTypeName)
                 .receiver(table.entityClassName)
