@@ -96,12 +96,17 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
             )
             .addType(
                 TypeSpec.companionObjectBuilder(null)
+                    .addKdoc("The default table object of %L.", tableName)
                     .superclass(table.tableClassName)
                     .addSuperclassConstructorParameter(CodeBlock.of("alias·=·%S", table.alias.takeIf { it.isNotBlank() }))
                     .build()
             )
             .addFunction(
                 FunSpec.builder("aliased")
+                    .addKdoc(
+                        "Return a new-created table object with all properties (including the table name and columns " +
+                        "and so on) being copied from this table, but applying a new alias given by the parameter."
+                    )
                     .returns(table.tableClassName)
                     .addParameter(ParameterSpec.builder("alias", typeNameOf<String>()).build())
                     .addModifiers(KModifier.OVERRIDE)
