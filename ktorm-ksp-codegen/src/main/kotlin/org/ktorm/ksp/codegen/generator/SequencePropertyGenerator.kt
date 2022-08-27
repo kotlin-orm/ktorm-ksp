@@ -45,7 +45,10 @@ public class SequencePropertyGenerator : TopLevelPropertyGenerator {
         val entitySequence = EntitySequence::class.asClassName()
         // EntitySequence<E, T>
         val sequenceType = entitySequence.parameterizedBy(table.entityClassName, table.tableClassName)
-        PropertySpec.Companion.builder(sequenceName, sequenceType)
+
+        PropertySpec
+            .builder(sequenceName, sequenceType)
+            .addKdoc("Return the default entity sequence of [%L].", table.tableClassName.simpleName)
             .receiver(Database::class.asClassName())
             .getter(
                 FunSpec.getterBuilder()
