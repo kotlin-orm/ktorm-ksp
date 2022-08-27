@@ -31,8 +31,15 @@ public class InterfaceEntityCopyFunGenerator : TopLevelFunctionGenerator {
         if (table.ktormEntityType != KtormEntityType.ENTITY_INTERFACE) {
             return
         }
+
         val nameAllocator = NameAllocator()
-        FunSpec.builder("copy")
+
+        FunSpec
+            .builder("copy")
+            .addKdoc(
+                "Return a deep copy of this entity (which has the same property values and tracked statuses), " +
+                "and alter the specified property values. "
+            )
             .returns(table.entityClassName)
             .receiver(table.entityClassName)
             .addParameters(CodeFactory.buildEntityConstructorParameters(context, nameAllocator))

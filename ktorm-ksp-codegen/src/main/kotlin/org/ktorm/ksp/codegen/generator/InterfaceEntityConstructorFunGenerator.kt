@@ -40,7 +40,7 @@ public class InterfaceEntityConstructorFunGenerator : TopLevelFunctionGenerator 
         FunSpec
             .builder(table.entityClassName.simpleName)
             .addKdoc(
-                "Create an entity of %L and specify the initial values for each properties, " +
+                "Create an entity of [%L] and specify the initial values for each properties, " +
                 "properties that doesn't have an initial value will left unassigned. ",
                 table.entityClassName.simpleName
             )
