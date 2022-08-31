@@ -32,7 +32,7 @@ import org.ktorm.schema.Table
  *     @PrimaryKey
  *     public var id: Int
  *     public var name: String
- *     @Column(isReferences = true, columnName = "department_id")
+ *     @References("department_id")
  *     public var department: Department
  * }
  * ```

@@ -187,7 +187,7 @@ public class DefaultTableTypeGeneratorTest : BaseKspTest() {
     }
 
     @Test
-    public fun `column definition does not contain isReference parameters`() {
+    public fun `column definition does not contain References annotation`() {
         val (result1, result2) = twiceCompile(
             SourceFile.kotlin(
                 "source.kt",

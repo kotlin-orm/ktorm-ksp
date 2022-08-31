@@ -57,7 +57,6 @@ public class KtormProcessor(
 
     private companion object {
         private val columnQualifiedName = Column::class.qualifiedName!!
-        private val referencesQualifiedName = References::class.qualifiedName!!
         private val ignoreInterfaceEntityProperties: Set<String> = setOf("entityClass", "properties")
     }
 
