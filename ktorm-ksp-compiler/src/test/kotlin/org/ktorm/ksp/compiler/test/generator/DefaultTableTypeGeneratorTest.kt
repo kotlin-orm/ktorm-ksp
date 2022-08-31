@@ -214,7 +214,7 @@ public class DefaultTableTypeGeneratorTest : BaseKspTest() {
                     var id: Int
                     var username: String
                     var age: Int
-                    @Column(isReferences = true)
+                    @References("school_id")
                     var school: School
                 }
 
@@ -230,7 +230,7 @@ public class DefaultTableTypeGeneratorTest : BaseKspTest() {
         assertThat(result1.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         assertThat(result2.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         val baseTable = result2.getBaseTable("Users")
-        val school = baseTable.columns.firstOrNull { it.name == "school" }
+        val school = baseTable.columns.firstOrNull { it.name == "school_id" }
         assertThat(school).isNotNull
         assertThat(school!!.referenceTable).isNotNull
         val referenceTable = school.referenceTable
@@ -255,7 +255,7 @@ public class DefaultTableTypeGeneratorTest : BaseKspTest() {
                     var id: Int
                     var username: String
                     var age: Int
-                    @Column(isReferences = true)
+                    @References("school_id")
                     var school: School
                 }
 
@@ -290,7 +290,7 @@ public class DefaultTableTypeGeneratorTest : BaseKspTest() {
                     var id: Int
                     var username: String
                     var age: Int
-                    @Column(isReferences = true)
+                    @References("school_id")
                     var school: School
                 }
 
@@ -344,7 +344,7 @@ public class DefaultTableTypeGeneratorTest : BaseKspTest() {
                     var id: Int,
                     var username: String,
                     var age: Int,
-                    @Column(isReferences = true)
+                    @References("school_id")
                     var school: School
                 )
 

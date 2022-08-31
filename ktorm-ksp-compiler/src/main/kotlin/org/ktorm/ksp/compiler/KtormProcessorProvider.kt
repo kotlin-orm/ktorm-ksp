@@ -57,6 +57,7 @@ public class KtormProcessor(
 
     private companion object {
         private val columnQualifiedName = Column::class.qualifiedName!!
+        private val referencesQualifiedName = References::class.qualifiedName!!
         private val ignoreInterfaceEntityProperties: Set<String> = setOf("entityClass", "properties")
     }
 
@@ -245,6 +246,10 @@ public class KtormProcessor(
                         val columnAnnotation = ksProperty.getAnnotationsByType(Column::class).firstOrNull()
                         val ksColumnAnnotation =
                             ksProperty.annotations.firstOrNull { anno -> anno.annotationType.resolve().declaration.qualifiedName?.asString() == columnQualifiedName }
+                        val referencesAnnotation = ksProperty.getAnnotationsByType(References::class).firstOrNull()
+                        if (columnAnnotation != null && referencesAnnotation != null) {
+                            error("Only one of the annotations @Column or @References is allowed to be used alone on the property")
+                        }
 
                         val sqlType =
                             ksColumnAnnotation?.arguments?.firstOrNull { it.name?.asString() == Column::sqlType.name }?.value as KSType?
@@ -276,11 +281,13 @@ public class KtormProcessor(
                         }
 
                         val isPrimaryKey = ksProperty.getAnnotationsByType(PrimaryKey::class).any()
-                        val columnName = columnAnnotation?.name ?: ""
-                        val tablePropertyName = if (columnAnnotation?.propertyName.isNullOrEmpty()) {
-                            MemberName(tableClassName, propertyName)
-                        } else {
+                        val columnName = columnAnnotation?.name ?: referencesAnnotation?.name ?: ""
+                        val tablePropertyName = if (!columnAnnotation?.propertyName.isNullOrEmpty()) {
                             MemberName(tableClassName, columnAnnotation!!.propertyName)
+                        } else if (!referencesAnnotation?.propertyName.isNullOrEmpty()) {
+                            MemberName(tableClassName, referencesAnnotation!!.propertyName)
+                        } else {
+                            MemberName(tableClassName, propertyName)
                         }
 
                         val columnDef = ColumnDefinition(
@@ -295,7 +302,7 @@ public class KtormProcessor(
                             ksProperty,
                             propertyKSType,
                             tableDef,
-                            columnAnnotation?.isReferences ?: false,
+                            referencesAnnotation != null,
                             null
                         )
                         columnDefs.add(columnDef)

@@ -54,34 +54,4 @@ public annotation class Column(
      * to which this annotation is added
      */
     val propertyName: String = "",
-
-    /**
-     * Generate the [Table.references] method for the table property, bind the column to the reference table,
-     * and the reference table is the generated table of the property type.
-     * Only entity class property based on the [Entity] interface can use references, and the referenced
-     * entity class must also be an entity class based on the [Entity] interface.
-     *
-     * entity code
-     * ```kotlin
-     * @Table
-     * public interface Employee : Entity<Employee> {
-     *     @PrimaryKey
-     *     public var id: Int
-     *     public var name: String
-     *     @Column(isReferences = true, columnName = "department_id")
-     *     public var department: Department
-     * }
-     * ```
-     * auto generate code
-     * ```kotlin
-     *  public object Employees: Table<Employee>(tableName="Employee",alias="",catalog="",schema="",
-     *                                           entityClass=Employee::class) {
-     *      public val id: Column<Int> = int("id").bindTo { it.id }.primaryKey()
-     *      public val name: Column<String> = varchar("name").bindTo { it.name }
-     *      public val department: Column<Int> = int("department_id").references(Departments) { it.department }
-     *  }
-     * ```
-     * @see [org.ktorm.schema.Table.references]
-     */
-    val isReferences: Boolean = false
 )

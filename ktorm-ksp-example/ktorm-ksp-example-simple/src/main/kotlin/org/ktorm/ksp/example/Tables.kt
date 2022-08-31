@@ -17,10 +17,7 @@
 package org.ktorm.ksp.example
 
 import org.ktorm.entity.Entity
-import org.ktorm.ksp.api.Column
-import org.ktorm.ksp.api.Ignore
-import org.ktorm.ksp.api.PrimaryKey
-import org.ktorm.ksp.api.Table
+import org.ktorm.ksp.api.*
 import java.io.Serializable
 import java.time.LocalDate
 
@@ -62,7 +59,7 @@ public interface Employee : Entity<Employee> {
     @Column(sqlType = IntEnumSqlTypeFactory::class)
     public var gender: Gender?
 
-    @Column(isReferences = true, name = "department_id")
+    @References("department_id")
     public var department: Department
 
     @Ignore
