@@ -41,9 +41,9 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
     /**
      * Generate entity sequence update function.
      */
-    override fun generate(context: TableGenerateContext, emitter: (FunSpec) -> Unit) {
+    override fun generate(context: TableGenerateContext): List<FunSpec> {
         if (context.table.ktormEntityType != KtormEntityType.ANY_KIND_CLASS) {
-            return
+            return emptyList()
         }
         val table = context.table
         val primaryKeyColumns = table.columns.filter { it.isPrimaryKey }
@@ -52,9 +52,9 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
                 "skip the entity sequence update method of table " +
                         "${table.entityClassName} because it does not have a primary key column"
             )
-            return
+            return emptyList()
         }
-        FunSpec.builder("update")
+        val funSpec = FunSpec.builder("update")
             .receiver(EntitySequence::class.asClassName().parameterizedBy(table.entityClassName, table.tableClassName))
             .addParameter("entity", table.entityClassName)
             .returns(Int::class.asClassName())
@@ -109,6 +109,7 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
                 }
             })
             .build()
-            .run(emitter)
+
+        return listOf(funSpec)
     }
 }

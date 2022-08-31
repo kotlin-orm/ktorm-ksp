@@ -31,9 +31,9 @@ public class SequenceAddAllFunctionGenerator : TopLevelFunctionGenerator {
 
     private val batchInsert = MemberName("org.ktorm.dsl", "batchInsert", true)
 
-    override fun generate(context: TableGenerateContext, emitter: (FunSpec) -> Unit) {
+    override fun generate(context: TableGenerateContext): List<FunSpec> {
         val table = context.table
-        FunSpec.builder("addAll")
+        val funSpec = FunSpec.builder("addAll")
             .addKdoc(
                 """
                 Batch insert entities into the database, this method will not get the auto-incrementing primary key
@@ -72,6 +72,7 @@ public class SequenceAddAllFunctionGenerator : TopLevelFunctionGenerator {
                 }
             })
             .build()
-            .run(emitter)
+
+        return listOf(funSpec)
     }
 }

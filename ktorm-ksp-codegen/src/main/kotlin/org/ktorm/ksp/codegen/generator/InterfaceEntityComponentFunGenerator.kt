@@ -24,19 +24,18 @@ import org.ktorm.ksp.codegen.definition.KtormEntityType
 
 public class InterfaceEntityComponentFunGenerator : TopLevelFunctionGenerator {
 
-    override fun generate(context: TableGenerateContext, emitter: (FunSpec) -> Unit) {
+    override fun generate(context: TableGenerateContext): List<FunSpec> {
         val table = context.table
         if (table.ktormEntityType != KtormEntityType.ENTITY_INTERFACE) {
-            return
+            return emptyList()
         }
-        table.columns.forEachIndexed { index, column ->
+        return table.columns.mapIndexed { index, column ->
             FunSpec.builder("component${index + 1}")
                 .addModifiers(KModifier.OPERATOR)
                 .returns(column.propertyTypeName)
                 .receiver(table.entityClassName)
                 .addCode("return·this.%L", column.entityPropertyName.simpleName)
                 .build()
-                .run(emitter)
         }
     }
 }

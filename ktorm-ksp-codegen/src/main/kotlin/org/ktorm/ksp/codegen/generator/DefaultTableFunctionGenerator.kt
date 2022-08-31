@@ -30,14 +30,14 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
     /**
      * Generate doCreateEntity function for entity of any kind of class.
      */
-    override fun generate(context: TableGenerateContext, emitter: (FunSpec) -> Unit) {
+    override fun generate(context: TableGenerateContext): List<FunSpec> {
         if (context.table.ktormEntityType != KtormEntityType.ANY_KIND_CLASS) {
-            return
+            return emptyList()
         }
         val (table, config, _, logger, _) = context
         val row = "row"
         val withReferences = "withReferences"
-        FunSpec.builder("doCreateEntity").addModifiers(KModifier.OVERRIDE).returns(table.entityClassName)
+        val funSpec = FunSpec.builder("doCreateEntity").addModifiers(KModifier.OVERRIDE).returns(table.entityClassName)
             .addParameter(row, QueryRowSet::class.asTypeName())
             .addParameter(withReferences, Boolean::class.asTypeName()).addCode(buildCodeBlock {
                 val entityClassDeclaration = table.entityClassDeclaration
@@ -158,6 +158,6 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
                 }
             })
             .build()
-            .run(emitter)
+        return listOf(funSpec)
     }
 }

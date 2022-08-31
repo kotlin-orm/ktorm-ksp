@@ -29,10 +29,10 @@ import org.ktorm.schema.Table
 
 public open class DefaultTableTypeGenerator : TableTypeGenerator {
 
-    override fun generate(context: TableGenerateContext, emitter: (TypeSpec.Builder) -> Unit) {
-        when (context.table.ktormEntityType) {
-            KtormEntityType.ENTITY_INTERFACE -> generateEntityInterfaceEntity(context, emitter)
-            KtormEntityType.ANY_KIND_CLASS -> generateAnyKindClassEntity(context, emitter)
+    override fun generate(context: TableGenerateContext): TypeSpec.Builder {
+        return when (context.table.ktormEntityType) {
+            KtormEntityType.ENTITY_INTERFACE -> generateEntityInterfaceEntity(context)
+            KtormEntityType.ANY_KIND_CLASS -> generateAnyKindClassEntity(context)
         }
     }
 
@@ -68,9 +68,9 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
         return result
     }
 
-    public open fun generateEntityInterfaceEntity(context: TableGenerateContext, emitter: (TypeSpec.Builder) -> Unit) {
+    public open fun generateEntityInterfaceEntity(context: TableGenerateContext): TypeSpec.Builder {
         val table = context.table
-        TypeSpec.classBuilder(table.tableClassName)
+        return TypeSpec.classBuilder(table.tableClassName)
             .superclass(Table::class.asClassName().parameterizedBy(table.entityClassName))
             .apply {
                 buildTableNameParameter(table, context.config)
@@ -78,7 +78,6 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
 
                 buildClassTable(table, this)
             }
-            .run(emitter)
     }
 
     private fun buildClassTable(table: TableDefinition, typeSpec: TypeSpec.Builder) {
@@ -115,9 +114,9 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
             )
     }
 
-    public open fun generateAnyKindClassEntity(context: TableGenerateContext, emitter: (TypeSpec.Builder) -> Unit) {
+    public open fun generateAnyKindClassEntity(context: TableGenerateContext): TypeSpec.Builder {
         val table = context.table
-        TypeSpec.classBuilder(table.tableClassName)
+        return TypeSpec.classBuilder(table.tableClassName)
             .superclass(BaseTable::class.asClassName().parameterizedBy(table.entityClassName))
             .apply {
                 buildTableNameParameter(table, context.config)
@@ -125,6 +124,5 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
 
                 buildClassTable(table, this)
             }
-            .run(emitter)
     }
 }

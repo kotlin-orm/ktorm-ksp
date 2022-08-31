@@ -31,7 +31,7 @@ public class SequenceUpdateAllFunctionGenerator : TopLevelFunctionGenerator {
 
     private val batchUpdate = MemberName("org.ktorm.dsl", "batchUpdate", true)
 
-    override fun generate(context: TableGenerateContext, emitter: (FunSpec) -> Unit) {
+    override fun generate(context: TableGenerateContext): List<FunSpec> {
         val table = context.table
         val primaryKeyColumns = table.columns.filter { it.isPrimaryKey }
         if (primaryKeyColumns.isEmpty()) {
@@ -39,9 +39,9 @@ public class SequenceUpdateAllFunctionGenerator : TopLevelFunctionGenerator {
                 "skip the entity sequence updateAll method of table ${table.entityClassName} " +
                         "because it does not have a primary key column"
             )
-            return
+            return emptyList()
         }
-        FunSpec.builder("updateAll")
+        val funSpec = FunSpec.builder("updateAll")
             .addKdoc(
                 """
                 Batch update based on entity primary key
@@ -109,6 +109,7 @@ public class SequenceUpdateAllFunctionGenerator : TopLevelFunctionGenerator {
                 }
             })
             .build()
-            .run(emitter)
+
+        return listOf(funSpec)
     }
 }

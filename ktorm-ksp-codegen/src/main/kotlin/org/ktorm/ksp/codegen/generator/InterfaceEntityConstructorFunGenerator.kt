@@ -29,13 +29,13 @@ import org.ktorm.ksp.codegen.generator.util.SuppressAnnotations.functionName
 
 public class InterfaceEntityConstructorFunGenerator : TopLevelFunctionGenerator {
 
-    override fun generate(context: TableGenerateContext, emitter: (FunSpec) -> Unit) {
+    override fun generate(context: TableGenerateContext): List<FunSpec> {
         val table = context.table
         if (table.ktormEntityType != KtormEntityType.ENTITY_INTERFACE) {
-            return
+            return emptyList()
         }
         val nameAllocator = NameAllocator()
-        FunSpec.builder(table.entityClassName.simpleName)
+        val funSpec = FunSpec.builder(table.entityClassName.simpleName)
             .addAnnotation(SuppressAnnotations.buildSuppress(functionName))
             .returns(table.entityClassName)
             .addParameters(CodeFactory.buildEntityConstructorParameters(context, nameAllocator))
@@ -45,6 +45,7 @@ public class InterfaceEntityConstructorFunGenerator : TopLevelFunctionGenerator 
                 add(CodeFactory.buildEntityAssignCode(context, entityVar))
             })
             .build()
-            .apply(emitter)
+
+        return listOf(funSpec)
     }
 }

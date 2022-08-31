@@ -68,24 +68,20 @@ public class TableFileGenerator(config: CodeGenerateConfig, logger: KSPLogger) {
         return ServiceLoader.load(T::class.java, TableFileGenerator::class.java.classLoader).toSet()
     }
 
-    private fun <T : Any> Iterable<TableCodeGenerator<T>>.forEachGenerate(
-        context: TableGenerateContext,
-        action: (T) -> Unit
-    ) {
-        forEach {
-            it.generate(context, action)
-        }
-    }
-
     public fun generate(context: TableGenerateContext): FileSpec {
         val fileBuilder = generateFile(context)
-        typeGenerator.generate(context) { typeBuilder ->
-            propertyGenerator.generate(context) { typeBuilder.addProperty(it) }
-            functionGenerator.generate(context) { typeBuilder.addFunction(it) }
-            fileBuilder.addType(typeBuilder.build())
-        }
-        topLevelFunctionGenerator.forEachGenerate(context) { fileBuilder.addFunction(it) }
-        topLevelPropertyGenerator.forEachGenerate(context) { fileBuilder.addProperty(it) }
+        val typeBuilder = typeGenerator.generate(context)
+        val properties = propertyGenerator.generate(context)
+        val functions = functionGenerator.generate(context)
+        typeBuilder.addProperties(properties)
+        typeBuilder.addFunctions(functions)
+        fileBuilder.addType(typeBuilder.build())
+        topLevelPropertyGenerator
+            .flatMap { it.generate(context) }
+            .forEach { fileBuilder.addProperty(it) }
+        topLevelFunctionGenerator
+            .flatMap { it.generate(context) }
+            .forEach { fileBuilder.addFunction(it) }
         return fileBuilder.build()
     }
 

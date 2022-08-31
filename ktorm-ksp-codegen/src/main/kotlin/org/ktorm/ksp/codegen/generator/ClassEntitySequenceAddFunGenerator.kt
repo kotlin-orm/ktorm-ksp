@@ -38,13 +38,13 @@ import org.ktorm.ksp.codegen.generator.util.MemberNames
  */
 public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
 
-    override fun generate(context: TableGenerateContext, emitter: (FunSpec) -> Unit) {
+    override fun generate(context: TableGenerateContext): List<FunSpec> {
         if (context.table.ktormEntityType != KtormEntityType.ANY_KIND_CLASS) {
-            return
+            return emptyList()
         }
         val table = context.table
         val kdocBuilder = StringBuilder("Insert entity into database")
-        FunSpec.builder("add")
+        val funSpec = FunSpec.builder("add")
             .receiver(EntitySequence::class.asClassName().parameterizedBy(table.entityClassName, table.tableClassName))
             .addParameter("entity", table.entityClassName)
             .returns(Int::class.asClassName())
@@ -134,6 +134,7 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
             })
             .addKdoc(kdocBuilder.toString())
             .build()
-            .run(emitter)
+
+        return listOf(funSpec)
     }
 }
