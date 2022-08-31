@@ -38,7 +38,7 @@ public class KtormKspTest : BaseKspTest() {
                 import org.ktorm.entity.toList
                 import kotlin.collections.List
                     
-                @Table(tableName = "province")
+                @Table(name = "province")
                 data class Province(
                     @PrimaryKey
                     val country:String,

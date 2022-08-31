@@ -36,9 +36,11 @@ public interface Department : Entity<Department> {
     @PrimaryKey
     public val id: Int
     public var name: String
+
     @Column(sqlType = LocationWrapperSqlType::class)
     public var location: LocationWrapper
-    @Column(columnName = "mixedCase")
+
+    @Column(name = "mixedCase")
     public var mixedCase: String?
 }
 
@@ -60,7 +62,7 @@ public interface Employee : Entity<Employee> {
     @Column(sqlType = IntEnumSqlTypeFactory::class)
     public var gender: Gender?
 
-    @Column(isReferences = true, columnName = "department_id")
+    @Column(isReferences = true, name = "department_id")
     public var department: Department
 
     @Ignore

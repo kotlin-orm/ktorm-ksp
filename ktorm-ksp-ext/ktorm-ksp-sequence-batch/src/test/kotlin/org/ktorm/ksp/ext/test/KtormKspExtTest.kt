@@ -236,7 +236,7 @@ public class KtormKspExtTest : BaseKspTest() {
                 import java.time.LocalDate
                 import kotlin.collections.any
                     
-                @Table(tableName = "province")
+                @Table(name = "province")
                 data class Province(
                     @PrimaryKey
                     val country:String,
@@ -285,7 +285,7 @@ public class KtormKspExtTest : BaseKspTest() {
                 import java.time.LocalDate
                 import kotlin.collections.any
                     
-                @Table(tableName = "province")
+                @Table(name = "province")
                 data class Province(
                     @PrimaryKey
                     val country:String,

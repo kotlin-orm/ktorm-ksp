@@ -19,7 +19,7 @@ package org.ktorm.ksp.example.ext
 import org.ktorm.ksp.api.PrimaryKey
 import org.ktorm.ksp.api.Table
 
-@Table(schema = "company", tableName = "t_customer")
+@Table(schema = "company", name = "t_customer")
 public data class Customer(
     @PrimaryKey
     public var id: Int?,
