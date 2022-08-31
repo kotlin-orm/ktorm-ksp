@@ -158,6 +158,35 @@ public class DefaultTableTypeGeneratorTest : BaseKspTest() {
     }
 
     @Test
+    public fun `column has no backingField`() {
+        val (result1, result2) = twiceCompile(
+            SourceFile.kotlin(
+                "source.kt",
+                """
+                import org.ktorm.ksp.api.*
+                import org.ktorm.schema.SqlType
+                import java.sql.*
+                import kotlin.reflect.KClass
+                
+                @Table
+                data class User(
+                    @PrimaryKey
+                    var id: Int,
+                    var age: Int
+                ) {
+                    val username: String
+                        get() = "username"
+                }
+                """,
+            )
+        )
+        assertThat(result1.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
+        assertThat(result2.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
+        val baseTable = result2.getBaseTable("Users")
+        assertThat(baseTable.columns.none { it.name == "username" })
+    }
+
+    @Test
     public fun `column definition does not contain isReference parameters`() {
         val (result1, result2) = twiceCompile(
             SourceFile.kotlin(
