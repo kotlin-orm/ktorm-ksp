@@ -65,7 +65,25 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
             """.trimIndent()
             )
             .addCode(buildCodeBlock {
-                addStatement("%M(this)", MemberNames.checkNotModified)
+                add("""
+                    val isModified = expression.where != null
+                        || expression.groupBy.isNotEmpty()
+                        || expression.having != null
+                        || expression.isDistinct
+                        || expression.orderBy.isNotEmpty()
+                        || expression.offset != null
+                        || expression.limit != null
+                
+                    if (isModified) {
+                        val msg = "" +
+                            "Entity manipulation functions are not supported by this sequence object. " +
+                            "Please call on the origin sequence returned from database.sequenceOf(table)"
+                        throw UnsupportedOperationException(msg)
+                    }
+                    
+                    
+                """.trimIndent())
+
                 withControlFlow("return·this.database.%M(%T)", arrayOf(MemberNames.update, table.tableClassName)) {
                     for (column in table.columns) {
                         if (!column.isPrimaryKey) {

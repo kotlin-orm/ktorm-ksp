@@ -25,7 +25,6 @@ import org.ktorm.ksp.codegen.TableGenerateContext
 import org.ktorm.ksp.codegen.TopLevelFunctionGenerator
 import org.ktorm.ksp.codegen.definition.KtormEntityType
 import org.ktorm.ksp.codegen.generator.util.ClassNames
-import org.ktorm.ksp.codegen.generator.util.MemberNames
 
 /**
  * Generate add extend function to [EntitySequence].
@@ -49,7 +48,25 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
             .addParameter("entity", table.entityClassName)
             .returns(Int::class.asClassName())
             .addCode(buildCodeBlock {
-                addStatement("%M(this)", MemberNames.checkNotModified)
+                add("""
+                    val isModified = expression.where != null
+                        || expression.groupBy.isNotEmpty()
+                        || expression.having != null
+                        || expression.isDistinct
+                        || expression.orderBy.isNotEmpty()
+                        || expression.offset != null
+                        || expression.limit != null
+                
+                    if (isModified) {
+                        val msg = "" +
+                            "Entity manipulation functions are not supported by this sequence object. " +
+                            "Please call on the origin sequence returned from database.sequenceOf(table)"
+                        throw UnsupportedOperationException(msg)
+                    }
+                    
+                    
+                """.trimIndent())
+
                 addStatement("val assignments = ArrayList<ColumnAssignmentExpression<*>>(%L)", table.columns.size)
                 for (column in table.columns) {
                     if (column.isNullable) {
@@ -65,14 +82,12 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
                     )
                     addNamed(
                         """
-                                assignments.add(
-                                    %columnAssignmentExpr:T(
-                                        column = %columnExpr:T(null, %table:T.%tableProperty:L.name, %table:T.%tableProperty:L.sqlType),
-                                        expression = %argumentExpr:T(entity.%entityProperty:L, %table:T.%tableProperty:L.sqlType)
-                                    )
-                                )
-                                
-                            """.trimIndent(),
+                            assignments += %columnAssignmentExpr:T(
+                                column = %columnExpr:T(null, %table:T.%tableProperty:L.name, %table:T.%tableProperty:L.sqlType),
+                                expression = %argumentExpr:T(entity.%entityProperty:L, %table:T.%tableProperty:L.sqlType)
+                            )
+                            
+                        """.trimIndent(),
                         params
                     )
                     if (column.isNullable) {

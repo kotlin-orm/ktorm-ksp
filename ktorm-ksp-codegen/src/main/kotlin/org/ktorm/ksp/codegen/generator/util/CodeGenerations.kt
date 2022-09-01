@@ -39,8 +39,6 @@ public object MemberNames {
     public val update: MemberName = MemberName("org.ktorm.dsl", "update", true)
     public val eq: MemberName = MemberName("org.ktorm.dsl", "eq", true)
     public val and: MemberName = MemberName("org.ktorm.dsl", "and", true)
-    public val checkNotModified: MemberName =
-        MemberName("org.ktorm.ksp.api.EntitySequenceUtil", "checkIfSequenceModified", false)
     public val primaryConstructor: MemberName = MemberName("kotlin.reflect.full", "primaryConstructor", true)
     public val emptyMap: MemberName = MemberName("kotlin.collections", "emptyMap")
 

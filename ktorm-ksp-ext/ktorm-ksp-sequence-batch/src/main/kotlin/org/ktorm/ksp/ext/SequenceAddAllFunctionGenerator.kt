@@ -24,7 +24,6 @@ import com.squareup.kotlinpoet.buildCodeBlock
 import org.ktorm.entity.EntitySequence
 import org.ktorm.ksp.codegen.TableGenerateContext
 import org.ktorm.ksp.codegen.TopLevelFunctionGenerator
-import org.ktorm.ksp.codegen.generator.util.MemberNames
 import org.ktorm.ksp.codegen.generator.util.withControlFlow
 
 public class SequenceAddAllFunctionGenerator : TopLevelFunctionGenerator {
@@ -44,7 +43,25 @@ public class SequenceAddAllFunctionGenerator : TopLevelFunctionGenerator {
             .addParameter("entities", Iterable::class.asClassName().parameterizedBy(table.entityClassName))
             .returns(IntArray::class.asClassName())
             .addCode(buildCodeBlock {
-                addStatement("%M(this)", MemberNames.checkNotModified)
+                add("""
+                    val isModified = expression.where != null
+                        || expression.groupBy.isNotEmpty()
+                        || expression.having != null
+                        || expression.isDistinct
+                        || expression.orderBy.isNotEmpty()
+                        || expression.offset != null
+                        || expression.limit != null
+                
+                    if (isModified) {
+                        val msg = "" +
+                            "Entity manipulation functions are not supported by this sequence object. " +
+                            "Please call on the origin sequence returned from database.sequenceOf(table)"
+                        throw UnsupportedOperationException(msg)
+                    }
+                    
+                    
+                """.trimIndent())
+
                 withControlFlow("return·this.database.%M(%T)", arrayOf(batchInsert, table.tableClassName)) {
                     withControlFlow("for (entity in entities)") {
                         withControlFlow("item") {
