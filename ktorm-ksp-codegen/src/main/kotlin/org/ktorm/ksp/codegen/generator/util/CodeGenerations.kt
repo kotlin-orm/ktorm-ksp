@@ -21,6 +21,7 @@ import org.ktorm.entity.Entity
 import org.ktorm.expression.*
 import org.ktorm.ksp.codegen.TableGenerateContext
 import org.ktorm.ksp.codegen.definition.ColumnDefinition
+import org.ktorm.schema.SqlType
 import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
 
@@ -61,10 +62,12 @@ public object ClassNames {
     public val suppress: ClassName = Suppress::class.asClassName()
     public val entity: ClassName = Entity::class.asClassName()
     public val kClass: ClassName = KClass::class.asClassName()
+    public val sqlType: ClassName = SqlType::class.asClassName()
 }
 
 public object SuppressAnnotations {
     public const val functionName: String = "\"FunctionName\""
+    public const val uncheckedCast: String = "\"UNCHECKED_CAST\""
 
     public fun buildSuppress(vararg names: String): AnnotationSpec {
         return AnnotationSpec.builder(Suppress::class).addMember(names.joinToString(", ")).build()

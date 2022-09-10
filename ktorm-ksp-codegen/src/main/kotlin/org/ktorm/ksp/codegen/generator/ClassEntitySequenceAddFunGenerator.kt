@@ -25,6 +25,7 @@ import org.ktorm.ksp.codegen.TableGenerateContext
 import org.ktorm.ksp.codegen.TopLevelFunctionGenerator
 import org.ktorm.ksp.codegen.definition.KtormEntityType
 import org.ktorm.ksp.codegen.generator.util.ClassNames
+import org.ktorm.ksp.codegen.generator.util.SuppressAnnotations
 
 /**
  * Generate add extend function to [EntitySequence].
@@ -38,15 +39,29 @@ import org.ktorm.ksp.codegen.generator.util.ClassNames
 public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
 
     override fun generate(context: TableGenerateContext, emitter: (FunSpec) -> Unit) {
-        if (context.table.ktormEntityType != KtormEntityType.ANY_KIND_CLASS) {
+        val table = context.table
+        if (table.ktormEntityType != KtormEntityType.ANY_KIND_CLASS) {
             return
         }
-        val table = context.table
-        val kdocBuilder = StringBuilder("Insert entity into database")
+
+        val primaryKeys = table.columns.filter { it.isPrimaryKey }
+        val useGeneratedKey = primaryKeys.size == 1 && primaryKeys[0].isMutable && primaryKeys[0].isNullable
+
+        var kdoc = "Insert the given entity into this sequence and return the affected record number. "
+        if (useGeneratedKey) {
+            kdoc += "\n\n" +
+                "Note that this function will obtain the generated key from the database and fill it into " +
+                "the corresponding property after the insertion completes. But this requires us not to set " +
+                "the primary key’s value beforehand, otherwise, if you do that, the given value will be " +
+                "inserted into the database, and no keys generated."
+        }
+
         FunSpec.builder("add")
             .receiver(EntitySequence::class.asClassName().parameterizedBy(table.entityClassName, table.tableClassName))
             .addParameter("entity", table.entityClassName)
             .returns(Int::class.asClassName())
+            .addAnnotation(SuppressAnnotations.buildSuppress(SuppressAnnotations.uncheckedCast))
+            .addKdoc(kdoc)
             .addCode(buildCodeBlock {
                 add("""
                     val isModified = expression.where != null
@@ -67,87 +82,81 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
                     
                 """.trimIndent())
 
-                addStatement("val assignments = ArrayList<ColumnAssignmentExpression<*>>(%L)", table.columns.size)
+                addStatement("val assignments = LinkedHashMap<Column<*>, Any?>()")
+
                 for (column in table.columns) {
                     if (column.isNullable) {
-                        beginControlFlow("if (entity.%L != null)", column.entityPropertyName.simpleName)
-                    }
-                    val params = mapOf(
-                        "columnAssignmentExpr" to ClassNames.columnAssignmentExpression,
-                        "columnExpr" to ClassNames.columnExpression,
-                        "argumentExpr" to ClassNames.argumentExpression,
-                        "table" to table.tableClassName,
-                        "entityProperty" to column.entityPropertyName.simpleName,
-                        "tableProperty" to column.tablePropertyName.simpleName
-                    )
-                    addNamed(
-                        """
-                            assignments += %columnAssignmentExpr:T(
-                                column = %columnExpr:T(null, %table:T.%tableProperty:L.name, %table:T.%tableProperty:L.sqlType),
-                                expression = %argumentExpr:T(entity.%entityProperty:L, %table:T.%tableProperty:L.sqlType)
-                            )
-                            
-                        """.trimIndent(),
-                        params
-                    )
-                    if (column.isNullable) {
-                        endControlFlow()
+                        addStatement("entity.%L?.let { assignments[sourceTable.%L] = it }",
+                            column.entityPropertyName.simpleName, column.tablePropertyName.simpleName)
+                    } else {
+                        addStatement("entity.%L.let { assignments[sourceTable.%L] = it }",
+                            column.entityPropertyName.simpleName, column.tablePropertyName.simpleName)
                     }
                 }
-                val params = mapOf(
-                    "insertExpr" to ClassNames.insertExpression,
-                    "tableExpr" to ClassNames.tableExpression,
-                    "table" to table.tableClassName,
-                )
+
                 addNamed(
-                    """
-                        val expression = %insertExpr:T(
-                            table = %tableExpr:T(%table:T.tableName, null, %table:T.catalog, %table:T.schema),
-                            assignments = assignments
-                        )
+                    format = """
                         
-                    """.trimIndent(), params
-                )
-                val primaryKeys = table.columns.filter { it.isPrimaryKey }
-                if (primaryKeys.size == 1 && primaryKeys.first().isMutable) {
-                    val primaryKey = primaryKeys.first()
-                    kdocBuilder.append(
-                        ", And try to get the auto-incrementing primary key and assign it to the " +
-                                "${primaryKey.entityPropertyName.simpleName} property"
-                    )
-                    if (primaryKey.isNullable) {
-                        beginControlFlow("if (entity.%L == null)", primaryKey.entityPropertyName.simpleName)
-                    }
-                    add(
-                        """
-                        val (effects, rowSet) = database.executeUpdateAndRetrieveKeys(expression)
-                        if (rowSet.next()) {
-                            val generatedKey = %T.%L.sqlType.getResult(rowSet, 1)
-                            if (generatedKey != null) {
-                                if (database.logger.isDebugEnabled()) {
-                                    database.logger.debug("Generated Key: ${'$'}generatedKey")
+                        val expression = // AliasRemover.visit(
+                            %insertExpression:T(
+                                table = sourceTable.asExpression(),
+                                assignments = assignments.map { (col, argument) ->
+                                    %columnAssignmentExpression:T(
+                                        column = col.asExpression() as %columnExpression:T<Any>,
+                                        expression = %argumentExpression:T(argument, col.sqlType as %sqlType:T<Any>)
+                                    )
                                 }
-                                entity.%L = generatedKey
-                            }
-                        }
-                        return effects
+                            )
+                        // )
+                        
                         
                     """.trimIndent(),
-                        table.tableClassName,
-                        primaryKey.tablePropertyName.simpleName,
-                        primaryKey.entityPropertyName.simpleName
+
+                    arguments = mapOf(
+                        "insertExpression" to ClassNames.insertExpression,
+                        "columnAssignmentExpression" to ClassNames.columnAssignmentExpression,
+                        "columnExpression" to ClassNames.columnExpression,
+                        "argumentExpression" to ClassNames.argumentExpression,
+                        "sqlType" to ClassNames.sqlType
                     )
-                    if (primaryKey.isNullable) {
-                        endControlFlow()
-                        addStatement("return database.executeUpdate(expression)")
-                    }
-                } else {
+                )
+
+                if (!useGeneratedKey) {
                     addStatement("return database.executeUpdate(expression)")
+                } else {
+                    // If the primary key value is manually specified, not obtain the generated key.
+                    beginControlFlow("if (entity.%L != null)", primaryKeys[0].entityPropertyName.simpleName)
+                    addStatement("return database.executeUpdate(expression)")
+
+                    // Else obtain the generated key value.
+                    nextControlFlow("else")
+                    addNamed(
+                        format = """
+                            val (effects, rowSet) = database.executeUpdateAndRetrieveKeys(expression)
+                            if (rowSet.next()) {
+                                val generatedKey = sourceTable.%columnName:L.sqlType.getResult(rowSet, 1)
+                                if (generatedKey != null) {
+                                    if (database.logger.isDebugEnabled()) {
+                                        database.logger.debug("Generated Key: ${'$'}generatedKey")
+                                    }
+                                    
+                                    entity.%propertyName:L = generatedKey
+                                }
+                            }
+                            
+                            return effects
+                            
+                        """.trimIndent(),
+
+                        arguments = mapOf(
+                            "columnName" to primaryKeys[0].tablePropertyName.simpleName,
+                            "propertyName" to primaryKeys[0].entityPropertyName.simpleName
+                        )
+                    )
+
+                    endControlFlow()
                 }
-                kdocBuilder.appendLine()
-                kdocBuilder.append("@return the effected row count.")
             })
-            .addKdoc(kdocBuilder.toString())
             .build()
             .run(emitter)
     }
