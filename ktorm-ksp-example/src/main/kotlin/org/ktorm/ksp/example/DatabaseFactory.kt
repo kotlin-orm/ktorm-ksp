@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.ktorm.ksp.example.common
+package org.ktorm.ksp.example
 
 import org.ktorm.database.Database
 import org.ktorm.database.use

@@ -18,7 +18,6 @@ package org.ktorm.ksp.example
 
 import org.ktorm.database.Database
 import org.ktorm.entity.toList
-import org.ktorm.ksp.example.common.DatabaseFactory
 
 public val database: Database = DatabaseFactory.database
 
