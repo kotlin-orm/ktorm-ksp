@@ -17,7 +17,8 @@
 package org.ktorm.ksp.compiler.generator
 
 import com.facebook.ktfmt.format.Formatter
-import com.facebook.ktfmt.format.Formatter.KOTLINLANG_FORMAT
+import com.facebook.ktfmt.format.FormattingOptions
+import com.facebook.ktfmt.format.FormattingOptions.Style.GOOGLE
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.KSPLogger
@@ -49,7 +50,9 @@ public object KtormCodeGenerator {
             val fileSpec = tableFileGenerator.generate(context)
 
             // Beautify the generated code via facebook ktfmt.
-            val formattedCode = Formatter.format(options = KOTLINLANG_FORMAT, code = fileSpec.toString())
+            val options = FormattingOptions(style = GOOGLE, maxWidth = 120, blockIndent = 4)
+            val codeWithoutTailingCommas = fileSpec.toString().replace(Regex(""",\s*\)"""), ")")
+            val formattedCode = Formatter.format(options, codeWithoutTailingCommas)
 
             // Output the formatted code.
             val dependencies = Dependencies(true, *dependencyFiles.toTypedArray())
