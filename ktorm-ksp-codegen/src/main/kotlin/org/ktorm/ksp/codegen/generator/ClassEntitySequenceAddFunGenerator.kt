@@ -16,10 +16,8 @@
 
 package org.ktorm.ksp.codegen.generator
 
-import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import com.squareup.kotlinpoet.asClassName
-import com.squareup.kotlinpoet.buildCodeBlock
 import org.ktorm.entity.EntitySequence
 import org.ktorm.ksp.codegen.TableGenerateContext
 import org.ktorm.ksp.codegen.TopLevelFunctionGenerator
@@ -59,11 +57,13 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
         FunSpec.builder("add")
             .receiver(EntitySequence::class.asClassName().parameterizedBy(table.entityClassName, table.tableClassName))
             .addParameter("entity", table.entityClassName)
+            .addParameter(ParameterSpec.builder("isDynamic", typeNameOf<Boolean>()).defaultValue("false").build())
             .returns(Int::class.asClassName())
             .addAnnotation(SuppressAnnotations.buildSuppress(SuppressAnnotations.uncheckedCast))
             .addKdoc(kdoc)
             .addCode(buildCodeBlock {
                 add("""
+                    println(isDynamic)
                     val isModified = expression.where != null
                         || expression.groupBy.isNotEmpty()
                         || expression.having != null

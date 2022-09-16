@@ -82,8 +82,8 @@ public class TableFileGenerator(config: CodeGenerateConfig, logger: KSPLogger) {
             functionGenerator.generate(context) { typeBuilder.addFunction(it) }
             fileBuilder.addType(typeBuilder.build())
         }
-        topLevelFunctionGenerator.forEachGenerate(context) { fileBuilder.addFunction(it) }
         topLevelPropertyGenerator.forEachGenerate(context) { fileBuilder.addProperty(it) }
+        topLevelFunctionGenerator.forEachGenerate(context) { fileBuilder.addFunction(it) }
         return fileBuilder.build()
     }
 

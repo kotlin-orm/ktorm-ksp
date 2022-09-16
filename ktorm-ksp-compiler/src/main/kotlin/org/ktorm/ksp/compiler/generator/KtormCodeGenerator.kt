@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-@file:OptIn(KotlinPoetKspPreview::class)
-
 package org.ktorm.ksp.compiler.generator
 
+import com.facebook.ktfmt.format.Formatter
+import com.facebook.ktfmt.format.Formatter.KOTLINLANG_FORMAT
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.KSPLogger
-import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
-import com.squareup.kotlinpoet.ksp.writeTo
 import org.ktorm.ksp.codegen.CodeGenerateConfig
 import org.ktorm.ksp.codegen.ColumnInitializerGenerator
 import org.ktorm.ksp.codegen.TableGenerateContext
@@ -37,20 +35,26 @@ public object KtormCodeGenerator {
         columnInitializerGenerator: ColumnInitializerGenerator,
         logger: KSPLogger,
     ) {
-        logger.info("generate tables:${tables.map { it.entityClassName.simpleName }}")
-        logger.info("code generator config:$config")
         val tableFileGenerator = TableFileGenerator(config, logger)
         val configDependencyFile = config.configDependencyFile
+
         for (table in tables) {
             val dependencyFiles = mutableSetOf(table.entityFile)
             if (configDependencyFile != null) {
                 dependencyFiles.add(configDependencyFile)
             }
-            logger.info("generate table:$table")
+
+            // Generate file spec via kotlinpoet.
             val context = TableGenerateContext(table, config, columnInitializerGenerator, logger, dependencyFiles)
-            val file = tableFileGenerator.generate(context)
-            logger.info("table dependencyFiles:${dependencyFiles.map { it.location }}")
-            file.writeTo(codeGenerator, Dependencies(true, *dependencyFiles.toTypedArray()))
+            val fileSpec = tableFileGenerator.generate(context)
+
+            // Beautify the generated code via facebook ktfmt.
+            val formattedCode = Formatter.format(options = KOTLINLANG_FORMAT, code = fileSpec.toString())
+
+            // Output the formatted code.
+            val dependencies = Dependencies(true, *dependencyFiles.toTypedArray())
+            val file = codeGenerator.createNewFile(dependencies, fileSpec.packageName, fileSpec.name)
+            file.writer(Charsets.UTF_8).use { it.write(formattedCode) }
         }
     }
 }
