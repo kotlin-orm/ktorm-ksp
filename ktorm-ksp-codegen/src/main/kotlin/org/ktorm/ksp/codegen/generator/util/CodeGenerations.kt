@@ -56,6 +56,7 @@ public object ClassNames {
     public val argumentExpression: ClassName = ArgumentExpression::class.asClassName()
     public val tableExpression: ClassName = TableExpression::class.asClassName()
     public val insertExpression: ClassName = InsertExpression::class.asClassName()
+    public val updateExpression: ClassName = UpdateExpression::class.asClassName()
     public val hashMap: ClassName = HashMap::class.asClassName()
     public val kParameter: ClassName = KParameter::class.asClassName()
     public val any: ClassName = Any::class.asClassName()
