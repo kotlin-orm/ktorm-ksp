@@ -19,22 +19,11 @@ package org.ktorm.ksp.codegen.generator.util
 import com.squareup.kotlinpoet.*
 import org.ktorm.entity.Entity
 import org.ktorm.expression.*
+import org.ktorm.ksp.api.Undefined
 import org.ktorm.ksp.codegen.TableGenerateContext
-import org.ktorm.ksp.codegen.definition.ColumnDefinition
 import org.ktorm.schema.SqlType
 import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
-
-public val primitiveTypes: List<TypeName> = listOf(
-    Byte::class.asTypeName(),
-    Int::class.asTypeName(),
-    Short::class.asTypeName(),
-    Long::class.asTypeName(),
-    Char::class.asTypeName(),
-    Boolean::class.asTypeName(),
-    Float::class.asTypeName(),
-    Double::class.asTypeName()
-)
 
 public object MemberNames {
     public val update: MemberName = MemberName("org.ktorm.dsl", "update", true)
@@ -42,12 +31,9 @@ public object MemberNames {
     public val and: MemberName = MemberName("org.ktorm.dsl", "and", true)
     public val primaryConstructor: MemberName = MemberName("kotlin.reflect.full", "primaryConstructor", true)
     public val emptyMap: MemberName = MemberName("kotlin.collections", "emptyMap")
-
     public val bindTo: MemberName = MemberName("", "bindTo")
     public val primaryKey: MemberName = MemberName("", "primaryKey")
     public val references: MemberName = MemberName("", "references")
-    public val undefined: MemberName = MemberName("org.ktorm.ksp.api.EntityUtil", "undefined")
-    public val getValueOrUndefined: MemberName = MemberName("org.ktorm.ksp.api.EntityUtil", "getValueOrUndefined")
 }
 
 public object ClassNames {
@@ -63,6 +49,7 @@ public object ClassNames {
     public val suppress: ClassName = Suppress::class.asClassName()
     public val entity: ClassName = Entity::class.asClassName()
     public val kClass: ClassName = KClass::class.asClassName()
+    public val undefined: ClassName = Undefined::class.asClassName()
     public val sqlType: ClassName = SqlType::class.asClassName()
 }
 
@@ -98,27 +85,35 @@ public object CodeFactory {
      * ```
      */
     public fun buildEntityAssignCode(context: TableGenerateContext, entityVar: String): CodeBlock {
-        val table = context.table
         return buildCodeBlock {
-            table.columns
-                .filter { it.isMutable }
-                .forEach { column ->
-                    val propertyName = column.entityPropertyName.simpleName
-                    withControlFlow(
-                        "if·(%L·!==·%M<%T>())",
-                        arrayOf(propertyName, MemberNames.undefined, column.constructorParameterType())
-                    ) {
-                        if (!column.isNullable && column.nonNullPropertyTypeName in primitiveTypes) {
-                            addStatement(
-                                "%1L.%2L·=·%2L·?:·error(\"`%1L` should not be null.\")",
-                                entityVar,
-                                propertyName
-                            )
-                        } else {
-                            addStatement("%1L.%2L·=·%2L", entityVar, propertyName)
-                        }
-                    }
+            for (column in context.table.columns) {
+                val propertyName = column.entityPropertyName.simpleName
+
+                val condition: String
+                if (column.isInlinePropertyType) {
+                    condition = "if·((%L·as·Any?)·!==·(%T.of<%T>()·as·Any?))"
+                } else {
+                    condition = "if·(%L·!==·%T.of<%T>())"
                 }
+
+                withControlFlow(
+                    condition,
+                    arrayOf(propertyName, ClassNames.undefined, column.nonNullPropertyTypeName)
+                ) {
+                    var statement: String
+                    if (column.isMutable) {
+                        statement = "%1L.%2L·=·%2L"
+                    } else {
+                        statement = "%1L[%2S]·=·%2L"
+                    }
+
+                    if (!column.isNullable) {
+                        statement += "·?:·error(\"`%2L` should not be null.\")"
+                    }
+
+                    addStatement(statement, entityVar, propertyName)
+                }
+            }
             addStatement("return %L", entityVar)
         }
     }
@@ -127,23 +122,12 @@ public object CodeFactory {
         context: TableGenerateContext,
         nameAllocator: NameAllocator
     ): List<ParameterSpec> {
-        return context.table.columns
-            .filter { it.isMutable }
-            .map {
-                ParameterSpec.builder(
-                    nameAllocator.newName(it.entityPropertyName.simpleName),
-                    it.constructorParameterType()
-                )
-                    .defaultValue("%M()", MemberNames.undefined)
-                    .build()
-            }
-    }
-
-    private fun ColumnDefinition.constructorParameterType(): TypeName {
-        return if (nonNullPropertyTypeName in primitiveTypes) {
-            nonNullPropertyTypeName.copy(nullable = true)
-        } else {
-            propertyTypeName
+        return context.table.columns.map {
+            val name = nameAllocator.newName(it.entityPropertyName.simpleName)
+            val type = it.nonNullPropertyTypeName.copy(nullable = true)
+            ParameterSpec.builder(name, type)
+                .defaultValue("%T.of()", ClassNames.undefined)
+                .build()
         }
     }
 

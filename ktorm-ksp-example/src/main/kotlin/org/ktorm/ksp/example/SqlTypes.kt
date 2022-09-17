@@ -24,6 +24,17 @@ import java.sql.Types
 import kotlin.reflect.KProperty1
 import kotlin.reflect.jvm.jvmErasure
 
+public object UIntSqlType : SqlType<UInt>(Types.INTEGER, "int") {
+
+    override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: UInt) {
+        ps.setLong(index, parameter.toLong())
+    }
+
+    override fun doGetResult(rs: ResultSet, index: Int): UInt {
+        return rs.getLong(index).toUInt()
+    }
+}
+
 public object LocationWrapperSqlType : SqlType<LocationWrapper>(Types.VARCHAR, "varchar") {
 
     override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: LocationWrapper) {
