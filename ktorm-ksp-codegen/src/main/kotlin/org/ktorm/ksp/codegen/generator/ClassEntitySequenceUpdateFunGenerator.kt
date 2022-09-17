@@ -51,13 +51,17 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
             return
         }
 
+        val kdoc = "" +
+            "Update the given entity to the database and return the affected record number. " +
+            "If [isDynamic] is set to true, the generated SQL will include only the non-null columns. "
+
         FunSpec.builder("update")
             .receiver(EntitySequence::class.asClassName().parameterizedBy(table.entityClassName, table.tableClassName))
             .addParameter("entity", table.entityClassName)
             .addParameter(ParameterSpec.builder("isDynamic", typeNameOf<Boolean>()).defaultValue("false").build())
             .returns(Int::class.asClassName())
             .addAnnotation(SuppressAnnotations.buildSuppress(SuppressAnnotations.uncheckedCast))
-            .addKdoc("Update the given entity to the database and return the affected record number.")
+            .addKdoc(kdoc)
             .addCode(CodeFactory.buildCheckDmlCode())
             .addCode(buildAssignmentsCode(table))
             .addCode(buildConditionsCode(primaryKeys))
