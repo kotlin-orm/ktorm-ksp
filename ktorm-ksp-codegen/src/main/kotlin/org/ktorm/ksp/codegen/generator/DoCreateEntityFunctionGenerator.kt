@@ -74,6 +74,9 @@ public class DoCreateEntityFunctionGenerator : TableFunctionGenerator {
                     "constructorColumnParameters:$constructorColumnParameters " +
                             "nonConstructorColumnProperties: $nonConstructorColumnPropertyNames"
                 )
+
+                // TODO: is it possible to avoid creating entities with reflection?
+                
                 if (config.allowReflectionCreateEntity && constructorColumnParameters.any { it.hasDefault }) {
                     // Create an instance using reflection
                     addStatement(
