@@ -81,7 +81,7 @@ public data class Customer(
     public var id: Int?,
     @PrimaryKey
     public var name: String,
-    public var email: String,
+    public var email: String?,
     public var phoneNumber: String,
 )
 
@@ -92,6 +92,6 @@ public data class LocationWrapper(val underlying: String = "") : Serializable
 public data class Student(
     @PrimaryKey
     public var id: Int?,
-    public var name: String,
+    public var name: String?,
     public var age: Int
 )

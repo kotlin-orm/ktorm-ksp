@@ -21,9 +21,13 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import org.ktorm.entity.EntitySequence
 import org.ktorm.ksp.codegen.TableGenerateContext
 import org.ktorm.ksp.codegen.TopLevelFunctionGenerator
+import org.ktorm.ksp.codegen.definition.ColumnDefinition
 import org.ktorm.ksp.codegen.definition.KtormEntityType
+import org.ktorm.ksp.codegen.definition.TableDefinition
 import org.ktorm.ksp.codegen.generator.util.ClassNames
+import org.ktorm.ksp.codegen.generator.util.CodeFactory
 import org.ktorm.ksp.codegen.generator.util.SuppressAnnotations
+import org.ktorm.ksp.codegen.generator.util.withControlFlow
 
 /**
  * Generate add extend function to [EntitySequence].
@@ -45,7 +49,10 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
         val primaryKeys = table.columns.filter { it.isPrimaryKey }
         val useGeneratedKey = primaryKeys.size == 1 && primaryKeys[0].isMutable && primaryKeys[0].isNullable
 
-        var kdoc = "Insert the given entity into this sequence and return the affected record number. "
+        var kdoc = "" +
+            "Insert the given entity into this sequence and return the affected record number. " +
+            "If [isDynamic] is set to true, the generated SQL will include only the non-null columns. "
+
         if (useGeneratedKey) {
             kdoc += "\n\n" +
                 "Note that this function will obtain the generated key from the database and fill it into " +
@@ -61,103 +68,119 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
             .returns(Int::class.asClassName())
             .addAnnotation(SuppressAnnotations.buildSuppress(SuppressAnnotations.uncheckedCast))
             .addKdoc(kdoc)
-            .addCode(buildCodeBlock {
-                add("""
-                    println(isDynamic)
-                    val isModified = expression.where != null
-                        || expression.groupBy.isNotEmpty()
-                        || expression.having != null
-                        || expression.isDistinct
-                        || expression.orderBy.isNotEmpty()
-                        || expression.offset != null
-                        || expression.limit != null
-                
-                    if (isModified) {
-                        val msg = "" +
-                            "Entity manipulation functions are not supported by this sequence object. " +
-                            "Please call on the origin sequence returned from database.sequenceOf(table)"
-                        throw UnsupportedOperationException(msg)
-                    }
-                    
-                    
-                """.trimIndent())
+            .addCode(CodeFactory.buildCheckDmlCode())
+            .addCode(buildAssignmentsCode(table, useGeneratedKey))
+            .addCode(buildExpressionCode())
+            .addCode(buildExecuteCode(useGeneratedKey, primaryKeys))
+            .build()
+            .run(emitter)
+    }
 
-                addStatement("val assignments = LinkedHashMap<Column<*>, Any?>()")
+    private fun buildAssignmentsCode(table: TableDefinition, useGeneratedKey: Boolean): CodeBlock {
+        return buildCodeBlock {
+            addStatement("val assignments = LinkedHashMap<Column<*>, Any?>()")
+            beginControlFlow("if (isDynamic)")
 
-                for (column in table.columns) {
-                    if (column.isNullable) {
-                        addStatement("entity.%L?.let { assignments[sourceTable.%L] = it }",
-                            column.entityPropertyName.simpleName, column.tablePropertyName.simpleName)
-                    } else {
-                        addStatement("entity.%L.let { assignments[sourceTable.%L] = it }",
-                            column.entityPropertyName.simpleName, column.tablePropertyName.simpleName)
-                    }
+            for (column in table.columns) {
+                if (column.isNullable) {
+                    addStatement("entity.%L?.let { assignments[sourceTable.%L] = it }",
+                        column.entityPropertyName.simpleName, column.tablePropertyName.simpleName)
+                } else {
+                    addStatement("entity.%L.let { assignments[sourceTable.%L] = it }",
+                        column.entityPropertyName.simpleName, column.tablePropertyName.simpleName)
                 }
+            }
 
+            nextControlFlow("else")
+
+            for (column in table.columns) {
+                if (useGeneratedKey && column.isPrimaryKey && column.isNullable) {
+                    addStatement("entity.%L?.let { assignments[sourceTable.%L] = it }",
+                        column.entityPropertyName.simpleName, column.tablePropertyName.simpleName)
+                } else {
+                    addStatement("entity.%L.let { assignments[sourceTable.%L] = it }",
+                        column.entityPropertyName.simpleName, column.tablePropertyName.simpleName)
+                }
+            }
+
+            endControlFlow()
+            add("\n")
+
+            withControlFlow("if (assignments.isEmpty())") {
+                addStatement("return 0")
+            }
+
+            add("\n")
+        }
+    }
+
+    private fun buildExpressionCode(): CodeBlock {
+        return buildCodeBlock {
+            addNamed(
+                format = """
+                    val expression = // AliasRemover.visit(
+                        %insertExpression:T(
+                            table = sourceTable.asExpression(),
+                            assignments = assignments.map { (col, argument) ->
+                                %columnAssignmentExpression:T(
+                                    column = col.asExpression() as %columnExpression:T<Any>,
+                                    expression = %argumentExpression:T(argument, col.sqlType as %sqlType:T<Any>)
+                                )
+                            }
+                        )
+                    // )
+                    
+                    
+                """.trimIndent(),
+
+                arguments = mapOf(
+                    "insertExpression" to ClassNames.insertExpression,
+                    "columnAssignmentExpression" to ClassNames.columnAssignmentExpression,
+                    "columnExpression" to ClassNames.columnExpression,
+                    "argumentExpression" to ClassNames.argumentExpression,
+                    "sqlType" to ClassNames.sqlType
+                )
+            )
+        }
+    }
+
+    private fun buildExecuteCode(useGeneratedKey: Boolean, primaryKeys: List<ColumnDefinition>): CodeBlock {
+        return buildCodeBlock {
+            if (!useGeneratedKey) {
+                addStatement("return database.executeUpdate(expression)")
+            } else {
+                // If the primary key value is manually specified, not obtain the generated key.
+                beginControlFlow("if (entity.%L != null)", primaryKeys[0].entityPropertyName.simpleName)
+                addStatement("return database.executeUpdate(expression)")
+
+                // Else obtain the generated key value.
+                nextControlFlow("else")
                 addNamed(
                     format = """
-                        
-                        val expression = // AliasRemover.visit(
-                            %insertExpression:T(
-                                table = sourceTable.asExpression(),
-                                assignments = assignments.map { (col, argument) ->
-                                    %columnAssignmentExpression:T(
-                                        column = col.asExpression() as %columnExpression:T<Any>,
-                                        expression = %argumentExpression:T(argument, col.sqlType as %sqlType:T<Any>)
-                                    )
+                        val (effects, rowSet) = database.executeUpdateAndRetrieveKeys(expression)
+                        if (rowSet.next()) {
+                            val generatedKey = sourceTable.%columnName:L.sqlType.getResult(rowSet, 1)
+                            if (generatedKey != null) {
+                                if (database.logger.isDebugEnabled()) {
+                                    database.logger.debug("Generated Key: ${'$'}generatedKey")
                                 }
-                            )
-                        // )
+                                
+                                entity.%propertyName:L = generatedKey
+                            }
+                        }
                         
+                        return effects
                         
                     """.trimIndent(),
 
                     arguments = mapOf(
-                        "insertExpression" to ClassNames.insertExpression,
-                        "columnAssignmentExpression" to ClassNames.columnAssignmentExpression,
-                        "columnExpression" to ClassNames.columnExpression,
-                        "argumentExpression" to ClassNames.argumentExpression,
-                        "sqlType" to ClassNames.sqlType
+                        "columnName" to primaryKeys[0].tablePropertyName.simpleName,
+                        "propertyName" to primaryKeys[0].entityPropertyName.simpleName
                     )
                 )
 
-                if (!useGeneratedKey) {
-                    addStatement("return database.executeUpdate(expression)")
-                } else {
-                    // If the primary key value is manually specified, not obtain the generated key.
-                    beginControlFlow("if (entity.%L != null)", primaryKeys[0].entityPropertyName.simpleName)
-                    addStatement("return database.executeUpdate(expression)")
-
-                    // Else obtain the generated key value.
-                    nextControlFlow("else")
-                    addNamed(
-                        format = """
-                            val (effects, rowSet) = database.executeUpdateAndRetrieveKeys(expression)
-                            if (rowSet.next()) {
-                                val generatedKey = sourceTable.%columnName:L.sqlType.getResult(rowSet, 1)
-                                if (generatedKey != null) {
-                                    if (database.logger.isDebugEnabled()) {
-                                        database.logger.debug("Generated Key: ${'$'}generatedKey")
-                                    }
-                                    
-                                    entity.%propertyName:L = generatedKey
-                                }
-                            }
-                            
-                            return effects
-                            
-                        """.trimIndent(),
-
-                        arguments = mapOf(
-                            "columnName" to primaryKeys[0].tablePropertyName.simpleName,
-                            "propertyName" to primaryKeys[0].entityPropertyName.simpleName
-                        )
-                    )
-
-                    endControlFlow()
-                }
-            })
-            .build()
-            .run(emitter)
+                endControlFlow()
+            }
+        }
     }
 }

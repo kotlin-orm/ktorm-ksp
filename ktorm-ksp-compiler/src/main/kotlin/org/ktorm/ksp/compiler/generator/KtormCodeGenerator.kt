@@ -22,6 +22,7 @@ import com.facebook.ktfmt.format.FormattingOptions.Style.GOOGLE
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.KSPLogger
+import com.squareup.kotlinpoet.FileSpec
 import org.ktorm.ksp.codegen.CodeGenerateConfig
 import org.ktorm.ksp.codegen.ColumnInitializerGenerator
 import org.ktorm.ksp.codegen.TableGenerateContext
@@ -50,14 +51,27 @@ public object KtormCodeGenerator {
             val fileSpec = tableFileGenerator.generate(context)
 
             // Beautify the generated code via facebook ktfmt.
-            val options = FormattingOptions(style = GOOGLE, maxWidth = 120, blockIndent = 4)
-            val codeWithoutTailingCommas = fileSpec.toString().replace(Regex(""",\s*\)"""), ")")
-            val formattedCode = Formatter.format(options, codeWithoutTailingCommas)
+            val formattedCode = formatCode(fileSpec, logger)
 
             // Output the formatted code.
             val dependencies = Dependencies(true, *dependencyFiles.toTypedArray())
             val file = codeGenerator.createNewFile(dependencies, fileSpec.packageName, fileSpec.name)
             file.writer(Charsets.UTF_8).use { it.write(formattedCode) }
+        }
+    }
+
+    private fun formatCode(fileSpec: FileSpec, logger: KSPLogger): String {
+        // Use the Kotlin official code style.
+        val options = FormattingOptions(style = GOOGLE, maxWidth = 120, blockIndent = 4)
+
+        // Remove tailing commas in parameter lists.
+        val code = fileSpec.toString().replace(Regex(""",\s*\)"""), ")")
+
+        try {
+            return Formatter.format(options, code)
+        } catch (e: Exception) {
+            logger.exception(e)
+            return code
         }
     }
 }
