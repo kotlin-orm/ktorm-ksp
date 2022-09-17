@@ -25,7 +25,7 @@ import org.ktorm.ksp.codegen.generator.util.ClassNames
 import org.ktorm.ksp.codegen.generator.util.MemberNames
 import org.ktorm.ksp.codegen.generator.util.withControlFlow
 
-public class DefaultTableFunctionGenerator : TableFunctionGenerator {
+public class DoCreateEntityFunctionGenerator : TableFunctionGenerator {
 
     /**
      * Generate doCreateEntity function for entity of any kind of class.
@@ -94,7 +94,7 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
                                 val parameterName = parameter.name!!.asString()
                                 val column = columnMap[parameterName]!!
                                 withControlFlow("%S -> ", arrayOf(parameterName)) {
-                                    addStatement("val value = row[this.%L]", column.tablePropertyName.simpleName)
+                                    addStatement("val value = row[%L]", column.tablePropertyName.simpleName)
                                     // hasDefault
                                     if (parameter.hasDefault) {
                                         withControlFlow("if (value != null)") {
@@ -131,7 +131,7 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
                                 }
                                 val notNullOperator = if (column.isNullable) "" else "!!"
                                 addStatement(
-                                    "%L·=·row[this.%L]%L,",
+                                    "%L·=·row[%L]%L,",
                                     parameter.name!!.asString(),
                                     column.tablePropertyName.simpleName,
                                     notNullOperator
@@ -150,7 +150,7 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
                         }
                         val notNullOperator = if (column.isNullable) "" else "!!"
                         addStatement(
-                            "entity.%L·=·row[this.%L]%L",
+                            "entity.%L·=·row[%L]%L",
                             property,
                             column.tablePropertyName.simpleName,
                             notNullOperator

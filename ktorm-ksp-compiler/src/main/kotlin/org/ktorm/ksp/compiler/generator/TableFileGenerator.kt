@@ -26,7 +26,7 @@ public class TableFileGenerator(config: CodeGenerateConfig, logger: KSPLogger) {
 
     private val typeGenerator: TableTypeGenerator = getOneOrNullService() ?: DefaultTableTypeGenerator()
     private val propertyGenerator: TablePropertyGenerator = getOneOrNullService() ?: DefaultTablePropertyGenerator()
-    private val functionGenerator: TableFunctionGenerator = getOneOrNullService() ?: DefaultTableFunctionGenerator()
+    private val functionGenerator: TableFunctionGenerator = getOneOrNullService() ?: DoCreateEntityFunctionGenerator()
     private val topLevelPropertyGenerator: MutableSet<TopLevelPropertyGenerator> =
         getAllService<TopLevelPropertyGenerator>().toMutableSet()
     private val topLevelFunctionGenerator: MutableSet<TopLevelFunctionGenerator> =
