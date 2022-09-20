@@ -36,12 +36,6 @@ public data class TableGenerateContext(
     val config: CodeGenerateConfig,
 
     /**
-     * The column initializer generator. For creating column object in the table
-     * Example:  int("id").primaryKey()
-     */
-    val columnInitializerGenerator: ColumnInitializerGenerator,
-
-    /**
      * The ksp logger.
      */
     val logger: KSPLogger,

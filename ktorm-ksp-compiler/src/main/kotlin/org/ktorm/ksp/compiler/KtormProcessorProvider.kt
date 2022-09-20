@@ -34,12 +34,10 @@ import org.atteo.evo.inflector.English
 import org.ktorm.entity.Entity
 import org.ktorm.ksp.api.*
 import org.ktorm.ksp.codegen.CodeGenerateConfig
-import org.ktorm.ksp.codegen.ColumnInitializerGenerator
 import org.ktorm.ksp.codegen.ExtensionGeneratorConfig
 import org.ktorm.ksp.codegen.definition.ColumnDefinition
 import org.ktorm.ksp.codegen.definition.KtormEntityType
 import org.ktorm.ksp.codegen.definition.TableDefinition
-import org.ktorm.ksp.codegen.findSuperTypeReference
 import org.ktorm.ksp.compiler.generator.KtormCodeGenerator
 import org.ktorm.schema.SqlType
 
@@ -66,9 +64,7 @@ public class KtormProcessor(
         val (config, configRets) = processKtormKspConfig(resolver)
         val (tableDefinitions, tableRets) = processEntity(resolver)
         // start generate
-        KtormCodeGenerator.generate(
-            tableDefinitions, environment.codeGenerator, config, ColumnInitializerGenerator(logger), logger
-        )
+        KtormCodeGenerator.generate(tableDefinitions, environment.codeGenerator, config, logger)
         return configRets + tableRets
     }
 

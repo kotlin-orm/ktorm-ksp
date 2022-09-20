@@ -24,7 +24,6 @@ import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.KSPLogger
 import com.squareup.kotlinpoet.FileSpec
 import org.ktorm.ksp.codegen.CodeGenerateConfig
-import org.ktorm.ksp.codegen.ColumnInitializerGenerator
 import org.ktorm.ksp.codegen.TableGenerateContext
 import org.ktorm.ksp.codegen.definition.TableDefinition
 
@@ -34,7 +33,6 @@ public object KtormCodeGenerator {
         tables: List<TableDefinition>,
         codeGenerator: CodeGenerator,
         config: CodeGenerateConfig,
-        columnInitializerGenerator: ColumnInitializerGenerator,
         logger: KSPLogger,
     ) {
         val tableFileGenerator = TableFileGenerator(config, logger)
@@ -47,7 +45,7 @@ public object KtormCodeGenerator {
             }
 
             // Generate file spec via kotlinpoet.
-            val context = TableGenerateContext(table, config, columnInitializerGenerator, logger, dependencyFiles)
+            val context = TableGenerateContext(table, config, logger, dependencyFiles)
             val fileSpec = tableFileGenerator.generate(context)
 
             // Beautify the generated code via facebook ktfmt.

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 the original author or authors.
+ * Copyright 2018-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,13 @@
 
 @file:OptIn(KotlinPoetKspPreview::class)
 
-package org.ktorm.ksp.codegen
+package org.ktorm.ksp.compiler.generator.util
 
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSFile
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
+import org.ktorm.ksp.codegen.CodeGenerateConfig
 import org.ktorm.ksp.codegen.definition.ColumnDefinition
 import java.math.BigDecimal
 import java.sql.Date
@@ -59,7 +60,7 @@ import java.util.*
  * | kotlin.Enum              | enum           | enum                   | Types.VARCHAR    |
  * +──────────────────────────+────────────────+────────────────────────+──────────────────+
  */
-public open class ColumnInitializerGenerator(private val logger: KSPLogger) {
+public object ColumnInitializerGenerator {
     private val enumSqlTypeFunction = MemberName("org.ktorm.schema", "enum", true)
     private val sqlTypeFunctions = mapOf<TypeName, MemberName>(
         Int::class.asTypeName() to MemberName("org.ktorm.schema", "int", true),
@@ -87,10 +88,11 @@ public open class ColumnInitializerGenerator(private val logger: KSPLogger) {
     /**
      * Generate column initializer code.
      */
-    public open fun generate(
+    public fun generate(
         column: ColumnDefinition,
         dependencyFiles: MutableSet<KSFile>,
-        config: CodeGenerateConfig
+        config: CodeGenerateConfig,
+        logger: KSPLogger
     ): CodeBlock {
         logger.info("generate column:$column")
         if (column.isReferences) {
@@ -139,7 +141,7 @@ public open class ColumnInitializerGenerator(private val logger: KSPLogger) {
         var actualColumnName = columnName
         if (columnName.isEmpty()) {
             if (config.localNamingStrategy != null) {
-                actualColumnName = config.localNamingStrategy.toColumnName(entityPropertyName.simpleName)
+                actualColumnName = config.localNamingStrategy!!.toColumnName(entityPropertyName.simpleName)
             } else if (config.namingStrategy == null) {
                 actualColumnName = entityPropertyName.simpleName
             }

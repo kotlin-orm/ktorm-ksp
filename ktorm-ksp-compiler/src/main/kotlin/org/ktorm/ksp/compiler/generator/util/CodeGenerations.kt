@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.ktorm.ksp.codegen.generator.util
+package org.ktorm.ksp.compiler.generator.util
 
 import com.squareup.kotlinpoet.*
 import org.ktorm.entity.Entity
@@ -136,7 +136,8 @@ public object CodeFactory {
     }
 
     public fun buildCheckDmlCode(): CodeBlock {
-        return CodeBlock.of("""
+        return CodeBlock.of(
+            """
             val isModified =
                 expression.where != null ||
                     expression.groupBy.isNotEmpty() ||
@@ -154,6 +155,7 @@ public object CodeFactory {
             }
             
             
-        """.trimIndent())
+        """.trimIndent()
+        )
     }
 }

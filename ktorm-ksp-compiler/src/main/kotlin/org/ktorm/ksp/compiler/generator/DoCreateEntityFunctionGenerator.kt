@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 the original author or authors.
+ * Copyright 2018-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package org.ktorm.ksp.codegen.generator
+package org.ktorm.ksp.compiler.generator
 
 import com.squareup.kotlinpoet.*
 import org.ktorm.dsl.QueryRowSet
 import org.ktorm.ksp.codegen.TableFunctionGenerator
 import org.ktorm.ksp.codegen.TableGenerateContext
 import org.ktorm.ksp.codegen.definition.KtormEntityType
-import org.ktorm.ksp.codegen.generator.util.ClassNames
-import org.ktorm.ksp.codegen.generator.util.MemberNames
-import org.ktorm.ksp.codegen.generator.util.withControlFlow
+import org.ktorm.ksp.compiler.generator.util.ClassNames
+import org.ktorm.ksp.compiler.generator.util.MemberNames
+import org.ktorm.ksp.compiler.generator.util.withControlFlow
 
 public class DoCreateEntityFunctionGenerator : TableFunctionGenerator {
 
@@ -35,7 +35,7 @@ public class DoCreateEntityFunctionGenerator : TableFunctionGenerator {
             return emptyList()
         }
 
-        val (table, config, _, logger, _) = context
+        val (table, config, logger, _) = context
 
         val funSpec = FunSpec.builder("doCreateEntity")
             .addKdoc("Create an entity object from the specific row of query results.")

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.ktorm.ksp.codegen.test
+package org.ktorm.ksp.compiler.test.generator
 
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
@@ -22,16 +22,17 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import org.ktorm.ksp.tests.BaseKspTest
 
-public class InterfaceEntityConstructorFunGeneratorTest : BaseKspTest() {
+public class InterfaceEntityCopyFunGeneratorTest : BaseKspTest() {
 
     @Test
-    public fun `interface entity constructor function`() {
+    public fun `interface entity copy function`() {
         val (result1, result2) = twiceCompile(
             SourceFile.kotlin(
                 "source.kt",
                 """
                 import org.ktorm.database.Database
                 import org.ktorm.entity.Entity
+                import org.ktorm.entity.EntityExtensionsApi
                 import org.ktorm.entity.EntitySequence
                 import org.ktorm.ksp.api.*
                 import java.time.LocalDate
@@ -46,16 +47,17 @@ public class InterfaceEntityConstructorFunGeneratorTest : BaseKspTest() {
                 }
                 
                 object TestBridge {
-                    fun createEmployee1(database: Database): Employee {
-                        return Employee()
-                    }
-                    
-                    fun createEmployee2(database: Database): Employee {
-                        return Employee(id = null)
-                    }
-
-                    fun createEmployee3(database: Database): Employee {
-                        return Employee(id = null, name = "")
+                    fun testCopy(database: Database) {
+                        val date = LocalDate.now()
+                        val jack = Employee(name = "jack", job = "programmer", hireDate = date)
+                        val tom = jack.copy(name = "tom")
+                        assert(jack != tom)
+                        assert(tom.name == "tom")
+                        assert(tom.job == "programmer")
+                        assert(jack.hireDate == date)
+                        with(EntityExtensionsApi()) {
+                            assert(!tom.hasColumnValue(Employees.id.binding!!))
+                        }
                     }
                 }
                 """,
@@ -65,12 +67,7 @@ public class InterfaceEntityConstructorFunGeneratorTest : BaseKspTest() {
         assertThat(result1.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         assertThat(result2.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         useDatabase { database ->
-            val employee1 = result2.invokeBridge("createEmployee1", database) as Any
-            assertThat(employee1.toString()).isEqualTo("Employee{}")
-            val employee2 = result2.invokeBridge("createEmployee2", database) as Any
-            assertThat(employee2.toString()).isEqualTo("Employee{id=null}")
-            val employee3 = result2.invokeBridge("createEmployee3", database) as Any
-            assertThat(employee3.toString()).isEqualTo("Employee{id=null, name=}")
+            result2.invokeBridge("testCopy", database)
         }
     }
 

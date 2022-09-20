@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.ktorm.ksp.codegen.generator
+package org.ktorm.ksp.compiler.generator
 
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.MemberName

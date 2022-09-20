@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 the original author or authors.
+ * Copyright 2018-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.ktorm.ksp.codegen.generator
+package org.ktorm.ksp.compiler.generator
 
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
@@ -23,7 +23,8 @@ import com.squareup.kotlinpoet.buildCodeBlock
 import org.ktorm.ksp.codegen.TableGenerateContext
 import org.ktorm.ksp.codegen.TablePropertyGenerator
 import org.ktorm.ksp.codegen.definition.KtormEntityType
-import org.ktorm.ksp.codegen.generator.util.MemberNames
+import org.ktorm.ksp.compiler.generator.util.ColumnInitializerGenerator
+import org.ktorm.ksp.compiler.generator.util.MemberNames
 import org.ktorm.schema.Column
 
 public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
@@ -36,7 +37,7 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
     }
 
     protected open fun generateEntityInterfaceEntity(context: TableGenerateContext): List<PropertySpec> {
-        val (table, config, columnInitializerGenerator, _, dependencyFiles) = context
+        val (table, config, logger, dependencyFiles) = context
         return table.columns
             .asSequence()
             .map { column ->
@@ -45,10 +46,11 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
                 } else {
                     Column::class.asClassName().parameterizedBy(column.nonNullPropertyTypeName)
                 }
+                val localNamingStrategy = config.localNamingStrategy
 
                 val columnName = when {
                     column.columnName.isNotEmpty() -> column.columnName
-                    config.localNamingStrategy != null -> config.localNamingStrategy.toColumnName(column.entityPropertyName.simpleName)
+                    localNamingStrategy != null -> localNamingStrategy.toColumnName(column.entityPropertyName.simpleName)
                     else -> column.entityPropertyName.simpleName
                 }
 
@@ -56,7 +58,7 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
                     .builder(column.tablePropertyName.simpleName, columnType)
                     .addKdoc("Column %L. %L", columnName, column.propertyDeclaration.docString?.trimIndent().orEmpty())
                     .initializer(buildCodeBlock {
-                        add(columnInitializerGenerator.generate(column, dependencyFiles, config))
+                        add(ColumnInitializerGenerator.generate(column, dependencyFiles, config, logger))
                         val params = mutableMapOf(
                             "bindTo" to MemberNames.bindTo,
                             "references" to MemberNames.references,
@@ -82,15 +84,15 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
     }
 
     protected open fun generateAnyKindClassEntity(context: TableGenerateContext): List<PropertySpec> {
-        val (table, config, columnInitializerGenerator, _, dependencyFiles) = context
+        val (table, config, logger, dependencyFiles) = context
         return table.columns
             .asSequence()
             .map { column ->
                 val columnType = Column::class.asClassName().parameterizedBy(column.nonNullPropertyTypeName)
-
+                val localNamingStrategy = config.localNamingStrategy
                 val columnName = when {
                     column.columnName.isNotEmpty() -> column.columnName
-                    config.localNamingStrategy != null -> config.localNamingStrategy.toColumnName(column.entityPropertyName.simpleName)
+                    localNamingStrategy != null -> localNamingStrategy.toColumnName(column.entityPropertyName.simpleName)
                     else -> column.entityPropertyName.simpleName
                 }
 
@@ -98,7 +100,7 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
                     .builder(column.tablePropertyName.simpleName, columnType)
                     .addKdoc("Column %L. %L", columnName, column.propertyDeclaration.docString?.trimIndent().orEmpty())
                     .initializer(buildCodeBlock {
-                        add(columnInitializerGenerator.generate(column, dependencyFiles, config))
+                        add(ColumnInitializerGenerator.generate(column, dependencyFiles, config, logger))
                         if (column.isPrimaryKey) {
                             add(".%M()", MemberNames.primaryKey)
                         }

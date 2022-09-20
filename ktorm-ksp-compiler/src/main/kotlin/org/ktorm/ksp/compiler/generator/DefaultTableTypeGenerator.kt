@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 the original author or authors.
+ * Copyright 2018-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.ktorm.ksp.codegen.generator
+package org.ktorm.ksp.compiler.generator
 
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
@@ -39,6 +39,7 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
         table: TableDefinition,
         config: CodeGenerateConfig
     ): List<CodeBlock> {
+        val localNamingStrategy = config.localNamingStrategy
         val tableNameParam = when {
             table.tableName.isNotEmpty() -> {
                 CodeBlock.of("%S", table.tableName)
@@ -46,8 +47,8 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
             config.namingStrategy == null -> {
                 CodeBlock.of("%S", table.entityClassName.simpleName)
             }
-            config.localNamingStrategy != null -> {
-                CodeBlock.of("%S", config.localNamingStrategy.toTableName(table.entityClassName.simpleName))
+            localNamingStrategy != null -> {
+                CodeBlock.of("%S", localNamingStrategy.toTableName(table.entityClassName.simpleName))
             }
             else -> {
                 CodeBlock.of("%T.toTableName(%S)", config.namingStrategy, table.entityClassName.simpleName)
@@ -82,9 +83,10 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
     }
 
     private fun buildClassTable(table: TableDefinition, config: CodeGenerateConfig, typeSpec: TypeSpec.Builder) {
+        val localNamingStrategy = config.localNamingStrategy
         val tableName = when {
             table.tableName.isNotEmpty() -> table.tableName
-            config.localNamingStrategy != null -> config.localNamingStrategy.toTableName(table.entityClassName.simpleName)
+            localNamingStrategy != null -> localNamingStrategy.toTableName(table.entityClassName.simpleName)
             else -> table.entityClassName.simpleName
         }
 

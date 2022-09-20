@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-
-package org.ktorm.ksp.codegen.test
+package org.ktorm.ksp.compiler.test.generator
 
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
@@ -24,11 +23,12 @@ import org.junit.Test
 import org.ktorm.entity.EntitySequence
 import org.ktorm.entity.toList
 import org.ktorm.ksp.tests.BaseKspTest
+import java.lang.reflect.InvocationTargetException
 
-public class SequencePropertyGeneratorTest : BaseKspTest() {
+public class ClassEntitySequenceUpdateFunGeneratorTest : BaseKspTest() {
 
     @Test
-    public fun `sequenceOf function`() {
+    public fun `sequence update function`() {
         val (result1, result2) = twiceCompile(
             SourceFile.kotlin(
                 "source.kt",
@@ -36,35 +36,32 @@ public class SequencePropertyGeneratorTest : BaseKspTest() {
                 import org.ktorm.database.Database
                 import org.ktorm.entity.Entity
                 import org.ktorm.entity.EntitySequence
+                import org.ktorm.entity.toList
                 import org.ktorm.ksp.api.*
+                import org.ktorm.dsl.eq
+                import org.ktorm.entity.filter
                 import java.time.LocalDate
-
+                    
                 @Table
                 data class User(
                     @PrimaryKey
-                    var id: Int,
+                    var id: Int?,
                     var username: String,
-                    var age: Int
+                    var age: Int,
                 )
 
-                @Table
-                interface Employee: Entity<Employee> {
-                    @PrimaryKey
-                    var id: Int
-                    var name: String    
-                    var job: String
-                    var hireDate: LocalDate
-                }
-                
                 @KtormKspConfig(namingStrategy = CamelCaseToSnakeCaseNamingStrategy::class)
                 class KtormConfig
 
                 object TestBridge {
+                    @Suppress("MemberVisibilityCanBePrivate")
                     fun getUsers(database:Database): EntitySequence<User,Users> {
                         return database.users
                     }
-                    fun getEmployees(database: Database): EntitySequence<Employee,Employees> {
-                        return database.employees
+                    fun updateUser(database: Database) {
+                        val user = getUsers(database).filter { it.id eq 1  }.toList().first()
+                        user.username = "tom"
+                        getUsers(database).update(user)
                     }
                 }
                 """,
@@ -73,44 +70,43 @@ public class SequencePropertyGeneratorTest : BaseKspTest() {
         assertThat(result1.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         assertThat(result2.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         useDatabase { database ->
-            val users = result2.invokeBridge("getUsers", database) as EntitySequence<*, *>
+            var users = result2.invokeBridge("getUsers", database) as EntitySequence<*, *>
             assertThat(users.sourceTable.tableName).isEqualTo("user")
-            val toList = users.toList()
-            assertThat(toList.toString())
+            assertThat(users.toList().toString())
                 .isEqualTo("[User(id=1, username=jack, age=20), User(id=2, username=lucy, age=22), User(id=3, username=mike, age=22)]")
-            val employees = result2.invokeBridge("getEmployees", database) as EntitySequence<*, *>
-            assertThat(employees.sourceTable.tableName).isEqualTo("employee")
-            assertThat(employees.toList().toString())
-                .isEqualTo("[Employee{id=1, name=vince, job=engineer, hireDate=2018-01-01}, Employee{id=2, name=marry, job=trainee, hireDate=2019-01-01}, Employee{id=3, name=tom, job=director, hireDate=2018-01-01}, Employee{id=4, name=penny, job=assistant, hireDate=2019-01-01}]")
+
+            result2.invokeBridge("updateUser", database)
+            users = result2.invokeBridge("getUsers", database) as EntitySequence<*, *>
+            assertThat(users.toList().toString())
+                .isEqualTo("[User(id=1, username=tom, age=20), User(id=2, username=lucy, age=22), User(id=3, username=mike, age=22)]")
         }
     }
 
     @Test
-    public fun `custom sequence name`() {
+    public fun `modified entity sequence call update fun`() {
         val (result1, result2) = twiceCompile(
             SourceFile.kotlin(
                 "source.kt",
                 """
-                import org.ktorm.database.Database
-                import org.ktorm.entity.Entity
-                import org.ktorm.entity.EntitySequence
                 import org.ktorm.ksp.api.*
-                import java.time.LocalDate
-
-                @Table(entitySequenceName = "aUsers")
+                import org.ktorm.database.Database
+                import org.ktorm.entity.toList
+                import kotlin.collections.List
+                import org.ktorm.dsl.eq
+                import org.ktorm.entity.filter
+                
+                @Table
                 data class User(
                     @PrimaryKey
-                    var id: Int,
+                    var id: Int?,
                     var username: String,
                     var age: Int
                 )
 
-                @KtormKspConfig(namingStrategy = CamelCaseToSnakeCaseNamingStrategy::class)
-                class KtormConfig
-
                 object TestBridge {
-                    fun getUsers(database:Database): EntitySequence<User,Users> {
-                        return database.aUsers
+                    fun testAdd(database:Database) {
+                        val users = database.users.filter { it.id eq 1 }
+                        users.update(User(1, "lucy", 10))
                     }
                 }
                 """,
@@ -119,11 +115,14 @@ public class SequencePropertyGeneratorTest : BaseKspTest() {
         assertThat(result1.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         assertThat(result2.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         useDatabase { database ->
-            val users = result2.invokeBridge("getUsers", database) as EntitySequence<*, *>
-            assertThat(users.sourceTable.tableName).isEqualTo("user")
-            val toList = users.toList()
-            assertThat(toList.toString())
-                .isEqualTo("[User(id=1, username=jack, age=20), User(id=2, username=lucy, age=22), User(id=3, username=mike, age=22)]")
+            try {
+                result2.invokeBridge("testAdd", database)
+            } catch (e: InvocationTargetException) {
+                assertThat(e.targetException.message)
+                    .contains("Please call on the origin sequence returned from database.sequenceOf(table)")
+                return
+            }
+            throw RuntimeException("fail")
         }
     }
 
