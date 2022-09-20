@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 the original author or authors.
+ * Copyright 2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,8 +29,10 @@ public class InterfaceEntityComponentFunGenerator : TopLevelFunctionGenerator {
         if (table.ktormEntityType != KtormEntityType.ENTITY_INTERFACE) {
             return
         }
-        table.columns.forEachIndexed { index, column ->
-            FunSpec.builder("component${index + 1}")
+
+        for ((i, column) in table.columns.withIndex()) {
+            FunSpec.builder("component${i + 1}")
+                .addKdoc("Return the value of [%L.%L]. ", table.entityClassName.simpleName, column.entityPropertyName.simpleName)
                 .addModifiers(KModifier.OPERATOR)
                 .returns(column.propertyTypeName)
                 .receiver(table.entityClassName)

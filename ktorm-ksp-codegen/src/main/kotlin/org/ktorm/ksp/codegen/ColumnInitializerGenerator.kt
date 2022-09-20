@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 the original author or authors.
+ * Copyright 2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,6 +96,8 @@ public open class ColumnInitializerGenerator(private val logger: KSPLogger) {
         if (column.isReferences) {
             val referenceColumn = column.referencesColumn!!
             dependencyFiles.add(referenceColumn.propertyDeclaration.containingFile!!)
+
+            // TODO: why skip naming strategy for reference columns?
             val columnName = column.columnName.ifEmpty { column.entityPropertyName.simpleName }
             return doGenerate(
                 columnName,

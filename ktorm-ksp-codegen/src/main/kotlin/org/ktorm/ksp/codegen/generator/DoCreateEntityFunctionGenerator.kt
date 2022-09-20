@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 the original author or authors.
+ * Copyright 2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import org.ktorm.ksp.codegen.generator.util.ClassNames
 import org.ktorm.ksp.codegen.generator.util.MemberNames
 import org.ktorm.ksp.codegen.generator.util.withControlFlow
 
-public class DefaultTableFunctionGenerator : TableFunctionGenerator {
+public class DoCreateEntityFunctionGenerator : TableFunctionGenerator {
 
     /**
      * Generate doCreateEntity function for entity of any kind of class.
@@ -34,12 +34,16 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
         if (context.table.ktormEntityType != KtormEntityType.ANY_KIND_CLASS) {
             return
         }
+
         val (table, config, _, logger, _) = context
-        val row = "row"
-        val withReferences = "withReferences"
-        FunSpec.builder("doCreateEntity").addModifiers(KModifier.OVERRIDE).returns(table.entityClassName)
-            .addParameter(row, QueryRowSet::class.asTypeName())
-            .addParameter(withReferences, Boolean::class.asTypeName()).addCode(buildCodeBlock {
+
+        FunSpec.builder("doCreateEntity")
+            .addKdoc("Create an entity object from the specific row of query results.")
+            .addModifiers(KModifier.OVERRIDE)
+            .returns(table.entityClassName)
+            .addParameter("row", QueryRowSet::class.asTypeName())
+            .addParameter("withReferences", Boolean::class.asTypeName())
+            .addCode(buildCodeBlock {
                 val entityClassDeclaration = table.entityClassDeclaration
                 val constructor = entityClassDeclaration.primaryConstructor!!
                 val constructorParameters = constructor.parameters
@@ -70,6 +74,8 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
                     "constructorColumnParameters:$constructorColumnParameters " +
                             "nonConstructorColumnProperties: $nonConstructorColumnPropertyNames"
                 )
+
+                // TODO: is it possible to avoid creating entities with reflection?
                 if (config.allowReflectionCreateEntity && constructorColumnParameters.any { it.hasDefault }) {
                     // Create an instance using reflection
                     addStatement(
@@ -90,7 +96,7 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
                                 val parameterName = parameter.name!!.asString()
                                 val column = columnMap[parameterName]!!
                                 withControlFlow("%S -> ", arrayOf(parameterName)) {
-                                    addStatement("val value = %L[this.%L]", row, column.tablePropertyName.simpleName)
+                                    addStatement("val value = row[%L]", column.tablePropertyName.simpleName)
                                     // hasDefault
                                     if (parameter.hasDefault) {
                                         withControlFlow("if (value != null)") {
@@ -127,9 +133,8 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
                                 }
                                 val notNullOperator = if (column.isNullable) "" else "!!"
                                 addStatement(
-                                    "%L·=·%L[this.%L]%L,",
+                                    "%L·=·row[%L]%L,",
                                     parameter.name!!.asString(),
-                                    row,
                                     column.tablePropertyName.simpleName,
                                     notNullOperator
                                 )
@@ -147,9 +152,8 @@ public class DefaultTableFunctionGenerator : TableFunctionGenerator {
                         }
                         val notNullOperator = if (column.isNullable) "" else "!!"
                         addStatement(
-                            "entity.%L·=·%L[this.%L]%L",
+                            "entity.%L·=·row[%L]%L",
                             property,
-                            row,
                             column.tablePropertyName.simpleName,
                             notNullOperator
                         )

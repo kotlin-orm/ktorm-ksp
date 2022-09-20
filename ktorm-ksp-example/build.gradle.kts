@@ -1,13 +1,13 @@
 plugins {
-    id("com.google.devtools.ksp")
     kotlin("jvm")
+    id("com.google.devtools.ksp")
 }
 
 dependencies {
+    api(libs.ktorm.core)
+    api(libs.h2database)
     ksp(project(":ktorm-ksp-compiler"))
-    ksp(project(":ktorm-ksp-ext:ktorm-ksp-sequence-batch"))
     implementation(project(":ktorm-ksp-api"))
-    implementation(project(":ktorm-ksp-example:ktorm-ksp-example-common"))
 }
 
 kotlin {

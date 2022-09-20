@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 the original author or authors.
+ * Copyright 2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import org.ktorm.ksp.codegen.TableGenerateContext
 import org.ktorm.ksp.codegen.TableTypeGenerator
 import org.ktorm.ksp.codegen.definition.KtormEntityType
 import org.ktorm.ksp.codegen.definition.TableDefinition
-import org.ktorm.ksp.codegen.generator.util.SuppressAnnotations
 import org.ktorm.schema.BaseTable
 import org.ktorm.schema.Table
 
@@ -36,36 +35,35 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
         }
     }
 
-    protected open fun buildTableNameParameter(table: TableDefinition, config: CodeGenerateConfig): List<CodeBlock> {
-        val tableName = when {
-            table.tableName.isNotEmpty() -> table.tableName
-            config.namingStrategy != null && config.localNamingStrategy != null -> {
-                config.localNamingStrategy.toTableName(table.entityClassName.simpleName)
+    protected open fun buildTableConstructorParams(table: TableDefinition, config: CodeGenerateConfig): List<CodeBlock> {
+        val tableNameParam = when {
+            table.tableName.isNotEmpty() -> {
+                CodeBlock.of("%S", table.tableName)
             }
             config.namingStrategy == null -> {
-                table.entityClassName.simpleName
+                CodeBlock.of("%S", table.entityClassName.simpleName)
+            }
+            config.localNamingStrategy != null -> {
+                CodeBlock.of("%S", config.localNamingStrategy.toTableName(table.entityClassName.simpleName))
             }
             else -> {
-                return listOf(
-                    CodeBlock.of(
-                        "tableName·=·%T.toTableName(%S)",
-                        config.namingStrategy,
-                        table.entityClassName.simpleName
-                    )
-                )
+                CodeBlock.of("%T.toTableName(%S)", config.namingStrategy, table.entityClassName.simpleName)
             }
         }
-        val result = mutableListOf<CodeBlock>()
-        result.add(CodeBlock.of("tableName·=·%S", tableName))
-        result.add(CodeBlock.of("alias·=·alias"))
+
+        val params = ArrayList<CodeBlock>()
+        params += tableNameParam
+        params += CodeBlock.of("alias")
+
         if (table.catalog.isNotEmpty()) {
-            result.add(CodeBlock.of("catalog·=·%S", table.catalog))
+            params += CodeBlock.of("catalog·=·%S", table.catalog)
         }
+
         if (table.schema.isNotEmpty()) {
-            result.add(CodeBlock.of("schema·=·%S", table.schema))
+            params += CodeBlock.of("schema·=·%S", table.schema)
         }
-        result.add(CodeBlock.of("entityClass·=·%T::class", table.entityClassName))
-        return result
+
+        return params
     }
 
     public open fun generateEntityInterfaceEntity(context: TableGenerateContext, emitter: (TypeSpec.Builder) -> Unit) {
@@ -73,38 +71,42 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
         TypeSpec.classBuilder(table.tableClassName)
             .superclass(Table::class.asClassName().parameterizedBy(table.entityClassName))
             .apply {
-                buildTableNameParameter(table, context.config)
+                buildTableConstructorParams(table, context.config)
                     .forEach { addSuperclassConstructorParameter(it) }
 
-                buildClassTable(table, this)
+                buildClassTable(table, context.config, this)
             }
             .run(emitter)
     }
 
-    private fun buildClassTable(table: TableDefinition, typeSpec: TypeSpec.Builder) {
-        typeSpec.addModifiers(KModifier.OPEN)
-            .addAnnotation(
-                SuppressAnnotations.buildSuppress(
-                    SuppressAnnotations.leakingThis,
-                    SuppressAnnotations.uncheckedCast
-                )
-            )
+    private fun buildClassTable(table: TableDefinition, config: CodeGenerateConfig, typeSpec: TypeSpec.Builder) {
+        val tableName = when {
+            table.tableName.isNotEmpty() -> table.tableName
+            config.localNamingStrategy != null -> config.localNamingStrategy.toTableName(table.entityClassName.simpleName)
+            else -> table.entityClassName.simpleName
+        }
+
+        typeSpec
+            .addKdoc("Table %L. %L", tableName, table.entityClassDeclaration.docString?.trimIndent().orEmpty())
+            .addModifiers(KModifier.OPEN)
             .primaryConstructor(
                 FunSpec.constructorBuilder()
-                    .addParameter(
-                        ParameterSpec.builder("alias", typeNameOf<String?>())
-                            .defaultValue(if (table.alias.isNotEmpty()) "\"${table.alias}\"" else "null")
-                            .build()
-                    )
+                    .addParameter(ParameterSpec("alias", typeNameOf<String?>()))
                     .build()
             )
             .addType(
                 TypeSpec.companionObjectBuilder(null)
+                    .addKdoc("The default table object of %L.", tableName)
                     .superclass(table.tableClassName)
+                    .addSuperclassConstructorParameter(CodeBlock.of("alias·=·%S", table.alias.takeIf { it.isNotBlank() }))
                     .build()
             )
             .addFunction(
                 FunSpec.builder("aliased")
+                    .addKdoc(
+                        "Return a new-created table object with all properties (including the table name and columns " +
+                        "and so on) being copied from this table, but applying a new alias given by the parameter."
+                    )
                     .returns(table.tableClassName)
                     .addParameter(ParameterSpec.builder("alias", typeNameOf<String>()).build())
                     .addModifiers(KModifier.OVERRIDE)
@@ -120,10 +122,10 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
         TypeSpec.classBuilder(table.tableClassName)
             .superclass(BaseTable::class.asClassName().parameterizedBy(table.entityClassName))
             .apply {
-                buildTableNameParameter(table, context.config)
+                buildTableConstructorParams(table, context.config)
                     .forEach { addSuperclassConstructorParameter(it) }
 
-                buildClassTable(table, this)
+                buildClassTable(table, context.config, this)
             }
             .run(emitter)
     }

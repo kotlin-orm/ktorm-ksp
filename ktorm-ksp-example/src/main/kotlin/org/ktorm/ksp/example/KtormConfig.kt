@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 the original author or authors.
+ * Copyright 2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,13 @@
  * limitations under the License.
  */
 
-package org.ktorm.ksp.example.ext
+package org.ktorm.ksp.example
 
-import org.ktorm.ksp.api.PrimaryKey
-import org.ktorm.ksp.api.Table
+import org.ktorm.ksp.api.CamelCaseToSnakeCaseNamingStrategy
+import org.ktorm.ksp.api.KtormKspConfig
 
-@Table(schema = "company", tableName = "t_customer")
-public data class Customer(
-    @PrimaryKey
-    public var id: Int?,
-    public var name: String,
-    public var email: String,
-    public var phoneNumber: String,
+@KtormKspConfig(
+    namingStrategy = CamelCaseToSnakeCaseNamingStrategy::class
 )
+public class KtormConfig
+

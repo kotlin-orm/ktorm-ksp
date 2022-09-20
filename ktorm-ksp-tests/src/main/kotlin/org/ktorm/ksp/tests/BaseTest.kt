@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 the original author or authors.
+ * Copyright 2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package org.ktorm.ksp.tests
 
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
-import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import org.ktorm.database.Database
@@ -26,7 +25,6 @@ import org.ktorm.logging.ConsoleLogger
 import org.ktorm.logging.LogLevel
 import org.ktorm.schema.BaseTable
 import org.ktorm.schema.Table
-import kotlin.reflect.full.createInstance
 import kotlin.reflect.full.functions
 
 public abstract class BaseTest {
@@ -45,19 +43,13 @@ public abstract class BaseTest {
     }
 
     protected fun KotlinCompilation.Result.getBaseTable(className: String): BaseTable<*> {
-        val clazz = classLoader.loadClass(className)
-        assertThat(clazz).isNotNull
-        val table = clazz.kotlin.createInstance()
-        assertThat(table).isInstanceOf(BaseTable::class.java)
-        return table as BaseTable<*>
+        val cls = classLoader.loadClass("$className\$Companion")
+        return cls.kotlin.objectInstance as BaseTable<*>
     }
 
-    protected fun KotlinCompilation.Result.getTable(className: String): BaseTable<*> {
-        val clazz = classLoader.loadClass(className)
-        assertThat(clazz).isNotNull
-        val table = clazz.kotlin.createInstance()
-        assertThat(table).isInstanceOf(Table::class.java)
-        return table as Table<*>
+    protected fun KotlinCompilation.Result.getTable(className: String): Table<*> {
+        val cls = classLoader.loadClass("$className\$Companion")
+        return cls.kotlin.objectInstance as Table<*>
     }
 
     protected inline fun useDatabase(action: (Database) -> Unit) {

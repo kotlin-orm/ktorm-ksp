@@ -5,6 +5,7 @@ plugins {
 dependencies {
     api(project(":ktorm-ksp-codegen"))
     implementation(libs.evoInflector)
+    implementation(libs.ktfmt)
     testImplementation(project(":ktorm-ksp-tests"))
 }
 

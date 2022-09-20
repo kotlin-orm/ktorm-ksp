@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 the original author or authors.
+ * Copyright 2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.ktorm.entity.Entity
 import org.ktorm.expression.*
 import org.ktorm.ksp.api.Undefined
 import org.ktorm.ksp.codegen.TableGenerateContext
+import org.ktorm.schema.SqlType
 import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
 
@@ -28,8 +29,6 @@ public object MemberNames {
     public val update: MemberName = MemberName("org.ktorm.dsl", "update", true)
     public val eq: MemberName = MemberName("org.ktorm.dsl", "eq", true)
     public val and: MemberName = MemberName("org.ktorm.dsl", "and", true)
-    public val checkNotModified: MemberName =
-        MemberName("org.ktorm.ksp.api.EntitySequenceUtil", "checkIfSequenceModified", false)
     public val primaryConstructor: MemberName = MemberName("kotlin.reflect.full", "primaryConstructor", true)
     public val emptyMap: MemberName = MemberName("kotlin.collections", "emptyMap")
     public val bindTo: MemberName = MemberName("", "bindTo")
@@ -43,6 +42,7 @@ public object ClassNames {
     public val argumentExpression: ClassName = ArgumentExpression::class.asClassName()
     public val tableExpression: ClassName = TableExpression::class.asClassName()
     public val insertExpression: ClassName = InsertExpression::class.asClassName()
+    public val updateExpression: ClassName = UpdateExpression::class.asClassName()
     public val hashMap: ClassName = HashMap::class.asClassName()
     public val kParameter: ClassName = KParameter::class.asClassName()
     public val any: ClassName = Any::class.asClassName()
@@ -50,14 +50,12 @@ public object ClassNames {
     public val entity: ClassName = Entity::class.asClassName()
     public val kClass: ClassName = KClass::class.asClassName()
     public val undefined: ClassName = Undefined::class.asClassName()
+    public val sqlType: ClassName = SqlType::class.asClassName()
 }
 
 public object SuppressAnnotations {
-    public const val localVariableName: String = "\"LocalVariableName\""
     public const val functionName: String = "\"FunctionName\""
-    public const val unusedParameter: String = "\"UNUSED_PARAMETER\""
     public const val uncheckedCast: String = "\"UNCHECKED_CAST\""
-    public const val leakingThis: String = "\"LeakingThis\""
 
     public fun buildSuppress(vararg names: String): AnnotationSpec {
         return AnnotationSpec.builder(Suppress::class).addMember(names.joinToString(", ")).build()
@@ -135,5 +133,27 @@ public object CodeFactory {
 
     public fun convertDefaultImplementationFunName(functionName: String): String {
         return "$${functionName}\$implementation"
+    }
+
+    public fun buildCheckDmlCode(): CodeBlock {
+        return CodeBlock.of("""
+            val isModified =
+                expression.where != null ||
+                    expression.groupBy.isNotEmpty() ||
+                    expression.having != null ||
+                    expression.isDistinct ||
+                    expression.orderBy.isNotEmpty() ||
+                    expression.offset != null ||
+                    expression.limit != null
+        
+            if (isModified) {
+                val msg =
+                    "Entity manipulation functions are not supported by this sequence object. " +
+                        "Please call on the origin sequence returned from database.sequenceOf(table)"
+                throw UnsupportedOperationException(msg)
+            }
+            
+            
+        """.trimIndent())
     }
 }

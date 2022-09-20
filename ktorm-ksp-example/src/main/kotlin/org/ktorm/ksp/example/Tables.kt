@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 the original author or authors.
+ * Copyright 2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,10 +42,20 @@ public interface Department : Entity<Department> {
     public var mixedCase: String?
 }
 
+/**
+ * This is the kdoc for Employee.
+ *
+ * This is the second line.
+ */
 @Table
 public interface Employee : Entity<Employee> {
     public companion object : Entity.Factory<Employee>()
 
+    /**
+     * This is the kdoc for id.
+     *
+     * This is the second line.
+     */
     @PrimaryKey
     public var id: Int
     public var name: String
@@ -68,14 +78,13 @@ public interface Employee : Entity<Employee> {
         get() = name.uppercase()
 }
 
-
 @Table(schema = "company")
 public data class Customer(
     @PrimaryKey
     public var id: Int?,
     @PrimaryKey
     public var name: String,
-    public var email: String,
+    public var email: String?,
     public var phoneNumber: String,
 )
 
@@ -86,6 +95,6 @@ public data class LocationWrapper(val underlying: String = "") : Serializable
 public data class Student(
     @PrimaryKey
     public var id: Int?,
-    public var name: String,
+    public var name: String?,
     public var age: Int
 )
