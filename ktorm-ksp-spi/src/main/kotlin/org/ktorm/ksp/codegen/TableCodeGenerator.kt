@@ -29,7 +29,7 @@ public sealed interface TableCodeGenerator<T : Any> {
      * Generate table component code.
      * @param context the table generate context, including the definition of table and its column,
      * global configuration, etc.
-     * @param emitter After generating the specified component code, call this function to submit the code
+     * @return generated code
      */
     public fun generate(context: TableGenerateContext): T
 }
