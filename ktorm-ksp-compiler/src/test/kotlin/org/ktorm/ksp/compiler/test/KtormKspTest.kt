@@ -20,7 +20,6 @@ import com.tschuchort.compiletesting.KotlinCompilation.ExitCode
 import com.tschuchort.compiletesting.SourceFile
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
-import org.ktorm.ksp.tests.BaseKspTest
 
 public class KtormKspTest : BaseKspTest() {
 

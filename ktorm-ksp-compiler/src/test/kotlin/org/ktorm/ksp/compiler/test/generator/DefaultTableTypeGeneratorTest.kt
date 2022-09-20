@@ -21,7 +21,7 @@ import com.tschuchort.compiletesting.SourceFile
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import org.ktorm.ksp.api.SqlTypeFactory
-import org.ktorm.ksp.tests.BaseKspTest
+import org.ktorm.ksp.compiler.test.BaseKspTest
 import org.ktorm.schema.SqlType
 
 public class DefaultTableTypeGeneratorTest : BaseKspTest() {
