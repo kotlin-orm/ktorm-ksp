@@ -29,19 +29,19 @@ import org.ktorm.ksp.codegen.generator.util.SuppressAnnotations.functionName
 
 public class InterfaceEntityConstructorFunGenerator : TopLevelFunctionGenerator {
 
-    override fun generate(context: TableGenerateContext, emitter: (FunSpec) -> Unit) {
+    override fun generate(context: TableGenerateContext): List<FunSpec> {
         val table = context.table
         if (table.ktormEntityType != KtormEntityType.ENTITY_INTERFACE) {
-            return
+            return emptyList()
         }
 
         val nameAllocator = NameAllocator()
 
-        FunSpec
+        val funSpec = FunSpec
             .builder(table.entityClassName.simpleName)
             .addKdoc(
                 "Create an entity of [%L] and specify the initial values for each properties, " +
-                "properties that doesn't have an initial value will left unassigned. ",
+                        "properties that doesn't have an initial value will left unassigned. ",
                 table.entityClassName.simpleName
             )
             .addAnnotation(SuppressAnnotations.buildSuppress(functionName))
@@ -53,6 +53,6 @@ public class InterfaceEntityConstructorFunGenerator : TopLevelFunctionGenerator 
                 add(CodeFactory.buildEntityAssignCode(context, entityVar))
             })
             .build()
-            .apply(emitter)
+        return listOf(funSpec)
     }
 }

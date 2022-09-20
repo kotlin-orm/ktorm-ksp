@@ -40,28 +40,28 @@ import org.ktorm.ksp.codegen.generator.util.withControlFlow
  */
 public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
 
-    override fun generate(context: TableGenerateContext, emitter: (FunSpec) -> Unit) {
+    override fun generate(context: TableGenerateContext): List<FunSpec> {
         val table = context.table
         if (table.ktormEntityType != KtormEntityType.ANY_KIND_CLASS) {
-            return
+            return emptyList()
         }
 
         val primaryKeys = table.columns.filter { it.isPrimaryKey }
         val useGeneratedKey = primaryKeys.size == 1 && primaryKeys[0].isMutable && primaryKeys[0].isNullable
 
         var kdoc = "" +
-            "Insert the given entity into this sequence and return the affected record number. " +
-            "If [isDynamic] is set to true, the generated SQL will include only the non-null columns. "
+                "Insert the given entity into this sequence and return the affected record number. " +
+                "If [isDynamic] is set to true, the generated SQL will include only the non-null columns. "
 
         if (useGeneratedKey) {
             kdoc += "\n\n" +
-                "Note that this function will obtain the generated key from the database and fill it into " +
-                "the corresponding property after the insertion completes. But this requires us not to set " +
-                "the primary key’s value beforehand, otherwise, if you do that, the given value will be " +
-                "inserted into the database, and no keys generated."
+                    "Note that this function will obtain the generated key from the database and fill it into " +
+                    "the corresponding property after the insertion completes. But this requires us not to set " +
+                    "the primary key’s value beforehand, otherwise, if you do that, the given value will be " +
+                    "inserted into the database, and no keys generated."
         }
 
-        FunSpec.builder("add")
+        val funSpec = FunSpec.builder("add")
             .receiver(EntitySequence::class.asClassName().parameterizedBy(table.entityClassName, table.tableClassName))
             .addParameter("entity", table.entityClassName)
             .addParameter(ParameterSpec.builder("isDynamic", typeNameOf<Boolean>()).defaultValue("false").build())
@@ -73,7 +73,7 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
             .addCode(buildExpressionCode())
             .addCode(buildExecuteCode(useGeneratedKey, primaryKeys))
             .build()
-            .run(emitter)
+        return listOf(funSpec)
     }
 
     private fun buildAssignmentsCode(table: TableDefinition, useGeneratedKey: Boolean): CodeBlock {
@@ -83,11 +83,15 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
 
             for (column in table.columns) {
                 if (column.isNullable) {
-                    addStatement("entity.%L?.let { assignments[sourceTable.%L] = it }",
-                        column.entityPropertyName.simpleName, column.tablePropertyName.simpleName)
+                    addStatement(
+                        "entity.%L?.let { assignments[sourceTable.%L] = it }",
+                        column.entityPropertyName.simpleName, column.tablePropertyName.simpleName
+                    )
                 } else {
-                    addStatement("entity.%L.let { assignments[sourceTable.%L] = it }",
-                        column.entityPropertyName.simpleName, column.tablePropertyName.simpleName)
+                    addStatement(
+                        "entity.%L.let { assignments[sourceTable.%L] = it }",
+                        column.entityPropertyName.simpleName, column.tablePropertyName.simpleName
+                    )
                 }
             }
 
@@ -95,11 +99,15 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
 
             for (column in table.columns) {
                 if (useGeneratedKey && column.isPrimaryKey && column.isNullable) {
-                    addStatement("entity.%L?.let { assignments[sourceTable.%L] = it }",
-                        column.entityPropertyName.simpleName, column.tablePropertyName.simpleName)
+                    addStatement(
+                        "entity.%L?.let { assignments[sourceTable.%L] = it }",
+                        column.entityPropertyName.simpleName, column.tablePropertyName.simpleName
+                    )
                 } else {
-                    addStatement("entity.%L.let { assignments[sourceTable.%L] = it }",
-                        column.entityPropertyName.simpleName, column.tablePropertyName.simpleName)
+                    addStatement(
+                        "entity.%L.let { assignments[sourceTable.%L] = it }",
+                        column.entityPropertyName.simpleName, column.tablePropertyName.simpleName
+                    )
                 }
             }
 

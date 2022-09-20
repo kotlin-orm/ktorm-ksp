@@ -28,14 +28,17 @@ import org.ktorm.schema.Table
 
 public open class DefaultTableTypeGenerator : TableTypeGenerator {
 
-    override fun generate(context: TableGenerateContext, emitter: (TypeSpec.Builder) -> Unit) {
-        when (context.table.ktormEntityType) {
-            KtormEntityType.ENTITY_INTERFACE -> generateEntityInterfaceEntity(context, emitter)
-            KtormEntityType.ANY_KIND_CLASS -> generateAnyKindClassEntity(context, emitter)
+    override fun generate(context: TableGenerateContext): TypeSpec.Builder {
+        return when (context.table.ktormEntityType) {
+            KtormEntityType.ENTITY_INTERFACE -> generateEntityInterfaceEntity(context)
+            KtormEntityType.ANY_KIND_CLASS -> generateAnyKindClassEntity(context)
         }
     }
 
-    protected open fun buildTableConstructorParams(table: TableDefinition, config: CodeGenerateConfig): List<CodeBlock> {
+    protected open fun buildTableConstructorParams(
+        table: TableDefinition,
+        config: CodeGenerateConfig
+    ): List<CodeBlock> {
         val tableNameParam = when {
             table.tableName.isNotEmpty() -> {
                 CodeBlock.of("%S", table.tableName)
@@ -66,9 +69,9 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
         return params
     }
 
-    public open fun generateEntityInterfaceEntity(context: TableGenerateContext, emitter: (TypeSpec.Builder) -> Unit) {
+    public open fun generateEntityInterfaceEntity(context: TableGenerateContext): TypeSpec.Builder {
         val table = context.table
-        TypeSpec.classBuilder(table.tableClassName)
+        return TypeSpec.classBuilder(table.tableClassName)
             .superclass(Table::class.asClassName().parameterizedBy(table.entityClassName))
             .apply {
                 buildTableConstructorParams(table, context.config)
@@ -76,7 +79,6 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
 
                 buildClassTable(table, context.config, this)
             }
-            .run(emitter)
     }
 
     private fun buildClassTable(table: TableDefinition, config: CodeGenerateConfig, typeSpec: TypeSpec.Builder) {
@@ -98,14 +100,18 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
                 TypeSpec.companionObjectBuilder(null)
                     .addKdoc("The default table object of %L.", tableName)
                     .superclass(table.tableClassName)
-                    .addSuperclassConstructorParameter(CodeBlock.of("alias·=·%S", table.alias.takeIf { it.isNotBlank() }))
+                    .addSuperclassConstructorParameter(
+                        CodeBlock.of(
+                            "alias·=·%S",
+                            table.alias.takeIf { it.isNotBlank() })
+                    )
                     .build()
             )
             .addFunction(
                 FunSpec.builder("aliased")
                     .addKdoc(
                         "Return a new-created table object with all properties (including the table name and columns " +
-                        "and so on) being copied from this table, but applying a new alias given by the parameter."
+                                "and so on) being copied from this table, but applying a new alias given by the parameter."
                     )
                     .returns(table.tableClassName)
                     .addParameter(ParameterSpec.builder("alias", typeNameOf<String>()).build())
@@ -117,9 +123,9 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
             )
     }
 
-    public open fun generateAnyKindClassEntity(context: TableGenerateContext, emitter: (TypeSpec.Builder) -> Unit) {
+    public open fun generateAnyKindClassEntity(context: TableGenerateContext): TypeSpec.Builder {
         val table = context.table
-        TypeSpec.classBuilder(table.tableClassName)
+        return TypeSpec.classBuilder(table.tableClassName)
             .superclass(BaseTable::class.asClassName().parameterizedBy(table.entityClassName))
             .apply {
                 buildTableConstructorParams(table, context.config)
@@ -127,6 +133,5 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
 
                 buildClassTable(table, context.config, this)
             }
-            .run(emitter)
     }
 }

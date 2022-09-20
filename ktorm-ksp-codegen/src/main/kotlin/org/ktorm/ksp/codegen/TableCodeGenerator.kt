@@ -31,7 +31,7 @@ public sealed interface TableCodeGenerator<T : Any> {
      * global configuration, etc.
      * @param emitter After generating the specified component code, call this function to submit the code
      */
-    public fun generate(context: TableGenerateContext, emitter: (T) -> Unit)
+    public fun generate(context: TableGenerateContext): T
 }
 
 /**
@@ -42,19 +42,19 @@ public interface TableTypeGenerator : TableCodeGenerator<TypeSpec.Builder>
 /**
  * Generate table properties code.
  */
-public interface TablePropertyGenerator : TableCodeGenerator<PropertySpec>
+public interface TablePropertyGenerator : TableCodeGenerator<List<PropertySpec>>
 
 /**
  * Generate table functions code.
  */
-public interface TableFunctionGenerator : TableCodeGenerator<FunSpec>
+public interface TableFunctionGenerator : TableCodeGenerator<List<FunSpec>>
 
 /**
  * Generate top-level properties code in table file.
  */
-public interface TopLevelPropertyGenerator : TableCodeGenerator<PropertySpec>
+public interface TopLevelPropertyGenerator : TableCodeGenerator<List<PropertySpec>>
 
 /**
  * Generate top-level functions code in table file.
  */
-public interface TopLevelFunctionGenerator : TableCodeGenerator<FunSpec>
+public interface TopLevelFunctionGenerator : TableCodeGenerator<List<FunSpec>>

@@ -26,19 +26,19 @@ import org.ktorm.ksp.codegen.generator.util.CodeFactory
 
 public class InterfaceEntityCopyFunGenerator : TopLevelFunctionGenerator {
 
-    override fun generate(context: TableGenerateContext, emitter: (FunSpec) -> Unit) {
+    override fun generate(context: TableGenerateContext): List<FunSpec> {
         val table = context.table
         if (table.ktormEntityType != KtormEntityType.ENTITY_INTERFACE) {
-            return
+            return emptyList()
         }
 
         val nameAllocator = NameAllocator()
 
-        FunSpec
+        val funSpec = FunSpec
             .builder("copy")
             .addKdoc(
                 "Return a deep copy of this entity (which has the same property values and tracked statuses), " +
-                "and alter the specified property values. "
+                        "and alter the specified property values. "
             )
             .returns(table.entityClassName)
             .receiver(table.entityClassName)
@@ -49,6 +49,6 @@ public class InterfaceEntityCopyFunGenerator : TopLevelFunctionGenerator {
                 add(CodeFactory.buildEntityAssignCode(context, entityVar))
             })
             .build()
-            .run(emitter)
+        return listOf(funSpec)
     }
 }

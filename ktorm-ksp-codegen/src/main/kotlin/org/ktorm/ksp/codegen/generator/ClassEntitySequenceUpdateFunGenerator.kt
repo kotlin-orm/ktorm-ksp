@@ -40,22 +40,22 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
     /**
      * Generate entity sequence update function.
      */
-    override fun generate(context: TableGenerateContext, emitter: (FunSpec) -> Unit) {
+    override fun generate(context: TableGenerateContext): List<FunSpec> {
         val table = context.table
         if (table.ktormEntityType != KtormEntityType.ANY_KIND_CLASS) {
-            return
+            return emptyList()
         }
 
         val primaryKeys = table.columns.filter { it.isPrimaryKey }
         if (primaryKeys.isEmpty()) {
-            return
+            return emptyList()
         }
 
         val kdoc = "" +
-            "Update the given entity to the database and return the affected record number. " +
-            "If [isDynamic] is set to true, the generated SQL will include only the non-null columns. "
+                "Update the given entity to the database and return the affected record number. " +
+                "If [isDynamic] is set to true, the generated SQL will include only the non-null columns. "
 
-        FunSpec.builder("update")
+        val funSpec = FunSpec.builder("update")
             .receiver(EntitySequence::class.asClassName().parameterizedBy(table.entityClassName, table.tableClassName))
             .addParameter("entity", table.entityClassName)
             .addParameter(ParameterSpec.builder("isDynamic", typeNameOf<Boolean>()).defaultValue("false").build())
@@ -68,7 +68,7 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
             .addCode(buildExpressionCode())
             .addStatement("return database.executeUpdate(expression)")
             .build()
-            .run(emitter)
+        return listOf(funSpec)
     }
 
     private fun buildAssignmentsCode(table: TableDefinition): CodeBlock {
@@ -82,11 +82,15 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
                 }
 
                 if (column.isNullable) {
-                    addStatement("entity.%L?.let { assignments[sourceTable.%L] = it }",
-                        column.entityPropertyName.simpleName, column.tablePropertyName.simpleName)
+                    addStatement(
+                        "entity.%L?.let { assignments[sourceTable.%L] = it }",
+                        column.entityPropertyName.simpleName, column.tablePropertyName.simpleName
+                    )
                 } else {
-                    addStatement("entity.%L.let { assignments[sourceTable.%L] = it }",
-                        column.entityPropertyName.simpleName, column.tablePropertyName.simpleName)
+                    addStatement(
+                        "entity.%L.let { assignments[sourceTable.%L] = it }",
+                        column.entityPropertyName.simpleName, column.tablePropertyName.simpleName
+                    )
                 }
             }
 
@@ -94,8 +98,10 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
 
             for (column in table.columns) {
                 if (!column.isPrimaryKey) {
-                    addStatement("entity.%L.let { assignments[sourceTable.%L] = it }",
-                        column.entityPropertyName.simpleName, column.tablePropertyName.simpleName)
+                    addStatement(
+                        "entity.%L.let { assignments[sourceTable.%L] = it }",
+                        column.entityPropertyName.simpleName, column.tablePropertyName.simpleName
+                    )
                 }
             }
 
@@ -115,22 +121,30 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
             if (primaryKeys.size == 1) {
                 val pk = primaryKeys[0]
                 if (pk.isNullable) {
-                    addStatement("val conditions = sourceTable.%L·%M·entity.%L!!",
-                        pk.tablePropertyName.simpleName, MemberNames.eq, pk.entityPropertyName.simpleName)
+                    addStatement(
+                        "val conditions = sourceTable.%L·%M·entity.%L!!",
+                        pk.tablePropertyName.simpleName, MemberNames.eq, pk.entityPropertyName.simpleName
+                    )
                 } else {
-                    addStatement("val conditions = sourceTable.%L·%M·entity.%L",
-                        pk.tablePropertyName.simpleName, MemberNames.eq, pk.entityPropertyName.simpleName)
+                    addStatement(
+                        "val conditions = sourceTable.%L·%M·entity.%L",
+                        pk.tablePropertyName.simpleName, MemberNames.eq, pk.entityPropertyName.simpleName
+                    )
                 }
             } else {
                 add("«val conditions = ")
 
                 for ((i, pk) in primaryKeys.withIndex()) {
                     if (pk.isNullable) {
-                        add("(sourceTable.%L·%M·entity.%L!!)",
-                            pk.tablePropertyName.simpleName, MemberNames.eq, pk.entityPropertyName.simpleName)
+                        add(
+                            "(sourceTable.%L·%M·entity.%L!!)",
+                            pk.tablePropertyName.simpleName, MemberNames.eq, pk.entityPropertyName.simpleName
+                        )
                     } else {
-                        add("(sourceTable.%L·%M·entity.%L)",
-                            pk.tablePropertyName.simpleName, MemberNames.eq, pk.entityPropertyName.simpleName)
+                        add(
+                            "(sourceTable.%L·%M·entity.%L)",
+                            pk.tablePropertyName.simpleName, MemberNames.eq, pk.entityPropertyName.simpleName
+                        )
                     }
 
                     if (i != primaryKeys.lastIndex) {

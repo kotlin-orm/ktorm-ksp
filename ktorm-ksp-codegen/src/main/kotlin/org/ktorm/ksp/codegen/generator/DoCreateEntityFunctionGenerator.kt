@@ -30,14 +30,14 @@ public class DoCreateEntityFunctionGenerator : TableFunctionGenerator {
     /**
      * Generate doCreateEntity function for entity of any kind of class.
      */
-    override fun generate(context: TableGenerateContext, emitter: (FunSpec) -> Unit) {
+    override fun generate(context: TableGenerateContext): List<FunSpec> {
         if (context.table.ktormEntityType != KtormEntityType.ANY_KIND_CLASS) {
-            return
+            return emptyList()
         }
 
         val (table, config, _, logger, _) = context
 
-        FunSpec.builder("doCreateEntity")
+        val funSpec = FunSpec.builder("doCreateEntity")
             .addKdoc("Create an entity object from the specific row of query results.")
             .addModifiers(KModifier.OVERRIDE)
             .returns(table.entityClassName)
@@ -75,7 +75,6 @@ public class DoCreateEntityFunctionGenerator : TableFunctionGenerator {
                             "nonConstructorColumnProperties: $nonConstructorColumnPropertyNames"
                 )
 
-                // TODO: is it possible to avoid creating entities with reflection?
                 if (config.allowReflectionCreateEntity && constructorColumnParameters.any { it.hasDefault }) {
                     // Create an instance using reflection
                     addStatement(
@@ -162,6 +161,6 @@ public class DoCreateEntityFunctionGenerator : TableFunctionGenerator {
                 }
             })
             .build()
-            .run(emitter)
+        return listOf(funSpec)
     }
 }

@@ -35,7 +35,7 @@ import org.ktorm.ksp.codegen.TopLevelPropertyGenerator
  * ```
  */
 public class SequencePropertyGenerator : TopLevelPropertyGenerator {
-    override fun generate(context: TableGenerateContext, emitter: (PropertySpec) -> Unit) {
+    override fun generate(context: TableGenerateContext): List<PropertySpec> {
         val table = context.table
         val sequenceOf = MemberName("org.ktorm.entity", "sequenceOf", true)
         val tableClassName = table.tableClassName.simpleName
@@ -46,7 +46,7 @@ public class SequencePropertyGenerator : TopLevelPropertyGenerator {
         // EntitySequence<E, T>
         val sequenceType = entitySequence.parameterizedBy(table.entityClassName, table.tableClassName)
 
-        PropertySpec
+        val propertySpec = PropertySpec
             .builder(sequenceName, sequenceType)
             .addKdoc("Return the default entity sequence of [%L].", table.tableClassName.simpleName)
             .receiver(Database::class.asClassName())
@@ -56,6 +56,6 @@ public class SequencePropertyGenerator : TopLevelPropertyGenerator {
                     .build()
             )
             .build()
-            .run(emitter)
+        return listOf(propertySpec)
     }
 }

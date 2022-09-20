@@ -28,16 +28,16 @@ import org.ktorm.schema.Column
 
 public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
 
-    override fun generate(context: TableGenerateContext, emitter: (PropertySpec) -> Unit) {
-        when (context.table.ktormEntityType) {
-            KtormEntityType.ENTITY_INTERFACE -> generateEntityInterfaceEntity(context, emitter)
-            KtormEntityType.ANY_KIND_CLASS -> generateAnyKindClassEntity(context, emitter)
+    override fun generate(context: TableGenerateContext): List<PropertySpec> {
+        return when (context.table.ktormEntityType) {
+            KtormEntityType.ENTITY_INTERFACE -> generateEntityInterfaceEntity(context)
+            KtormEntityType.ANY_KIND_CLASS -> generateAnyKindClassEntity(context)
         }
     }
 
-    protected open fun generateEntityInterfaceEntity(context: TableGenerateContext, emitter: (PropertySpec) -> Unit) {
+    protected open fun generateEntityInterfaceEntity(context: TableGenerateContext): List<PropertySpec> {
         val (table, config, columnInitializerGenerator, _, dependencyFiles) = context
-        table.columns
+        return table.columns
             .asSequence()
             .map { column ->
                 val columnType = if (column.isReferences) {
@@ -78,12 +78,12 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
                     })
                     .build()
             }
-            .forEach(emitter)
+            .toList()
     }
 
-    protected open fun generateAnyKindClassEntity(context: TableGenerateContext, emitter: (PropertySpec) -> Unit) {
+    protected open fun generateAnyKindClassEntity(context: TableGenerateContext): List<PropertySpec> {
         val (table, config, columnInitializerGenerator, _, dependencyFiles) = context
-        table.columns
+        return table.columns
             .asSequence()
             .map { column ->
                 val columnType = Column::class.asClassName().parameterizedBy(column.nonNullPropertyTypeName)
@@ -105,6 +105,6 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
                     })
                     .build()
             }
-            .forEach(emitter)
+            .toList()
     }
 }
