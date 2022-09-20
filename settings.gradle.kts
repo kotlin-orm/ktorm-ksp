@@ -32,7 +32,7 @@ pluginManagement {
 enableFeaturePreview("VERSION_CATALOGS")
 
 include("ktorm-ksp-api")
-include("ktorm-ksp-codegen")
+include("ktorm-ksp-spi")
 include("ktorm-ksp-compiler")
 include("ktorm-ksp-example")
 include("ktorm-ksp-tests")
