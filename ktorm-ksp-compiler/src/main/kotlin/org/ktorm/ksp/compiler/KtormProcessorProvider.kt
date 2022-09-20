@@ -237,9 +237,29 @@ public class KtormProcessor(
                         val propertyName = ksProperty.simpleName.asString()
                         if (ksProperty.isAnnotationPresent(Ignore::class)
                             || propertyName in table.ignoreColumns
-                            || tableDef.ktormEntityType == KtormEntityType.ENTITY_INTERFACE && propertyName in ignoreInterfaceEntityProperties
                         ) {
-                            logger.info("ignore column: ${tableDef.entityClassName.canonicalName}.$propertyName")
+                            logger.info(
+                                "ignore column: ${tableDef.entityClassName.canonicalName}.$propertyName, " +
+                                        "because the configuration specifies to ignore this column"
+                            )
+                            return@forEach
+                        }
+                        val parentDeclaration = ksProperty.parentDeclaration
+                        if (parentDeclaration is KSClassDeclaration
+                            && parentDeclaration.classKind != ClassKind.INTERFACE
+                            && !ksProperty.hasBackingField
+                        ) {
+                            logger.info(
+                                "ignore column: ${tableDef.entityClassName.canonicalName}.$propertyName, " +
+                                        "because it has no backingField"
+                            )
+                            return@forEach
+                        }
+                        if (tableDef.ktormEntityType == KtormEntityType.ENTITY_INTERFACE && propertyName in ignoreInterfaceEntityProperties) {
+                            logger.info(
+                                "ignore column: ${tableDef.entityClassName.canonicalName}.$propertyName," +
+                                        "because it is from 'org.ktorm.entity.Entity' class definition property."
+                            )
                             return@forEach
                         }
                         val columnAnnotation = ksProperty.getAnnotationsByType(Column::class).firstOrNull()
