@@ -208,18 +208,18 @@ public class KtormProcessor(
                     else -> error("wrong entity class declaration: ${entityClassName.canonicalName}, classKind must to be Interface or Class")
                 }
                 val table = classDeclaration.getAnnotationsByType(Table::class).first()
-                val tableClassName = if (table.tableClassName.isEmpty()) {
+                val tableClassName = if (table.className.isEmpty()) {
                     ClassName(entityClassName.packageName, English.plural(entityClassName.simpleName))
                 } else {
-                    ClassName(entityClassName.packageName, table.tableClassName)
+                    ClassName(entityClassName.packageName, table.className)
                 }
-                val tableName = table.tableName
+                val tableName = table.name
 
                 val columnDefs = mutableListOf<ColumnDefinition>()
                 val tableDef = TableDefinition(
                     tableName,
                     tableClassName,
-                    table.sequenceName,
+                    table.entitySequenceName,
                     table.alias,
                     table.catalog,
                     table.schema,
@@ -276,7 +276,7 @@ public class KtormProcessor(
                         }
 
                         val isPrimaryKey = ksProperty.getAnnotationsByType(PrimaryKey::class).any()
-                        val columnName = columnAnnotation?.columnName ?: ""
+                        val columnName = columnAnnotation?.name ?: ""
                         val tablePropertyName = if (columnAnnotation?.propertyName.isNullOrEmpty()) {
                             MemberName(tableClassName, propertyName)
                         } else {

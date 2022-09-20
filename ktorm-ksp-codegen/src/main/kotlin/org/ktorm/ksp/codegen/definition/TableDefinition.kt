@@ -30,7 +30,7 @@ import kotlin.reflect.KClass
 public data class TableDefinition(
 
     /**
-     * The table name，Corresponds to the [org.ktorm.ksp.api.Table.tableName] property, may be an empty string.
+     * The table name，Corresponds to the [org.ktorm.ksp.api.Table.name] property, may be an empty string.
      */
     val tableName: String,
 

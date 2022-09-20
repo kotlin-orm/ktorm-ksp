@@ -31,7 +31,7 @@ import org.ktorm.schema.BaseTable
  * For details, please refer to the description in [Column].
  *
  * By default, the class name of [BaseTable] or [org.ktorm.schema.Table] is generated, and the plural of nouns
- * is converted based on the class name. The generated class name can be modified by assigning the [tableClassName]
+ * is converted based on the class name. The generated class name can be modified by assigning the [className]
  * property
  *
  * @see BaseTable
@@ -44,15 +44,15 @@ public annotation class Table(
     /**
      * Table names in SQL, Corresponds to [org.ktorm.schema.BaseTable.tableName] property, If the value is an
      * empty string, the default value will be used. The [KtormKspConfig.namingStrategy] property can affect the
-     * default table name generation rules, but the [tableName] property has the highest priority
+     * default table name generation rules, but the [name] property has the highest priority
      */
-    val tableName: String = "",
+    val name: String = "",
 
     /**
      * Specifies the class name of the generated table class. By default, the noun plural is converted from
      * the class name of the entity class.
      */
-    val tableClassName: String = "",
+    val className: String = "",
 
     /**
      * Specify the table alias, corresponding to the [BaseTable.alias] property.
@@ -75,7 +75,7 @@ public annotation class Table(
     val ignoreColumns: Array<String> = [],
 
     /**
-     * Specify the sequence name，By default, the first character lowercase of the [tableClassName].
+     * Specify the sequence name，By default, the first character lowercase of the [className].
      */
-    val sequenceName: String = "",
+    val entitySequenceName: String = "",
 )

@@ -28,7 +28,7 @@ import com.squareup.kotlinpoet.TypeName
 public data class ColumnDefinition(
 
     /**
-     * The column name，Corresponds to the [org.ktorm.ksp.api.Column.columnName] property, may be an empty string.
+     * The column name，Corresponds to the [org.ktorm.ksp.api.Column.name] property, may be an empty string.
      */
     val columnName: String,
 

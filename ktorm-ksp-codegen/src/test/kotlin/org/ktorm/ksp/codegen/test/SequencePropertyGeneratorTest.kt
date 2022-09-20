@@ -97,7 +97,7 @@ public class SequencePropertyGeneratorTest : BaseKspTest() {
                 import org.ktorm.ksp.api.*
                 import java.time.LocalDate
 
-                @Table(sequenceName = "aUsers")
+                @Table(entitySequenceName = "aUsers")
                 data class User(
                     @PrimaryKey
                     var id: Int,

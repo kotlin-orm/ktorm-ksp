@@ -37,10 +37,10 @@ public annotation class Column(
     /**
      * Column names in SQL, Corresponds to [org.ktorm.schema.Column.name] property. If the value is an empty string,
      * the default value will be used. The [KtormKspConfig.namingStrategy] property can affect the default column
-     * name generation rules, but the [columnName] property has the highest priority
+     * name generation rules, but the [name] property has the highest priority
      * @see [KtormKspConfig.namingStrategy]
      */
-    val columnName: String = "",
+    val name: String = "",
 
     /**
      * The SQL type for this column.
