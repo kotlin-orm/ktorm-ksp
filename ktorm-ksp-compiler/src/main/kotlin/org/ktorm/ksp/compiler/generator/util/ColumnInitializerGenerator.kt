@@ -99,10 +99,8 @@ public object ColumnInitializerGenerator {
             val referenceColumn = column.referencesColumn!!
             dependencyFiles.add(referenceColumn.propertyDeclaration.containingFile!!)
 
-            // TODO: why skip naming strategy for reference columns?
-            val columnName = column.columnName.ifEmpty { column.entityPropertyName.simpleName }
             return doGenerate(
-                columnName,
+                column.columnName,
                 config,
                 referenceColumn.entityPropertyName,
                 referenceColumn.sqlType,
