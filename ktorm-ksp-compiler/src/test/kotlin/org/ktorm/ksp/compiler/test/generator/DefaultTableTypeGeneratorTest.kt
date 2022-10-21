@@ -243,8 +243,10 @@ public class DefaultTableTypeGeneratorTest : BaseKspTest() {
                     var id: Int
                     var username: String
                     var age: Int
-                    @References("school_id")
-                    var school: School
+                    @References
+                    var firstSchool: School
+                    @References("second_school_id")
+                    var secondSchool: School
                 }
 
                 @Table
@@ -259,11 +261,18 @@ public class DefaultTableTypeGeneratorTest : BaseKspTest() {
         assertThat(result1.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         assertThat(result2.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         val baseTable = result2.getBaseTable("Users")
-        val school = baseTable.columns.firstOrNull { it.name == "school_id" }
-        assertThat(school).isNotNull
-        assertThat(school!!.referenceTable).isNotNull
-        val referenceTable = school.referenceTable
-        assertThat(referenceTable!!.tableName).isEqualTo("School")
+
+        val firstSchool = baseTable.columns.firstOrNull { it.name == "firstSchoolId" }
+        assertThat(firstSchool).isNotNull
+        assertThat(firstSchool!!.referenceTable).isNotNull
+        val firstSchoolReferenceTable = firstSchool.referenceTable
+        assertThat(firstSchoolReferenceTable!!.tableName).isEqualTo("School")
+
+        val secondSchool = baseTable.columns.firstOrNull { it.name == "second_school_id" }
+        assertThat(secondSchool).isNotNull
+        assertThat(secondSchool!!.referenceTable).isNotNull
+        val secondSchoolReferenceTable = firstSchool.referenceTable
+        assertThat(secondSchoolReferenceTable!!.tableName).isEqualTo("School")
     }
 
     @Test

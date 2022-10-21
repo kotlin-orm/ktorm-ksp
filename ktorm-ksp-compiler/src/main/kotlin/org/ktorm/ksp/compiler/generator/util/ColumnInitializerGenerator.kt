@@ -18,11 +18,9 @@
 
 package org.ktorm.ksp.compiler.generator.util
 
-import com.google.devtools.ksp.processing.KSPLogger
-import com.google.devtools.ksp.symbol.KSFile
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
-import org.ktorm.ksp.codegen.CodeGenerateConfig
+import org.ktorm.ksp.codegen.TableGenerateContext
 import org.ktorm.ksp.codegen.definition.ColumnDefinition
 import java.math.BigDecimal
 import java.sql.Date
@@ -89,118 +87,48 @@ public object ColumnInitializerGenerator {
      * Generate column initializer code.
      */
     public fun generate(
-        column: ColumnDefinition,
-        dependencyFiles: MutableSet<KSFile>,
-        config: CodeGenerateConfig,
-        logger: KSPLogger
+        context: TableGenerateContext,
+        column: ColumnDefinition
     ): CodeBlock {
+        val (_, _, logger, dependencyFiles) = context
         logger.info("generate column:$column")
         if (column.isReferences) {
             val referenceColumn = column.referencesColumn!!
             dependencyFiles.add(referenceColumn.propertyDeclaration.containingFile!!)
-
-            return doGenerate(
-                column.columnName,
-                config,
-                referenceColumn.entityPropertyName,
-                referenceColumn.sqlType,
-                referenceColumn.sqlTypeFactory,
-                referenceColumn.isEnum,
-                referenceColumn.propertyTypeName,
-                referenceColumn.nonNullPropertyTypeName
-            )
-        } else {
-            return doGenerate(
-                column.columnName,
-                config,
-                column.entityPropertyName,
-                column.sqlType,
-                column.sqlTypeFactory,
-                column.isEnum,
-                column.propertyTypeName,
-                column.nonNullPropertyTypeName
-            )
         }
-    }
-
-    /**
-     * Generate column initializer code.
-     */
-    private fun doGenerate(
-        columnName: String,
-        config: CodeGenerateConfig,
-        entityPropertyName: MemberName,
-        sqlType: ClassName?,
-        sqlTypeFactory: ClassName?,
-        isEnum: Boolean,
-        propertyTypeName: TypeName,
-        nonNullPropertyTypeName: TypeName
-    ): CodeBlock {
-        var actualColumnName = columnName
-        if (columnName.isEmpty()) {
-            if (config.localNamingStrategy != null) {
-                actualColumnName = config.localNamingStrategy!!.toColumnName(entityPropertyName.simpleName)
-            } else if (config.namingStrategy == null) {
-                actualColumnName = entityPropertyName.simpleName
-            }
-        }
+        val columnName = NameGenerator.toSqlColumnName(context, column)
+        val targetColumn = if (column.isReferences) column.referencesColumn!! else column
+        val (_, _, propertyTypeName, _, entityPropertyName, _, sqlType, sqlTypeFactory) = targetColumn
+        val isEnum = targetColumn.isEnum
+        val nonNullPropertyTypeName = targetColumn.nonNullPropertyTypeName
 
         if (sqlType != null) {
             return buildCodeBlock {
-                if (actualColumnName.isEmpty()) {
-                    add(
-                        "registerColumn(%T.toColumnName(%S),·%T)",
-                        config.namingStrategy,
-                        entityPropertyName.simpleName,
-                        sqlType
-                    )
-                } else {
-                    add(
-                        "registerColumn(%S,·%T)",
-                        actualColumnName,
-                        sqlType
-                    )
-                }
+                add("registerColumn(")
+                add(columnName)
+                add(",·%T)", sqlType)
             }
         }
 
         if (sqlTypeFactory != null) {
             return buildCodeBlock {
-                if (actualColumnName.isEmpty()) {
-                    add(
-                        "registerColumn(%T.toColumnName(%S),·%T.createSqlType(%T::%L))",
-                        config.namingStrategy,
-                        entityPropertyName.simpleName,
-                        sqlTypeFactory,
-                        entityPropertyName.enclosingClassName,
-                        entityPropertyName.simpleName
-                    )
-                } else {
-                    add(
-                        "registerColumn(%S,·%T.createSqlType(%T::%L))",
-                        actualColumnName,
-                        sqlTypeFactory,
-                        entityPropertyName.enclosingClassName,
-                        entityPropertyName.simpleName
-                    )
-                }
+                add("registerColumn(")
+                add(columnName)
+                add(
+                    ",·%T.createSqlType(%T::%L))",
+                    sqlTypeFactory,
+                    entityPropertyName.enclosingClassName,
+                    entityPropertyName.simpleName
+                )
             }
         }
 
         // default enum initializer
         if (isEnum) {
             return buildCodeBlock {
-                if (actualColumnName.isEmpty()) {
-                    add(
-                        "%M<%T>(%T.toColumnName(%S))",
-                        enumSqlTypeFunction,
-                        nonNullPropertyTypeName,
-                        config.namingStrategy,
-                        entityPropertyName.simpleName
-                    )
-                } else {
-                    add("%M<%T>(%S)", enumSqlTypeFunction, nonNullPropertyTypeName, actualColumnName)
-                }
+                add("%M<%T>(", enumSqlTypeFunction, nonNullPropertyTypeName)
+                add(columnName)
+                add(")")
             }
         }
 
@@ -208,16 +136,9 @@ public object ColumnInitializerGenerator {
         val defaultFunction = sqlTypeFunctions[nonNullPropertyTypeName]
         if (defaultFunction != null) {
             return buildCodeBlock {
-                if (actualColumnName.isEmpty()) {
-                    add(
-                        "%M(%T.toColumnName(%S))",
-                        defaultFunction,
-                        config.namingStrategy,
-                        entityPropertyName.simpleName
-                    )
-                } else {
-                    add("%M(%S)", defaultFunction, actualColumnName)
-                }
+                add("%M(", defaultFunction)
+                add(columnName)
+                add(")")
             }
         }
 

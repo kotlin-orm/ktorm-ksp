@@ -37,7 +37,7 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
     }
 
     protected open fun generateEntityInterfaceEntity(context: TableGenerateContext): List<PropertySpec> {
-        val (table, config, logger, dependencyFiles) = context
+        val (table, config, _, _) = context
         return table.columns
             .asSequence()
             .map { column ->
@@ -58,7 +58,7 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
                     .builder(column.tablePropertyName.simpleName, columnType)
                     .addKdoc("Column %L. %L", columnName, column.propertyDeclaration.docString?.trimIndent().orEmpty())
                     .initializer(buildCodeBlock {
-                        add(ColumnInitializerGenerator.generate(column, dependencyFiles, config, logger))
+                        add(ColumnInitializerGenerator.generate(context, column))
                         val params = mutableMapOf(
                             "bindTo" to MemberNames.bindTo,
                             "references" to MemberNames.references,
@@ -84,7 +84,7 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
     }
 
     protected open fun generateAnyKindClassEntity(context: TableGenerateContext): List<PropertySpec> {
-        val (table, config, logger, dependencyFiles) = context
+        val (table, config, _, _) = context
         return table.columns
             .asSequence()
             .map { column ->
@@ -100,7 +100,7 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
                     .builder(column.tablePropertyName.simpleName, columnType)
                     .addKdoc("Column %L. %L", columnName, column.propertyDeclaration.docString?.trimIndent().orEmpty())
                     .initializer(buildCodeBlock {
-                        add(ColumnInitializerGenerator.generate(column, dependencyFiles, config, logger))
+                        add(ColumnInitializerGenerator.generate(context, column))
                         if (column.isPrimaryKey) {
                             add(".%M()", MemberNames.primaryKey)
                         }

@@ -18,11 +18,10 @@ package org.ktorm.ksp.compiler.generator
 
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import org.ktorm.ksp.codegen.CodeGenerateConfig
 import org.ktorm.ksp.codegen.TableGenerateContext
 import org.ktorm.ksp.codegen.TableTypeGenerator
 import org.ktorm.ksp.codegen.definition.KtormEntityType
-import org.ktorm.ksp.codegen.definition.TableDefinition
+import org.ktorm.ksp.compiler.generator.util.NameGenerator
 import org.ktorm.schema.BaseTable
 import org.ktorm.schema.Table
 
@@ -35,25 +34,9 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
         }
     }
 
-    protected open fun buildTableConstructorParams(
-        table: TableDefinition,
-        config: CodeGenerateConfig
-    ): List<CodeBlock> {
-        val localNamingStrategy = config.localNamingStrategy
-        val tableNameParam = when {
-            table.tableName.isNotEmpty() -> {
-                CodeBlock.of("%S", table.tableName)
-            }
-            config.namingStrategy == null -> {
-                CodeBlock.of("%S", table.entityClassName.simpleName)
-            }
-            localNamingStrategy != null -> {
-                CodeBlock.of("%S", localNamingStrategy.toTableName(table.entityClassName.simpleName))
-            }
-            else -> {
-                CodeBlock.of("%T.toTableName(%S)", config.namingStrategy, table.entityClassName.simpleName)
-            }
-        }
+    protected open fun buildTableConstructorParams(context: TableGenerateContext): List<CodeBlock> {
+        val table = context.table
+        val tableNameParam = NameGenerator.toSqlTableName(context)
 
         val params = ArrayList<CodeBlock>()
         params += tableNameParam
@@ -75,14 +58,15 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
         return TypeSpec.classBuilder(table.tableClassName)
             .superclass(Table::class.asClassName().parameterizedBy(table.entityClassName))
             .apply {
-                buildTableConstructorParams(table, context.config)
+                buildTableConstructorParams(context)
                     .forEach { addSuperclassConstructorParameter(it) }
 
-                buildClassTable(table, context.config, this)
+                buildClassTable(context, this)
             }
     }
 
-    private fun buildClassTable(table: TableDefinition, config: CodeGenerateConfig, typeSpec: TypeSpec.Builder) {
+    private fun buildClassTable(context: TableGenerateContext, typeSpec: TypeSpec.Builder) {
+        val (table, config, _, _) = context
         val localNamingStrategy = config.localNamingStrategy
         val tableName = when {
             table.tableName.isNotEmpty() -> table.tableName
@@ -130,10 +114,10 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
         return TypeSpec.classBuilder(table.tableClassName)
             .superclass(BaseTable::class.asClassName().parameterizedBy(table.entityClassName))
             .apply {
-                buildTableConstructorParams(table, context.config)
+                buildTableConstructorParams(context)
                     .forEach { addSuperclassConstructorParameter(it) }
 
-                buildClassTable(table, context.config, this)
+                buildClassTable(context, this)
             }
     }
 }

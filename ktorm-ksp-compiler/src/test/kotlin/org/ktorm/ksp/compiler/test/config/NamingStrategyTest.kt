@@ -35,15 +35,25 @@ public class NamingStrategyTest : BaseKspTest() {
                 import org.ktorm.schema.BaseTable
                 import org.ktorm.schema.Column
                 import org.ktorm.schema.int
+                import org.ktorm.entity.Entity
                 import kotlin.reflect.KClass
                 
                 @Table
-                data class UserProfile(
+                interface UserProfile: Entity<UserProfile> {
                     @PrimaryKey
-                    var id: Int,
-                    var publicEmail: String,
+                    var id: Int
+                    var publicEmail: String
                     var profilePicture: Int
-                )
+                    @References
+                    var company: Company
+                }
+
+                @Table
+                interface Company: Entity<Company> {                    
+                    @PrimaryKey
+                    var id: Int
+                    var name: String
+                }
                
                 @KtormKspConfig(
                     namingStrategy = CamelCaseToSnakeCaseNamingStrategy::class
@@ -57,7 +67,14 @@ public class NamingStrategyTest : BaseKspTest() {
         assertThat(result2.exitCode).isEqualTo(ExitCode.OK)
         val baseTable = result2.getBaseTable("UserProfiles")
         assertThat(baseTable.tableName).isEqualTo("user_profile")
-        assertThat(baseTable.columns.map { it.name }.toSet()).isEqualTo(setOf("id", "public_email", "profile_picture"))
+        assertThat(baseTable.columns.map { it.name }.toSet()).isEqualTo(
+            setOf(
+                "id",
+                "public_email",
+                "profile_picture",
+                "company_id"
+            )
+        )
     }
 
     @Test
@@ -71,15 +88,25 @@ public class NamingStrategyTest : BaseKspTest() {
                 import org.ktorm.schema.BaseTable
                 import org.ktorm.schema.Column
                 import org.ktorm.schema.int
+                import org.ktorm.entity.Entity
                 import kotlin.reflect.KClass
                 
                 @Table
-                data class UserProfile(
+                interface UserProfile: Entity<UserProfile> {
                     @PrimaryKey
-                    var id: Int,
-                    var publicEmail: String,
+                    var id: Int
+                    var publicEmail: String
                     var profilePicture: Int
-                )
+                    @References
+                    var company: Company
+                }
+
+                @Table
+                interface Company: Entity<Company> {                    
+                    @PrimaryKey
+                    var id: Int
+                    var name: String
+                }
                
                 @KtormKspConfig(
                     namingStrategy = CustomNamingStrategy::class
@@ -106,7 +133,8 @@ public class NamingStrategyTest : BaseKspTest() {
             setOf(
                 "c_id",
                 "c_publicEmail",
-                "c_profilePicture"
+                "c_profilePicture",
+                "c_companyId"
             )
         )
     }

@@ -30,7 +30,6 @@ import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
-import org.atteo.evo.inflector.English
 import org.ktorm.entity.Entity
 import org.ktorm.ksp.api.*
 import org.ktorm.ksp.codegen.CodeGenerateConfig
@@ -39,6 +38,7 @@ import org.ktorm.ksp.codegen.definition.ColumnDefinition
 import org.ktorm.ksp.codegen.definition.KtormEntityType
 import org.ktorm.ksp.codegen.definition.TableDefinition
 import org.ktorm.ksp.compiler.generator.KtormCodeGenerator
+import org.ktorm.ksp.compiler.generator.util.NameGenerator
 import org.ktorm.schema.SqlType
 
 public class KtormProcessorProvider : SymbolProcessorProvider {
@@ -204,11 +204,7 @@ public class KtormProcessor(
                     else -> error("wrong entity class declaration: ${entityClassName.canonicalName}, classKind must to be Interface or Class")
                 }
                 val table = classDeclaration.getAnnotationsByType(Table::class).first()
-                val tableClassName = if (table.className.isEmpty()) {
-                    ClassName(entityClassName.packageName, English.plural(entityClassName.simpleName))
-                } else {
-                    ClassName(entityClassName.packageName, table.className)
-                }
+                val tableClassName = NameGenerator.toTableClassName(classDeclaration)
                 val tableName = table.name
 
                 val columnDefs = mutableListOf<ColumnDefinition>()
@@ -297,13 +293,7 @@ public class KtormProcessor(
 
                         val isPrimaryKey = ksProperty.getAnnotationsByType(PrimaryKey::class).any()
                         val columnName = columnAnnotation?.name ?: referencesAnnotation?.name ?: ""
-                        val tablePropertyName = if (!columnAnnotation?.propertyName.isNullOrEmpty()) {
-                            MemberName(tableClassName, columnAnnotation!!.propertyName)
-                        } else if (!referencesAnnotation?.propertyName.isNullOrEmpty()) {
-                            MemberName(tableClassName, referencesAnnotation!!.propertyName)
-                        } else {
-                            MemberName(tableClassName, propertyName)
-                        }
+                        val tablePropertyName = NameGenerator.toTablePropertyName(tableClassName, ksProperty)
 
                         val columnDef = ColumnDefinition(
                             columnName,

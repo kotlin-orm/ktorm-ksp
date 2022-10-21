@@ -56,7 +56,7 @@ public annotation class References(
      * name generation rules, but the [name] property has the highest priority
      * @see [KtormKspConfig.namingStrategy]
      */
-    val name: String,
+    val name: String = "",
 
 
     /**
