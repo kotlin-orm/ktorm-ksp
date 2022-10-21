@@ -35,7 +35,7 @@ import org.ktorm.ksp.codegen.definition.ColumnDefinition
 public object NameGenerator {
 
     @OptIn(KspExperimental::class, KotlinPoetKspPreview::class)
-    public fun toTableClassName(entityClass: KSClassDeclaration): ClassName {
+    public fun generateTableClassName(entityClass: KSClassDeclaration): ClassName {
         val entityClassName = entityClass.toClassName()
         val table = entityClass.getAnnotationsByType(Table::class).first()
         val tableClassName = table.className.ifEmpty { English.plural(entityClassName.simpleName) }
@@ -43,7 +43,7 @@ public object NameGenerator {
     }
 
     @OptIn(KspExperimental::class)
-    public fun toTablePropertyName(tableClassName: ClassName, property: KSPropertyDeclaration): MemberName {
+    public fun generateTablePropertyName(tableClassName: ClassName, property: KSPropertyDeclaration): MemberName {
         val columnAnnotation = property.getAnnotationsByType(Column::class).firstOrNull()
         val referencesAnnotation = property.getAnnotationsByType(References::class).firstOrNull()
         val propertyName = property.simpleName.asString()
@@ -58,7 +58,7 @@ public object NameGenerator {
         return MemberName(tableClassName, tablePropertyName)
     }
 
-    public fun toSqlTableName(context: TableGenerateContext): CodeBlock {
+    public fun generateSqlTableName(context: TableGenerateContext): CodeBlock {
         val (table, config, _, _) = context
         val localNamingStrategy = config.localNamingStrategy
         return when {
@@ -77,7 +77,7 @@ public object NameGenerator {
         }
     }
 
-    public fun toSqlColumnName(context: TableGenerateContext, column: ColumnDefinition): CodeBlock {
+    public fun generateSqlColumnName(context: TableGenerateContext, column: ColumnDefinition): CodeBlock {
         if (column.columnName.isNotEmpty()) {
             return CodeBlock.of("%S", column.columnName)
         }

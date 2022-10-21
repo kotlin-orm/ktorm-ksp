@@ -36,7 +36,7 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
 
     protected open fun buildTableConstructorParams(context: TableGenerateContext): List<CodeBlock> {
         val table = context.table
-        val tableNameParam = NameGenerator.toSqlTableName(context)
+        val tableNameParam = NameGenerator.generateSqlTableName(context)
 
         val params = ArrayList<CodeBlock>()
         params += tableNameParam

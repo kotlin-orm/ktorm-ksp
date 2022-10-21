@@ -96,7 +96,7 @@ public object ColumnInitializerGenerator {
             val referenceColumn = column.referencesColumn!!
             dependencyFiles.add(referenceColumn.propertyDeclaration.containingFile!!)
         }
-        val columnName = NameGenerator.toSqlColumnName(context, column)
+        val columnName = NameGenerator.generateSqlColumnName(context, column)
         val targetColumn = if (column.isReferences) column.referencesColumn!! else column
         val (_, _, propertyTypeName, _, entityPropertyName, _, sqlType, sqlTypeFactory) = targetColumn
         val isEnum = targetColumn.isEnum
