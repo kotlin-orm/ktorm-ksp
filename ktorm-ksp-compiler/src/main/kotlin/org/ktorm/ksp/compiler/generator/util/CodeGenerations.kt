@@ -84,10 +84,15 @@ public object CodeFactory {
      * return entity
      * ```
      */
-    public fun buildEntityAssignCode(context: TableGenerateContext, entityVar: String): CodeBlock {
+    public fun buildEntityAssignCode(
+        context: TableGenerateContext,
+        entityVar: String,
+        nameAllocator: NameAllocator
+    ): CodeBlock {
         return buildCodeBlock {
             for (column in context.table.columns) {
                 val propertyName = column.entityPropertyName.simpleName
+                val propertyParameterName = nameAllocator[propertyName]
 
                 val condition: String
                 if (column.isInlinePropertyType) {
@@ -98,20 +103,20 @@ public object CodeFactory {
 
                 withControlFlow(
                     condition,
-                    arrayOf(propertyName, ClassNames.undefined, column.nonNullPropertyTypeName)
+                    arrayOf(propertyParameterName, ClassNames.undefined, column.nonNullPropertyTypeName)
                 ) {
                     var statement: String
                     if (column.isMutable) {
-                        statement = "%1L.%2L·=·%2L"
+                        statement = "%1L.%2L·=·%3L"
                     } else {
-                        statement = "%1L[%2S]·=·%2L"
+                        statement = "%1L[%2S]·=·%3L"
                     }
 
                     if (!column.isNullable) {
                         statement += "·?:·error(\"`%2L` should not be null.\")"
                     }
 
-                    addStatement(statement, entityVar, propertyName)
+                    addStatement(statement, entityVar, propertyName, propertyParameterName)
                 }
             }
             addStatement("return %L", entityVar)
@@ -120,10 +125,10 @@ public object CodeFactory {
 
     public fun buildEntityConstructorParameters(
         context: TableGenerateContext,
-        nameAllocator: NameAllocator
+        nameAllocator: NameAllocator,
     ): List<ParameterSpec> {
         return context.table.columns.map {
-            val name = nameAllocator.newName(it.entityPropertyName.simpleName)
+            val name = nameAllocator.newName(it.entityPropertyName.simpleName, it.entityPropertyName.simpleName)
             val type = it.nonNullPropertyTypeName.copy(nullable = true)
             ParameterSpec.builder(name, type)
                 .defaultValue("%T.of()", ClassNames.undefined)

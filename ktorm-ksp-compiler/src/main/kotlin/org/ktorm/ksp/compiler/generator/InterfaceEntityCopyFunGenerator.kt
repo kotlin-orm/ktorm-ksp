@@ -46,7 +46,7 @@ public class InterfaceEntityCopyFunGenerator : TopLevelFunctionGenerator {
             .addCode(buildCodeBlock {
                 val entityVar = nameAllocator.newName("entity")
                 addStatement("val·%L·=·this.copy()", entityVar)
-                add(CodeFactory.buildEntityAssignCode(context, entityVar))
+                add(CodeFactory.buildEntityAssignCode(context, entityVar, nameAllocator))
             })
             .build()
         return listOf(funSpec)

@@ -36,7 +36,6 @@ public class InterfaceEntityConstructorFunGenerator : TopLevelFunctionGenerator 
         }
 
         val nameAllocator = NameAllocator()
-
         val funSpec = FunSpec
             .builder(table.entityClassName.simpleName)
             .addKdoc(
@@ -50,7 +49,7 @@ public class InterfaceEntityConstructorFunGenerator : TopLevelFunctionGenerator 
             .addCode(buildCodeBlock {
                 val entityVar = nameAllocator.newName("entity")
                 addStatement("val·%L·=·%T.create<%T>()", entityVar, ClassNames.entity, table.entityClassName)
-                add(CodeFactory.buildEntityAssignCode(context, entityVar))
+                add(CodeFactory.buildEntityAssignCode(context, entityVar, nameAllocator))
             })
             .build()
         return listOf(funSpec)
