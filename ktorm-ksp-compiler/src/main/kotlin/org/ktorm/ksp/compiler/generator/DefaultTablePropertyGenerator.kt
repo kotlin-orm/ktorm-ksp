@@ -73,7 +73,7 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
                             if (column.isReferences) {
                                 append(".%references:M(%referencesTable:T)·{·it.%entityPropertyName:L·}·")
                             } else {
-                                append(".%bindTo:M·{·it.%entityPropertyName:L·}")
+                                append(".%bindTo:M·{·it.%entityPropertyName:N·}")
                             }
                         }
                         addNamed(code, params)

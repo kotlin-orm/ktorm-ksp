@@ -95,7 +95,7 @@ public class DoCreateEntityFunctionGenerator : TableFunctionGenerator {
                                 val parameterName = parameter.name!!.asString()
                                 val column = columnMap[parameterName]!!
                                 withControlFlow("%S -> ", arrayOf(parameterName)) {
-                                    addStatement("val value = row[%L]", column.tablePropertyName.simpleName)
+                                    addStatement("val value = row[this.%N]", column.tablePropertyName.simpleName)
                                     // hasDefault
                                     if (parameter.hasDefault) {
                                         withControlFlow("if (value != null)") {
@@ -132,7 +132,7 @@ public class DoCreateEntityFunctionGenerator : TableFunctionGenerator {
                                 }
                                 val notNullOperator = if (column.isNullable) "" else "!!"
                                 addStatement(
-                                    "%L·=·row[%L]%L,",
+                                    "%N·=·row[this.%N]%L,",
                                     parameter.name!!.asString(),
                                     column.tablePropertyName.simpleName,
                                     notNullOperator
@@ -151,7 +151,7 @@ public class DoCreateEntityFunctionGenerator : TableFunctionGenerator {
                         }
                         val notNullOperator = if (column.isNullable) "" else "!!"
                         addStatement(
-                            "entity.%L·=·row[%L]%L",
+                            "entity.%N·=·row[this.%N]%L",
                             property,
                             column.tablePropertyName.simpleName,
                             notNullOperator

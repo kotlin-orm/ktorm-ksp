@@ -84,12 +84,12 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
             for (column in table.columns) {
                 if (column.isNullable) {
                     addStatement(
-                        "entity.%L?.let { assignments[sourceTable.%L] = it }",
+                        "entity.%N?.let { assignments[sourceTable.%N] = it }",
                         column.entityPropertyName.simpleName, column.tablePropertyName.simpleName
                     )
                 } else {
                     addStatement(
-                        "entity.%L.let { assignments[sourceTable.%L] = it }",
+                        "entity.%N.let { assignments[sourceTable.%N] = it }",
                         column.entityPropertyName.simpleName, column.tablePropertyName.simpleName
                     )
                 }
@@ -100,12 +100,12 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
             for (column in table.columns) {
                 if (useGeneratedKey && column.isPrimaryKey && column.isNullable) {
                     addStatement(
-                        "entity.%L?.let { assignments[sourceTable.%L] = it }",
+                        "entity.%N?.let { assignments[sourceTable.%N] = it }",
                         column.entityPropertyName.simpleName, column.tablePropertyName.simpleName
                     )
                 } else {
                     addStatement(
-                        "entity.%L.let { assignments[sourceTable.%L] = it }",
+                        "entity.%N.let { assignments[sourceTable.%N] = it }",
                         column.entityPropertyName.simpleName, column.tablePropertyName.simpleName
                     )
                 }
@@ -158,7 +158,7 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
                 addStatement("return database.executeUpdate(expression)")
             } else {
                 // If the primary key value is manually specified, not obtain the generated key.
-                beginControlFlow("if (entity.%L != null)", primaryKeys[0].entityPropertyName.simpleName)
+                beginControlFlow("if (entity.%N != null)", primaryKeys[0].entityPropertyName.simpleName)
                 addStatement("return database.executeUpdate(expression)")
 
                 // Else obtain the generated key value.
@@ -167,13 +167,13 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
                     format = """
                         val (effects, rowSet) = database.executeUpdateAndRetrieveKeys(expression)
                         if (rowSet.next()) {
-                            val generatedKey = sourceTable.%columnName:L.sqlType.getResult(rowSet, 1)
+                            val generatedKey = sourceTable.%columnName:N.sqlType.getResult(rowSet, 1)
                             if (generatedKey != null) {
                                 if (database.logger.isDebugEnabled()) {
                                     database.logger.debug("Generated Key: ${'$'}generatedKey")
                                 }
                                 
-                                entity.%propertyName:L = generatedKey
+                                entity.%propertyName:N = generatedKey
                             }
                         }
                         

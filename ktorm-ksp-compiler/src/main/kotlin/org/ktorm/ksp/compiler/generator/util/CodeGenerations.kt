@@ -96,9 +96,9 @@ public object CodeFactory {
 
                 val condition: String
                 if (column.isInlinePropertyType) {
-                    condition = "if·((%L·as·Any?)·!==·(%T.of<%T>()·as·Any?))"
+                    condition = "if·((%N·as·Any?)·!==·(%T.of<%T>()·as·Any?))"
                 } else {
-                    condition = "if·(%L·!==·%T.of<%T>())"
+                    condition = "if·(%N·!==·%T.of<%T>())"
                 }
 
                 withControlFlow(
@@ -107,9 +107,9 @@ public object CodeFactory {
                 ) {
                     var statement: String
                     if (column.isMutable) {
-                        statement = "%1L.%2L·=·%3L"
+                        statement = "%1N.%2N·=·%3N"
                     } else {
-                        statement = "%1L[%2S]·=·%3L"
+                        statement = "%1N[%2S]·=·%3N"
                     }
 
                     if (!column.isNullable) {

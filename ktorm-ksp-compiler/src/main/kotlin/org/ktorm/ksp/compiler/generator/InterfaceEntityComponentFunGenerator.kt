@@ -40,7 +40,7 @@ public class InterfaceEntityComponentFunGenerator : TopLevelFunctionGenerator {
                 .addModifiers(KModifier.OPERATOR)
                 .returns(column.propertyTypeName)
                 .receiver(table.entityClassName)
-                .addCode("return·this.%L", column.entityPropertyName.simpleName)
+                .addCode("return·this.%N", column.entityPropertyName.simpleName)
                 .build()
         }
     }

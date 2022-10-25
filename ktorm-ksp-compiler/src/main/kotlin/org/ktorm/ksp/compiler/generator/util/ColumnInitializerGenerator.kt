@@ -115,7 +115,7 @@ public object ColumnInitializerGenerator {
                 add("registerColumn(")
                 add(columnName)
                 add(
-                    ",·%T.createSqlType(%T::%L))",
+                    ",·%T.createSqlType(%T::%N))",
                     sqlTypeFactory,
                     entityPropertyName.enclosingClassName,
                     entityPropertyName.simpleName

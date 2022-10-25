@@ -83,12 +83,12 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
 
                 if (column.isNullable) {
                     addStatement(
-                        "entity.%L?.let { assignments[sourceTable.%L] = it }",
+                        "entity.%N?.let { assignments[sourceTable.%N] = it }",
                         column.entityPropertyName.simpleName, column.tablePropertyName.simpleName
                     )
                 } else {
                     addStatement(
-                        "entity.%L.let { assignments[sourceTable.%L] = it }",
+                        "entity.%N.let { assignments[sourceTable.%N] = it }",
                         column.entityPropertyName.simpleName, column.tablePropertyName.simpleName
                     )
                 }
@@ -99,7 +99,7 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
             for (column in table.columns) {
                 if (!column.isPrimaryKey) {
                     addStatement(
-                        "entity.%L.let { assignments[sourceTable.%L] = it }",
+                        "entity.%N.let { assignments[sourceTable.%N] = it }",
                         column.entityPropertyName.simpleName, column.tablePropertyName.simpleName
                     )
                 }
@@ -122,12 +122,12 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
                 val pk = primaryKeys[0]
                 if (pk.isNullable) {
                     addStatement(
-                        "val conditions = sourceTable.%L·%M·entity.%L!!",
+                        "val conditions = sourceTable.%N·%M·entity.%N!!",
                         pk.tablePropertyName.simpleName, MemberNames.eq, pk.entityPropertyName.simpleName
                     )
                 } else {
                     addStatement(
-                        "val conditions = sourceTable.%L·%M·entity.%L",
+                        "val conditions = sourceTable.%N·%M·entity.%N",
                         pk.tablePropertyName.simpleName, MemberNames.eq, pk.entityPropertyName.simpleName
                     )
                 }
@@ -137,12 +137,12 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
                 for ((i, pk) in primaryKeys.withIndex()) {
                     if (pk.isNullable) {
                         add(
-                            "(sourceTable.%L·%M·entity.%L!!)",
+                            "(sourceTable.%N·%M·entity.%N!!)",
                             pk.tablePropertyName.simpleName, MemberNames.eq, pk.entityPropertyName.simpleName
                         )
                     } else {
                         add(
-                            "(sourceTable.%L·%M·entity.%L)",
+                            "(sourceTable.%N·%M·entity.%N)",
                             pk.tablePropertyName.simpleName, MemberNames.eq, pk.entityPropertyName.simpleName
                         )
                     }

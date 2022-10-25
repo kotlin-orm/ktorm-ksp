@@ -49,6 +49,35 @@ public class DefaultTableTypeGeneratorTest : BaseKspTest() {
     }
 
     @Test
+    public fun `data class keyword identifier`() {
+        val (result1, result2) = twiceCompile(
+            SourceFile.kotlin(
+                "source.kt",
+                """
+                import org.ktorm.database.Database
+                import org.ktorm.entity.Entity
+                import org.ktorm.entity.EntitySequence
+                import org.ktorm.ksp.api.*
+                import java.time.LocalDate
+                    
+                @Table
+                data class User(
+                    @PrimaryKey
+                    var id: Int,
+                    var `class`: String,
+                    var operator: String,
+                ) {
+                    var `interface`: String = ""
+                    var constructor: String = ""
+                }
+                """,
+            )
+        )
+        assertThat(result1.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
+        assertThat(result2.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
+    }
+
+    @Test
     public fun `table annotation`() {
         val (result1, result2) = twiceCompile(
             SourceFile.kotlin(
@@ -130,6 +159,35 @@ public class DefaultTableTypeGeneratorTest : BaseKspTest() {
         assertThat(result1.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         assertThat(result2.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         result2.getBaseTable("Users")
+    }
+
+    @Test
+    public fun `data class keyword identifier with default parameters column`() {
+        val (result1, result2) = twiceCompile(
+            SourceFile.kotlin(
+                "source.kt",
+                """
+                import org.ktorm.database.Database
+                import org.ktorm.entity.Entity
+                import org.ktorm.entity.EntitySequence
+                import org.ktorm.ksp.api.*
+                import java.time.LocalDate
+                    
+                @Table
+                data class User(
+                    @PrimaryKey
+                    var id: Int,
+                    var `class`: String = "",
+                    var operator: String = "",
+                ) {
+                    var `interface`: String = ""
+                    var constructor: String = ""
+                }
+                """,
+            )
+        )
+        assertThat(result1.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
+        assertThat(result2.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
     }
 
     @Test
@@ -363,6 +421,29 @@ public class DefaultTableTypeGeneratorTest : BaseKspTest() {
             )
         )
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
+    }
+
+    @Test
+    public fun `interface entity keyword identifier`() {
+        val (result1, result2) = twiceCompile(
+            SourceFile.kotlin(
+                "source.kt",
+                """
+                import org.ktorm.entity.Entity
+                import org.ktorm.ksp.api.PrimaryKey
+                import org.ktorm.ksp.api.Table
+                @Table
+                interface User: Entity<User> {
+                    @PrimaryKey
+                    var id: Int
+                    var `class`: String
+                    var operator: String
+                }
+                """
+            )
+        )
+        assertThat(result1.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
+        assertThat(result2.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
     }
 
     @Test
