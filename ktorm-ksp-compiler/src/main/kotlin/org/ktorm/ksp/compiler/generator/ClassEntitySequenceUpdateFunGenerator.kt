@@ -19,6 +19,7 @@ package org.ktorm.ksp.compiler.generator
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import org.ktorm.entity.EntitySequence
+import org.ktorm.expression.ColumnAssignmentExpression
 import org.ktorm.ksp.codegen.TableGenerateContext
 import org.ktorm.ksp.codegen.TopLevelFunctionGenerator
 import org.ktorm.ksp.codegen.definition.ColumnDefinition
@@ -63,6 +64,7 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
             .addAnnotation(SuppressAnnotations.buildSuppress(SuppressAnnotations.uncheckedCast))
             .addKdoc(kdoc)
             .addCode(CodeFactory.buildCheckDmlCode())
+            .addCode(CodeFactory.buildAddAssignmentCode())
             .addCode(buildAssignmentsCode(table))
             .addCode(buildConditionsCode(primaryKeys))
             .addCode(buildExpressionCode())
@@ -73,39 +75,22 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
 
     private fun buildAssignmentsCode(table: TableDefinition): CodeBlock {
         return buildCodeBlock {
-            addStatement("val assignments = LinkedHashMap<Column<*>, Any?>()")
-            beginControlFlow("if (isDynamic)")
+            val targetColumns = table.columns.filter { !it.isPrimaryKey }
 
-            for (column in table.columns) {
-                if (column.isPrimaryKey) {
-                    continue
-                }
+            addStatement(
+                "val assignments = %T<%T<*>>(%L)",
+                ArrayList::class.asClassName(),
+                ColumnAssignmentExpression::class.asClassName(),
+                targetColumns.size
+            )
 
-                if (column.isNullable) {
-                    addStatement(
-                        "entity.%N?.let { assignments[sourceTable.%N] = it }",
-                        column.entityPropertyName.simpleName, column.tablePropertyName.simpleName
-                    )
-                } else {
-                    addStatement(
-                        "entity.%N.let { assignments[sourceTable.%N] = it }",
-                        column.entityPropertyName.simpleName, column.tablePropertyName.simpleName
-                    )
-                }
+            for (column in targetColumns) {
+                addStatement(
+                    "addAssignment(sourceTable.%N, entity.%N, isDynamic, assignments)",
+                    column.tablePropertyName.simpleName,
+                    column.entityPropertyName.simpleName,
+                )
             }
-
-            nextControlFlow("else")
-
-            for (column in table.columns) {
-                if (!column.isPrimaryKey) {
-                    addStatement(
-                        "entity.%N.let { assignments[sourceTable.%N] = it }",
-                        column.entityPropertyName.simpleName, column.tablePropertyName.simpleName
-                    )
-                }
-            }
-
-            endControlFlow()
             add("\n")
 
             withControlFlow("if (assignments.isEmpty())") {
@@ -158,33 +143,15 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
     }
 
     private fun buildExpressionCode(): CodeBlock {
-        return buildCodeBlock {
-            addNamed(
-                format = """
-                    val expression = // AliasRemover.visit(
-                        %updateExpression:T(
-                            table = sourceTable.asExpression(),
-                            assignments = assignments.map { (col, argument) ->
-                                %columnAssignmentExpression:T(
-                                    column = col.asExpression() as %columnExpression:T<Any>,
-                                    expression = %argumentExpression:T(argument, col.sqlType as %sqlType:T<Any>)
-                                )
-                            },
-                            where = conditions
-                        )
-                    // )
-                    
-                    
-                """.trimIndent(),
-
-                arguments = mapOf(
-                    "updateExpression" to ClassNames.updateExpression,
-                    "columnAssignmentExpression" to ClassNames.columnAssignmentExpression,
-                    "columnExpression" to ClassNames.columnExpression,
-                    "argumentExpression" to ClassNames.argumentExpression,
-                    "sqlType" to ClassNames.sqlType
-                )
-            )
-        }
+        return CodeBlock.of(
+            """
+            val expression = // AliasRemover.visit(
+                %T(table = sourceTable.asExpression(), assignments = assignments, where = conditions)
+            // )
+            
+              
+            """.trimIndent(),
+            ClassNames.updateExpression
+        )
     }
 }

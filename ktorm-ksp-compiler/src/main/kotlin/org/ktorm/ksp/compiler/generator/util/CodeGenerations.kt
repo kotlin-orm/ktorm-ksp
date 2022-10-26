@@ -21,6 +21,7 @@ import org.ktorm.entity.Entity
 import org.ktorm.expression.*
 import org.ktorm.ksp.api.Undefined
 import org.ktorm.ksp.codegen.TableGenerateContext
+import org.ktorm.schema.Column
 import org.ktorm.schema.SqlType
 import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
@@ -46,6 +47,7 @@ public object ClassNames {
     public val hashMap: ClassName = HashMap::class.asClassName()
     public val kParameter: ClassName = KParameter::class.asClassName()
     public val any: ClassName = Any::class.asClassName()
+    public val column: ClassName = Column::class.asClassName()
     public val suppress: ClassName = Suppress::class.asClassName()
     public val entity: ClassName = Entity::class.asClassName()
     public val kClass: ClassName = KClass::class.asClassName()
@@ -161,6 +163,34 @@ public object CodeFactory {
             
             
         """.trimIndent()
+        )
+    }
+
+    public fun buildAddAssignmentCode(): CodeBlock {
+        return CodeBlock.of(
+            """
+            fun <T : %1T> addAssignment(
+                column: %2T<T>,
+                value: T?,
+                isDynamic: Boolean,
+                assignments: MutableList<%3T<*>>
+            ) {
+                if (isDynamic && value == null) {
+                    return
+                }
+                val expression = %3T(
+                    column = column.asExpression(),
+                    expression = %4T(value, column.sqlType)
+                )
+                assignments.add(expression)
+            }
+            
+            
+            """.trimIndent(),
+            ClassNames.any,
+            ClassNames.column,
+            ClassNames.columnAssignmentExpression,
+            ClassNames.argumentExpression,
         )
     }
 }
