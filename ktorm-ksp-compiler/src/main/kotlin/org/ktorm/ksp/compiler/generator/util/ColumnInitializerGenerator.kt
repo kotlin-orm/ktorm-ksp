@@ -18,7 +18,10 @@
 
 package org.ktorm.ksp.compiler.generator.util
 
-import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.CodeBlock
+import com.squareup.kotlinpoet.MemberName
+import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import org.ktorm.ksp.codegen.TableGenerateContext
 import org.ktorm.ksp.codegen.definition.ColumnDefinition
@@ -103,43 +106,27 @@ public object ColumnInitializerGenerator {
         val nonNullPropertyTypeName = targetColumn.nonNullPropertyTypeName
 
         if (sqlType != null) {
-            return buildCodeBlock {
-                add("registerColumn(")
-                add(columnName)
-                add(",·%T)", sqlType)
-            }
+            return CodeBlock.of("registerColumn(%L,·%T)", columnName, sqlType)
         }
 
         if (sqlTypeFactory != null) {
-            return buildCodeBlock {
-                add("registerColumn(")
-                add(columnName)
-                add(
-                    ",·%T.createSqlType(%T::%N))",
-                    sqlTypeFactory,
-                    entityPropertyName.enclosingClassName,
-                    entityPropertyName.simpleName
-                )
-            }
+            return CodeBlock.of(
+                "registerColumn(%L,·%T.createSqlType(%L))",
+                columnName,
+                sqlTypeFactory,
+                entityPropertyName.reference()
+            )
         }
 
         // default enum initializer
         if (isEnum) {
-            return buildCodeBlock {
-                add("%M<%T>(", enumSqlTypeFunction, nonNullPropertyTypeName)
-                add(columnName)
-                add(")")
-            }
+            return CodeBlock.of("%M<%T>(%L)", enumSqlTypeFunction, nonNullPropertyTypeName, columnName)
         }
 
         // default initializer
         val defaultFunction = sqlTypeFunctions[nonNullPropertyTypeName]
         if (defaultFunction != null) {
-            return buildCodeBlock {
-                add("%M(", defaultFunction)
-                add(columnName)
-                add(")")
-            }
+            return CodeBlock.of("%M(%L)", defaultFunction, columnName)
         }
 
         error(
