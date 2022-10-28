@@ -63,7 +63,7 @@ public class DoCreateEntityFunctionGenerator : TableFunctionGenerator {
                         "Construct parameter not exists in tableDefinition: " +
                                 "${unknownParameters.map { it.name!!.asString() }}, If the parameter is " +
                                 "not a sql column, add a default value. If the parameter is a sql column, " +
-                                "please remove the Ignore annotation or ignoreColumns in the Table annotation " +
+                                "please remove the Ignore annotation or ignoreProperties in the Table annotation " +
                                 "to remove the parameter"
                     )
                 }

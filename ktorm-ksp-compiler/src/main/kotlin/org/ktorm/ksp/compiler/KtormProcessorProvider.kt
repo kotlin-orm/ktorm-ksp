@@ -228,7 +228,7 @@ public class KtormProcessor(
                         val propertyKSType = ksProperty.type.resolve()
                         val propertyName = ksProperty.simpleName.asString()
                         if (ksProperty.isAnnotationPresent(Ignore::class)
-                            || propertyName in table.ignoreColumns
+                            || propertyName in table.ignoreProperties
                         ) {
                             logger.info(
                                 "ignore column: ${tableDef.entityClassName.canonicalName}.$propertyName, " +
