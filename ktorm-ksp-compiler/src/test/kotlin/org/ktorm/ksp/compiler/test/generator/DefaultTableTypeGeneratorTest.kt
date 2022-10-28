@@ -216,6 +216,37 @@ public class DefaultTableTypeGeneratorTest : BaseKspTest() {
     }
 
     @Test
+    public fun `ignore properties`() {
+        val (result1, result2) = twiceCompile(
+            SourceFile.kotlin(
+                "source.kt",
+                """
+                import org.ktorm.ksp.api.Ignore
+                import org.ktorm.ksp.api.PrimaryKey
+                import org.ktorm.ksp.api.Table
+                
+                @Table(ignoreProperties = ["email"])
+                data class User(
+                    @PrimaryKey
+                    var id: Int,
+                    var age: Int,
+                    @Ignore
+                    var username: String = ""
+                ) {
+                    var email: String = ""
+                }
+                """,
+            )
+        )
+        assertThat(result1.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
+        assertThat(result2.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
+        val baseTable = result2.getBaseTable("Users")
+        val columns = baseTable.columns.map { it.name }.toSet()
+        val expectColumns = setOf("id", "age")
+        assertThat(columns).isEqualTo(expectColumns)
+    }
+
+    @Test
     public fun `column has no backingField`() {
         val (result1, result2) = twiceCompile(
             SourceFile.kotlin(
