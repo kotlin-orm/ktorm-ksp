@@ -29,6 +29,9 @@ custom extension code generation logic.
 - Better support for class entity classes, the default implementation of the doCreateEntity method, and the add and
   update method of the entity sequence
 
+- Generate ```constructor```, ```copy```, ```componentN``` functions for entities based on the Entity interface, 
+making it as easy to use as a data class
+
 - Extensible code generation logic. Through the SPI mechanism, you only need to implement the specified interface, and
   you can write your own automatically generated logic.
 
@@ -69,16 +72,32 @@ public open class Students(
     public companion object : Students()
 }
 
-public fun EntitySequence<Student, Students>.add(entity: Student): Int { /*Ignore code*/
+public fun EntitySequence<Student, Students>.add(entity: Student, isDynamic: Boolean = false): Int { /*Ignore code*/
 }
 
-public fun EntitySequence<Student, Students>.update(entity: Student): Int { /*Ignore code*/
+public fun EntitySequence<Student, Students>.update(entity: Student, isDynamic: Boolean = false): Int { /*Ignore code*/
 }
 
 public val Database.students: EntitySequence<Student, Students> get() = this.sequenceOf(Students)
 ```
 
-> Why use class as a table type instead of an object singleton? Please refer to the documentation:  [Self-Joining-amp-Table-Aliases](https://www.ktorm.org/en/joining.html#Self-Joining-amp-Table-Aliases)
+> Why use class as a table type instead of an object singleton? Please refer to the documentation:  
+[Self-Joining-amp-Table-Aliases](https://www.ktorm.org/en/joining.html#Self-Joining-amp-Table-Aliases)
+
+Default generated code:
+
+|                                 | Entities Based On The Entity Interface | Entities Of Any Kind Of Class |
+|---------------------------------|----------------------------------------|-------------------------------|
+| ```Table```type                 | ✅                                      | ✅                             |
+| ```column```properteis          | ✅                                      | ✅ (unsupported references)    |
+| ```doCreateEntity```function    |                                        | ✅                             |
+| ```sequenceOf```扩展属性            | ✅                                      | ✅                             |
+| ```EntitySequence.add``` 扩展方法   |                                        | ✅                             |
+| ```EntitySequence.update```扩展方法 |                                        | ✅                             |
+| 伪构造函数                           | ✅                                      |                               |
+| ```entity.componentN```扩展方法     | ✅                                      |                               |
+| ```entity.copy```扩展方法           | ✅                                      |                               |
+
 
 
 - [Quick Start](#quick-start)
@@ -111,8 +130,8 @@ plugins {
 }
 
 dependencies {
-    implementation 'org.ktorm:ktorm-ksp-api:${ktorm-ksp.version}'
-    ksp 'org.ktorm:ktorm-ksp-compiler:${ktorm-ksp.version}'
+    implementation 'org.ktorm:ktorm-ksp-api:${ktorm_ksp.version}'
+    ksp 'org.ktorm:ktorm-ksp-compiler:${ktorm_ksp.version}'
 }
 ```
 
@@ -123,8 +142,8 @@ plugins {
 }
 
 dependencies {
-    implementation("org.ktorm:ktorm-ksp-api:${ktorm-ksp.version}")
-    ksp("org.ktorm:ktorm-ksp-compiler:${ktorm-ksp.version}")
+    implementation("org.ktorm:ktorm-ksp-api:${ktorm_ksp.version}")
+    ksp("org.ktorm:ktorm-ksp-compiler:${ktorm_ksp.version}")
 }
 ```
 
@@ -155,7 +174,7 @@ dependencies {
                     <dependency>
                         <groupId>org.ktorm</groupId>
                         <artifactId>ktorm-ksp-compiler</artifactId>
-                        <version>${ktorm-ksp.version}</version>
+                        <version>${ktorm_ksp.version}</version>
                     </dependency>
                 </dependencies>
                 <executions>
@@ -175,7 +194,7 @@ dependencies {
         <dependency>
             <groupId>org.ktorm</groupId>
             <artifactId>ktorm-ksp-api</artifactId>
-            <version>${ktorm-ksp.version}</version>
+            <version>${ktorm_ksp.version}</version>
         </dependency>
     </dependencies>
 </project>
@@ -236,9 +255,9 @@ public open class Students(
     // Ignore code
 }
 
-public fun EntitySequence<Student, Students>.add(entity: Student): Int { /*Ignore code*/
+public fun EntitySequence<Student, Students>.add(entity: Student, isDynamic: Boolean = false): Int { /*Ignore code*/
 }
-public fun EntitySequence<Student, Students>.update(entity: Student): Int { /*Ignore code*/
+public fun EntitySequence<Student, Students>.update(entity: Student, isDynamic: Boolean = false): Int { /*Ignore code*/
 }
 public val Database.students: EntitySequence<Student, Students> get() = this.sequenceOf(Students)
 ```
@@ -253,18 +272,6 @@ val users = database.users.toList()
 #### Define Entities Based On The Entity Interface
 
 ```kotlin
-@Table
-public interface Student : Entity<Student> {
-    @PrimaryKey
-    public var id: Int?
-    public var name: String
-    public var age: Int
-}
-```
-
-Generate code：
-
-```kotlin
 public open class Students(
     alias: String? = null,
 ) : Table<Student>(tableName = "Student", alias = alias, entityClass = Student::class) {
@@ -272,13 +279,27 @@ public open class Students(
 }
 
 public val Database.students: EntitySequence<Student, Students> get() = this.sequenceOf(Students)
+
+public fun Student(id: Int? = Undefined.of(), name: String? = Undefined.of(), age: Int? = Undefined.of()): Student {
+  // Ignore code
+}
+
+public fun Student.copy(
+  id: Int? = Undefined.of(),
+  name: String? = Undefined.of(),
+  age: Int? = Undefined.of()
+): Student {
+  // Ignore code
+}
+
+public operator fun Student.component1(): Int? = this.id
+public operator fun Student.component2(): String = this.name
+public operator fun Student.component3(): Int = this.age
+
 ```
 
-The difference from the table generated by the ```entity of any kind class``` is that the table inherits
-the ```Table class``` instead of the
-```BaseTable class```, so there is no need to implement the ```doCreateEntity``` method. Therefore, there is no need to
-generate the
-```add``` ```update``` extension method of ```EntitySequence``` (because it already exists)
+The extended properties of ```EntitySequence``` are generated by default, which saves the steps of handwritten boilerplate code, 
+and can be queried directly by calling
 
 ```kotlin
 val users = database.users.toList()
@@ -291,15 +312,15 @@ Adding the @Table annotation to the entity class will automatically generate the
 The parameters of @Table are as follows:
 
 
-| Parameter      | Description                                                                                                                                          |
-|----------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------|
-| tableName      | Specify the parameter value of  ```BaseTable.tableName```                                                                                            |
-| tableClassName | Specifies the type name of the generated table type, which defaults to the plural form of the noun of the entity class                               |
-| alias          | Specify the parameter value of  ```BaseTable.alias```                                                                                                |
-| catalog        | Specify the parameter value of  ```BaseTable.catalog```                                                                                              |
-| schema         | Specify the parameter value of  ```BaseTable.schema```                                                                                               |
-| ignoreColumns  | Specifies a list of property names to ignore. The ignored properties will not generate corresponding column definitions in the generated Table class |
-| sequenceName   | The sequence name，By default, the first character lowercase of the tableClassName                                                                   |
+| Parameter          | Description                                                                                                                                          |
+|--------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| name               | Specify the parameter value of  ```BaseTable.tableName```                                                                                            |
+| className          | Specifies the type name of the generated table type, which defaults to the plural form of the noun of the entity class                               |
+| alias              | Specify the parameter value of  ```BaseTable.alias```                                                                                                |
+| catalog            | Specify the parameter value of  ```BaseTable.catalog```                                                                                              |
+| schema             | Specify the parameter value of  ```BaseTable.schema```                                                                                               |
+| ignoreColumns      | Specifies a list of property names to ignore. The ignored properties will not generate corresponding column definitions in the generated Table class |
+| entitySequenceName | The sequence name，By default, the first character lowercase of the tableClassName                                                                    |
 
 
 #### Define Primary Key
@@ -312,12 +333,55 @@ Add the @Column annotation to the entity class property to configure the generat
 
 The parameters of @Column are as follows:
 
-| Parameter    | Description                                                                                                                                                                                                                                          |
-|--------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| columnName   | Specify column names in SQL                                                                                                                                                                                                                          |
-| converter    | Specify the column converter. For the converter, please refer to the type converter description at the bottom of the document                                                                                                                        |
-| propertyName | Specifies the property name of the corresponding column definition in the generated table class.                                                                                                                                                     |
-| isReferences | Specifies whether this property is a reference column. Only ```entity class based on the Entity interface``` can be assigned a value of true. When this value is true, the generated column definition will automatically call the references method |
+| Parameter    | Description                                                                                      |
+|--------------|:-------------------------------------------------------------------------------------------------|
+| name         | Specify column names in SQL                                                                      |
+| sqlType      | Specify [SqlType](#sqltype)                                                                      |
+| propertyName | Specifies the property name of the corresponding column definition in the generated table class. |
+
+#### Define Table Reference Column
+
+If you need to use reference column, Just add the `````@References````` annotation to the referenced property. The entity class to 
+which the annotation is added and the referenced entity class must both be ```Entities Based On The Entity Interface```.
+
+The parameters of @References are as follows:
+
+| Parameter    | Description                                                                                      |
+|--------------|:-------------------------------------------------------------------------------------------------|
+| name         | Specify column names in SQL                                                                      |
+| propertyName | Specifies the property name of the corresponding column definition in the generated table class. |
+
+When ```name``` is empty, the default generated ```column name``` is ```property name```+ ```reference table primary key property name```,
+If a [NamingStyleStrategy](#naming-style) is configured, further conversions are performed.
+
+```kotlin
+@Table
+public interface School : Entity<School> {
+    @PrimaryKey
+    public var id: Int
+    public var name: String
+}
+
+@Table
+public interface Student : Entity<Student> {
+    @PrimaryKey
+    public var id: Int
+
+    @References
+    public var school: School
+}
+```
+
+Generated code:
+
+```kotlin
+public open class Students(alias: String?) : Table<Student>("Student", alias) {
+    public val id: Column<Int> = int("id").primaryKey().bindTo { it.id }
+    public val school: Column<Int> = int("schoolId").references(Schools) { it.school }
+
+    // ...
+}
+```
 
 #### Ignore The Specified Properties
 
@@ -332,12 +396,10 @@ the annotation parameters are as follows:
 | Parameter                        | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 |----------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | allowReflectionCreateClassEntity | Whether to allow the creation of instance objects of ```entity of any kind class``` through reflection in the ```doCreateEntity``` method. If true, the instance will be created using reflection when the entity class constructor parameter has a default value parameter (reflection means a slight performance penalty, although in most cases this penalty is negligible). If it is false, the method will be directly constructed to create an instance, and the default value of the default value parameter in the construction will not take effect. |
-| enumConverter                    | Global enum converter, which is automatically used by enum type properties in entity classes. For converters, please refer to the description of type converters below                                                                                                                                                                                                                                                                                                                                                                                        |
-| singleTypeConverters             | Global single-type converter, which is automatically used by properties of the corresponding type in the entity class. For converters, please refer to the description of type converters below                                                                                                                                                                                                                                                                                                                                                               |
 | namingStrategy                   | Global naming style configuration. For the naming style, please refer to the description of the naming style below                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | extension                        | Generation options for extension methods/properties. For specific extension descriptions, please refer to the related descriptions of method/property generators below                                                                                                                                                                                                                                                                                                                                                                                        |
 
-Extension Parameter
+```extension``` parameter description
 
 - enableSequenceOf
   Whether to generate```EntitySequence```property extension. Generate code:
@@ -362,15 +424,15 @@ Extension Parameter
   The purpose is to make the entity class like```data class```, Generate code:
   ```kotlin
   public fun Employee(
-    id: Int? = undefined(),
-    name: String = undefined(),
-    job: String = undefined(),
+    id: Int? = Undefined.of(),
+    name: String? = Undefined.of(),
+    job: String? = Undefined.of(),
   ): Employee
   
   public fun Employee.copy(
-    id: Int? = undefined(),
-    name: String = undefined(),
-    job: String = undefined(),
+    id: Int? = Undefined.of(),
+    name: String? = Undefined.of(),
+    job: String? = Undefined.of(),
   ): Employee 
   
   public operator fun Employee.component1(): Int = this.id
@@ -404,7 +466,7 @@ Extension Parameter
   When calling the function, the created entity instance will not assign the corresponding properties
   to the parameters that are not passed.
   In order to achieve this, the default argument value in the constructor and copy function may generate JDK dynamic
-  proxy object, proxy object generated by byte-buddy, object created by Unsafe（It depends on what the specific
+  proxy object, object that dynamically generates bytecode, object created by Unsafe（It depends on what the specific
   type is）This generated instance is unique and will not conflict with the parameters passed when calling
   （Unless you also call the undefined function to get the instance）Therefore, it can help us determine which
   parameters have passed values and which parameters have not passed values when calling the method.
@@ -424,17 +486,17 @@ The generated name can be modified through ```Global Naming Configuration``` and
 
 #### Single Naming Configuration
 
-Table name: assign the ```tableName``` parameter to the @Table annotation on the entity class
+Table name: assign the ```name``` parameter to the @Table annotation on the entity class
 
-Column name: add the @Column annotation to the property and assign the ```columnName``` parameter
+Column name: add the @Column annotation to the property and assign the ```name``` parameter
 
 ```kotlin
-@Table(tableName = "t_student")
+@Table(name = "t_student")
 public interface Student : Entity<Student> {
     @PrimaryKey
     public var id: Int?
 
-    @Column(columnName = "student_name")
+    @Column(name = "student_name")
     public var name: String
     public var age: Int
 }
@@ -496,7 +558,7 @@ public open class Students(
 }
 ```
 
-### Type Converter
+### SqlType
 
 The data types supported by default in ktorm-ksp are as follows:
 
@@ -524,183 +586,66 @@ The data types supported by default in ktorm-ksp are as follows:
 | kotlin.ByteArray        |     bytes     |               bytes |                    Types.BINARY |
 | kotlin.Enum             |     enum      |                enum |                   Types.VARCHAR |
 
-If you need to use a type that is not listed above, or if you want to override the default type behavior, you need to
-use a type converter
+If you need to use a type not listed above, or want to override the default type behavior,
+The ```sql Type``` parameter needs to be assigned in the ```@Column``` annotation, argument must be a type that 
+implements ```SqlType``` or ```SqlTypeFactory```, and this type must be ```singleton```.
 
-There are three types of type converters (corresponding to three interfaces)
+- SqlType
+  适用于明确某一个kotlin类型, 如Int、String. 更多信息请参考[文档](https://www.ktorm.org/zh-cn/schema-definition.html#SqlType)
+- SqlTypeFactory
+  接收字段的信息返回```SqlType```实例, 适用于不明确kotlin类型, 如json类型
 
-- SingleTypeConverter
-
-  Only supports a certain type of converter, which can be used for global configuration or specified column
-  configuration
-
-- MultiTypeConverter
-
-  Supports any type of converter, suitable for use in scenarios where objects are converted into json and stored in the
-  database, and can only be used to specify column configuration
-
-- EnumConverter
-
-  A converter that supports any enumeration type, which can be used for global configuration or specific column
-  configuration
-
-#### How To Use Type Converter
-
-You need to define a singleton and implement any of the above converter type interfaces. Then type converters can be
-used via ```global configuration``` or ```column configuration```, and the priority of the converters is as follows:
-
-Column Configuration > Global Configuration > Default Type Conversion Behavior
-
-##### Use Type Converter in Column
-
-Any type of converter can be used via the converter property in @Column.
+Example:
 
 ```kotlin
-//Define Entities
 @Table
-data class User(
+public data class Student(
     @PrimaryKey
-    var id: Int,
-    @Column(converter = UsernameConverter::class)
-    var username: Username,
-    var age: Int,
-    @Column(converter = IntEnumConverter::class)
-    var gender: Gender
+    public var id: Int?,
+    @Column(sqlType = UIntSqlType::class)
+    public var age: UInt,
+    @Column(sqlType = IntEnumSqlTypeFactory::class)
+    public var gender: Gender
 )
 
-enum class Gender {
-    MALE,
-    FEMALE
-}
-
-data class Username(
-    val firstName: String,
-    val lastName: String
-)
-
-//Type Converter
-object UsernameConverter : SingleTypeConverter<Username> {
-    public override fun convert(
-        table: BaseTable<*>,
-        columnName: String,
-        propertyType: KClass<Username>
-    ): Column<Username> {
-        return with(table) {
-            varchar(columnName).transform({
-                val spilt = it.split("#")
-                Username(spilt[0], spilt[1])
-            }, {
-                it.firstName + "#" + it.lastName
-            })
-        }
+public object UIntSqlType : SqlType<UInt>(Types.INTEGER, "int") {
+    override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: UInt) {
+        ps.setLong(index, parameter.toLong())
+    }
+    override fun doGetResult(rs: ResultSet, index: Int): UInt {
+        return rs.getLong(index).toUInt()
     }
 }
 
-object IntEnumConverter : EnumConverter {
-    override fun <E : Enum<E>> convert(table: BaseTable<*>, columnName: String, propertyType: KClass<E>): Column<E> {
-        val values = propertyType.java.enumConstants
-        return with(table) {
-            int(columnName).transform({ values[it] }, { it.ordinal })
+public object IntEnumSqlTypeFactory : SqlTypeFactory {
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : Any> createSqlType(property: KProperty1<*, T?>): SqlType<T> {
+        val returnType = property.returnType.jvmErasure.java
+        if (returnType.isEnum) {
+            return IntEnumSqlType(returnType as Class<out Enum<*>>) as SqlType<T>
+        } else {
+            throw IllegalArgumentException("The property is required to be typed of enum but actually: $returnType")
+        }
+    }
+
+    private class IntEnumSqlType<E : Enum<E>>(val enumClass: Class<E>) : SqlType<E>(Types.INTEGER, "int") {
+        override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: E) {
+            ps.setInt(index, parameter.ordinal)
+        }
+        override fun doGetResult(rs: ResultSet, index: Int): E? {
+            return enumClass.enumConstants[rs.getInt(index)]
         }
     }
 }
 ```
 
-Generate Code:
+Generated code:
 
 ```kotlin
-public open class Users(
-    alias: String? = null,
-) : BaseTable<User>(tableName = "User", alias = alias, entityClass = User::class) {
+public open class Students(alias: String?) : BaseTable<Student>("student", alias) {
     public val id: Column<Int> = int("id").primaryKey()
-
-    public val username: Column<Username> =
-        UsernameConverter.convert(this,"username",Username::class)
-
-    public val age: Column<Int> = int("age")
-
-    public val gender: Column<Gender> = IntEnumConverter.convert(this,"gender",Gender::class)
-    // ...
-}
-```
-
-##### Use Type Converter in Global Configuration
-
-Type converters can be added to the singleTypeConverters and enumConverter parameters in the global configuration
-@KtormKspConfig
-
-- singleTypeConverters: Receive the type array of SingleTypeConverter, when there is a property of the type supported by
-  SingleTypeConverter, the corresponding converter will be used automatically
-
-- enumConverter: Receives a type of EnumConverter, all enumeration types will automatically use the converter.
-
-```kotlin
-enum class Gender {
-    MALE,
-    FEMALE
-}
-
-@Table
-data class User(
-    @PrimaryKey
-    var id: Int,
-    var username: Username,
-    var age: Int,
-    var gender: Gender
-)
-
-data class Username(
-    val firstName: String,
-    val lastName: String
-)
-
-@KtormKspConfig(
-    singleTypeConverters = [UsernameConverter::class],
-    enumConverter = IntEnumConverter::class
-)
-class KtormConfig
-
-object UsernameConverter : SingleTypeConverter<Username> {
-    public override fun convert(
-        table: BaseTable<*>,
-        columnName: String,
-        propertyType: KClass<Username>
-    ): Column<Username> {
-        return with(table) {
-            varchar(columnName).transform({
-                val spilt = it.split("#")
-                Username(spilt[0], spilt[1])
-            }, {
-                it.firstName + "#" + it.lastName
-            })
-        }
-    }
-}
-
-object IntEnumConverter : EnumConverter {
-    override fun <E : Enum<E>> convert(table: BaseTable<*>, columnName: String, propertyType: KClass<E>): Column<E> {
-        val values = propertyType.java.enumConstants
-        return with(table) {
-            int(columnName).transform({ values[it] }, { it.ordinal })
-        }
-    }
-}
-```
-
-Generate code：
-
-```kotlin
-public open class Users(
-    alias: String? = null,
-) : BaseTable<User>(tableName = "User", alias = alias, entityClass = User::class) {
-    public val id: Column<Int> = int("id").primaryKey()
-
-    public val username: Column<Username> =
-        UsernameConverter.convert(this,"username",Username::class)
-
-    public val age: Column<Int> = int("age")
-
-    public val gender: Column<Gender> = IntEnumConverter.convert(this,"gender",Gender::class)
+    public val age: Column<UInt> = registerColumn("age", UIntSqlType)
+    public val gender: Column<Gender> = registerColumn("gender", IntEnumSqlTypeFactory.createSqlType(Student::gender))
     // ...
 }
 ```
@@ -746,7 +691,7 @@ uses it to participate in ```code generator```, to achieve the purpose of custom
 
 #### Steps To Customize The Generator
 
-Please refer to the code implementation of this [module](ktorm-ksp-ext/ktorm-ksp-sequence-batch)
+Please refer to project [ktorm-ksp-ext-batch](https://github.com/kotlin-orm/ktorm-ksp-ext-batch)
 
 Create a new module that implements the generator (corresponding to ```your-ext-module``` in the above figure), and add
 dependencies in ```build.gradle``` or ```pom.xml```
@@ -754,14 +699,14 @@ dependencies in ```build.gradle``` or ```pom.xml```
 ```groovy
 // groovy dsl gradle 
 dependencies {
-    implementation 'org.ktorm:ktorm-ksp-codegen:${ktorm-ksp.version}'
+    implementation 'org.ktorm:ktorm-ksp-spi:${ktorm_ksp.version}'
 }
 ```
 
 ```kotlin
 // kotlin dsl gradle
 dependencies {
-    implementation("org.ktorm:ktorm-ksp-codegen:${ktorm-ksp.version}")
+    implementation("org.ktorm:ktorm-ksp-codegen:${ktorm_ksp.version}")
 }
 ```
 
@@ -770,8 +715,8 @@ dependencies {
 <dependencies>
     <dependency>
         <groupId>org.ktorm</groupId>
-        <artifactId>ktorm-ksp-codegen</artifactId>
-        <version>${ktorm-ksp.version}</version>
+        <artifactId>ktorm-ksp-spi</artifactId>
+        <version>${ktorm_ksp.version}</version>
     </dependency>
 </dependencies>
 ```
@@ -802,8 +747,8 @@ in the above figure)
 ```groovy
 // groovy dsl gradle 
 dependencies {
-    implementation 'org.ktorm:ktorm-ksp-api:${ktorm-ksp.version}'
-    ksp 'org.ktorm:ktorm-ksp-compile:${ktorm-ksp.version}'
+    implementation 'org.ktorm:ktorm-ksp-api:${ktorm_ksp.version}'
+    ksp 'org.ktorm:ktorm-ksp-compiler:${ktorm_ksp.version}'
     ksp project(':your-ext-module')
 }
 ```
@@ -811,8 +756,8 @@ dependencies {
 ```kotlin
 // kotlin dsl gradle
 dependencies {
-    implementation("org.ktorm:ktorm-ksp-api:${ktorm-ksp.version}")
-    ksp("org.ktorm:ktorm-ksp-compile:${ktorm-ksp.version}")
+    implementation("org.ktorm:ktorm-ksp-api:${ktorm_ksp.version}")
+    ksp("org.ktorm:ktorm-ksp-compiler:${ktorm_ksp.version}")
     ksp(project(":your-ext-module"))
 }
 ```
@@ -841,7 +786,7 @@ dependencies {
         <dependency>
             <groupId>org.ktorm</groupId>
             <artifactId>ktorm-ksp-compiler</artifactId>
-            <version>${ktorm-ksp.version}</version>
+            <version>${ktorm_ksp.version}</version>
         </dependency>
         <dependency>
             <groupId><!-- your-ext-module groupId --></groupId>
@@ -865,50 +810,5 @@ Let ksp generate the code again. You will see the code generated by the custom g
 
 #### Available Generator Extensions
 
-- [ktorm-ksp-sequence-batch](ktorm-ksp-ext/ktorm-ksp-sequence-batch)
+- [ktorm-ksp-ext-batch](https://github.com/kotlin-orm/ktorm-ksp-ext-batch)
 
-A function to generate batch addition and batch update for ```any kind of class``` entity sequence. Dependencies:
-
-```groovy
-ksp 'org.ktorm:ktorm-ksp-sequence-batch:${ktorm-ksp.version}'
-```
-
-Generate the following extension function:
-
-```kotlin
-/**
- * Batch insert entities into the database, this method will not get the auto-incrementing primary key
- * @param entities List of entities to insert
- * @return the effected row counts for each sub-operation.
- */
-public fun EntitySequence<Customer, Customers>.addAll(entities: Iterable<Customer>): IntArray =
-    this.database.batchInsert(Customers) {
-        for (entity in entities) {
-            item {
-                set(Customers.id, entity.id)
-                set(Customers.name, entity.name)
-                set(Customers.email, entity.email)
-                set(Customers.phoneNumber, entity.phoneNumber)
-            }
-        }
-    }
-
-/**
- * Batch update based on entity primary key
- * @param entities List of entities to update
- * @return the effected row counts for each sub-operation.
- */
-public fun EntitySequence<Customer, Customers>.updateAll(entities: Iterable<Customer>): IntArray =
-    this.database.batchUpdate(Customers) {
-        for (entity in entities) {
-            item {
-                set(Customers.name, entity.name)
-                set(Customers.email, entity.email)
-                set(Customers.phoneNumber, entity.phoneNumber)
-                where {
-                    it.id eq entity.id!!
-                }
-            }
-        }
-    }
-```

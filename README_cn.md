@@ -389,7 +389,7 @@ public open class Students(alias: String?) : Table<Student>("Student", alias) {
 
 ### 全局配置
 
-在```任意类的实体类```上添加@KtormKspConfig注解，可以进行全局配置（只能添加一次此注解），注解参数如下
+在任意类上添加@KtormKspConfig注解，可以进行全局配置（只能添加一次此注解），注解参数如下
 
 | 参数                               | 说明                                                                                                                                                                      |
 |----------------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -397,7 +397,7 @@ public open class Students(alias: String?) : Table<Student>("Student", alias) {
 | namingStrategy                   | 全局命名风格配置。关于命名风格请参考下文命名风格的说明                                                                                                                                             |
 | extension                        | 扩展方法/属性的生成选项（具体的扩展说明请参考下文方法/属性生成器的相关说明）                                                                                                                                 |
 
-extension参数说明
+```extension```参数说明
 
 - enableSequenceOf
   是否生成```EntitySequence```属性扩展. 生成代码示例:
@@ -427,9 +427,9 @@ extension参数说明
   ): Employee
   
   public fun Employee.copy(
-    id: Int? = undefined(),
-    name: String? = undefined(),
-    job: String? = undefined(),
+    id: Int? = Undefined.of(),
+    name: String? = Undefined.of(),
+    job: String? = Undefined.of(),
   ): Employee 
   
   public operator fun Employee.component1(): Int = this.id
@@ -574,7 +574,7 @@ public open class Students(
 | kotlin.ByteArray        |     bytes     |     bytes |              Types.BINARY |
 | kotlin.Enum             |     enum      |      enum |             Types.VARCHAR |
 
-如果需要使用不在上述的类型，或者想覆盖默认的类型行为，需要在@Column注解中传入sqlType参数, 传入```SqlType```或```SqlTypeFactory```
+如果需要使用不在上述的类型，或者想覆盖默认的类型行为，需要在```@Column```注解中传入```sqlType```参数, 传入```SqlType```或```SqlTypeFactory```
 的类型, 且此类型必须是```单例```的.
 
 - SqlType
@@ -703,7 +703,7 @@ dependencies {
 新建生成器类，实现任意一个生成器接口。
 
 ```kotlin
-public class SequenceAddAllFunctionGenerator : TopLevelFunctionGenerat+or {
+public class SequenceAddAllFunctionGenerator : TopLevelFunctionGenerator {
     // 忽略具体实现
 }
 public class SequenceUpdateAllFunctionGenerator : TopLevelFunctionGenerator {
