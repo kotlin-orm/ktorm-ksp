@@ -46,7 +46,7 @@ public class InterfaceEntityComponentFunGeneratorTest : BaseKspTest() {
                 }
                 
                 object TestBridge {
-                    fun testComponents(database: Database) {
+                    fun testComponentN(database: Database) {
                         val date = LocalDate.now()
                         val employee = Entity.create<Employee>()
                         employee.id = 1
@@ -67,7 +67,7 @@ public class InterfaceEntityComponentFunGeneratorTest : BaseKspTest() {
         assertThat(result1.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         assertThat(result2.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         useDatabase { database ->
-            result2.invokeBridge("testComponents", database)
+            result2.invokeBridge("testComponentN", database)
         }
     }
 

@@ -391,11 +391,11 @@ public open class Students(alias: String?) : Table<Student>("Student", alias) {
 
 在任意类上添加@KtormKspConfig注解，可以进行全局配置（只能添加一次此注解），注解参数如下
 
-| 参数                               | 说明                                                                                                                                                                      |
-|----------------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| allowReflectionCreateClassEntity | 是否允许在doCreateEntity方法中通过反射创建```任意类的实体类```的实例对象。如果为true，那么当实体类构造参数存在默认值参数时，会使用反射进行创建实例 （反射意味着带来了轻微的性能损耗，尽管大部分情况下这个损耗可以忽略不计）。如果如果为false，那么会直接构造方法创建实例，构造中的默认值参数的默认值，将无法生效 |
-| namingStrategy                   | 全局命名风格配置。关于命名风格请参考下文命名风格的说明                                                                                                                                             |
-| extension                        | 扩展方法/属性的生成选项（具体的扩展说明请参考下文方法/属性生成器的相关说明）                                                                                                                                 |
+| 参数                               | 说明                                                                                                                                                                    |
+|----------------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| allowReflectionCreateClassEntity | 是否允许在doCreateEntity方法中通过反射创建```任意类的实体类```的实例对象。如果为true，那么当实体类构造参数存在默认值参数时，会使用反射进行创建实例 （反射意味着带来了轻微的性能损耗，尽管大部分情况下这个损耗可以忽略不计）。如果为false，那么会直接构造方法创建实例，构造中的默认值参数的默认值，将无法生效 |
+| namingStrategy                   | 全局命名风格配置。关于命名风格请参考下文命名风格的说明                                                                                                                                           |
+| extension                        | 扩展方法/属性的生成选项（具体的扩展说明请参考下文方法/属性生成器的相关说明）                                                                                                                               |
 
 ```extension```参数说明
 
@@ -405,20 +405,25 @@ public open class Students(alias: String?) : Table<Student>("Student", alias) {
   val Database.employees: EntitySequence<Employee,Employees>
   ```
 
+
 - enableClassEntitySequenceAddFun
   是否生成```EntitySequence.add```方法扩展. 该方法用于将实体插入到数据库中, 生成代码示例:
   ```kotlin
-  fun EntitySequence<Employee,Employees>.add(employee: Employee)
+  fun EntitySequence<Employee,Employees>.add(employee: Employee, isDynamic: Boolean = false)
   ```
+  ```isDynamic```: 如果值为true，则生成的 SQL 将仅包含非空列。
+
 
 - enableClassEntitySequenceUpdateFun
   是否生成```EntitySequence.update```方法扩展. 改方法用于根据主键更新实体字段, 生成代码示例:
   ```kotlin
-  fun EntitySequence<Employee,Employees>.update(employee: Employee)
+  fun EntitySequence<Employee,Employees>.update(employee: Employee, isDynamic: Boolean = false)
   ```
+  ```isDynamic```: 如果值为true，则生成的 SQL 将仅包含非空列。
+
 
 - enableInterfaceEntitySimulationDataClass
-  是否生成```构造函数``` ```components``` ```copy```方法. 只会对基于Entity接口的实体类生成, 目的是让实体类变的像```data class```一样好用, 生成代码示例:
+  是否生成```伪构造函数``` ```componentN``` ```copy```方法. 只会对基于Entity接口的实体类生成, 目的是让实体类变的像```data class```一样好用, 生成代码示例:
   ```kotlin
   public fun Employee(
     id: Int? = Undefined.of(),
@@ -436,7 +441,7 @@ public open class Students(alias: String?) : Table<Student>("Student", alias) {
   public operator fun Employee.component2(): String = this.name
   public operator fun Employee.component3(): String = this.job
   ```
-  **深入了解参数默认值:**```undefined()```
+  **深入了解参数默认值:**```Undefined.of()```
 
   在ktorm中创建实体实例后，对实例属性赋值null和未赋值是两种实质上不同的行为。例如:
   ```kotlin
@@ -461,7 +466,7 @@ public open class Students(alias: String?) : Table<Student>("Student", alias) {
   ```
   调用函数时，创建的实体实例不会赋值没有传参的相应属性。
   为了实现这一点，```构造函数```和```copy函数```中的参数默认值可能是JDK动态代理对象、动态生成字节码的对象、由Unsafe创建的对象
-  (这取决于具体类型是什么) 这个生成的实例是唯一的，不会与调用时传递的参数冲突 (除非你也调用```undefined()```来获取实例) 因此，
+  (这取决于具体类型是什么) 这个生成的实例是唯一的，不会与调用时传递的参数冲突 (除非你也调用```Undefined.of()```来获取实例) 因此，
   它可以帮助我们确定哪些参数传递了值，哪些参数在调用方法时没有传递值。  
   此实现的限制是参数类型不能是非空基本类型。这是因为kotlin中的非空基本类型会被自动拆箱，这将导致我们上述实现失败，并且无法判断调用时传递了
   哪些参数值。所以在生成的```构造函数```和```copy函数```中，如果属性是非空基本类型，则会自动转换为可空基本类型。并且在实际创建实例的过程中，

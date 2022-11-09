@@ -407,20 +407,25 @@ the annotation parameters are as follows:
   val Database.employees: EntitySequence<Employee,Employees>
   ```
 
+
 - enableClassEntitySequenceAddFun
   Whether to generate```EntitySequence.add```method extension. This method is used to insert entity into the database. Generate code:
   ```kotlin
   fun EntitySequence<Employee,Employees>.add(employee: Employee)
   ```
+  ```isDynamic```: if true, the generated SQL will include only the non-null columns.
+
 
 - enableClassEntitySequenceUpdateFun
   Whether to generate```EntitySequence.update```method extension. This method is used to update the entity by primary key. Generate code:
   ```kotlin
   fun EntitySequence<Employee,Employees>.update(employee: Employee)
   ```
+  ```isDynamic```: if true, the generated SQL will include only the non-null columns.
+
 
 - enableInterfaceEntitySimulationDataClass
-  Whether to generate```constuctor``` ```components``` ```copy```method. Generated only for ```entity class based on the Entity interface```. 
+  Whether to generate```constuctor``` ```componentN``` ```copy```method. Generated only for ```entity class based on the Entity interface```. 
   The purpose is to make the entity class like```data class```, Generate code:
   ```kotlin
   public fun Employee(
@@ -439,7 +444,7 @@ the annotation parameters are as follows:
   public operator fun Employee.component2(): String = this.name
   public operator fun Employee.component3(): String = this.job
   ```
-  **Understand default argument:**```undefined()```
+  **Understand default argument:**```Undefined.of()```
 
   After creating an entity instance in ktorm, assigning null and unassigned values to the instance properties are two 
   substantially different behaviors. Example:
@@ -465,15 +470,15 @@ the annotation parameters are as follows:
   ```
   When calling the function, the created entity instance will not assign the corresponding properties
   to the parameters that are not passed.
-  In order to achieve this, the default argument value in the constructor and copy function may generate JDK dynamic
+  In order to achieve this, the default argument value in the ```constructor``` and ```copy``` function may generate JDK dynamic
   proxy object, object that dynamically generates bytecode, object created by Unsafe（It depends on what the specific
   type is）This generated instance is unique and will not conflict with the parameters passed when calling
-  （Unless you also call the undefined function to get the instance）Therefore, it can help us determine which
+  （Unless you also call the ```Undefined.of()``` function to get the instance）Therefore, it can help us determine which
   parameters have passed values and which parameters have not passed values when calling the method.
   A limitation of this implementation is that the parameter type cannot be a non-null primitive type.
   This is because the non-null primitive type in kotlin will be automatically unboxed, which will cause our
   above implementation to fail, and there is no way to tell which parameter values were passed when calling.
-  So in the generated Constructor Function, Copy Function，If the property is a non-null primitive type,
+  So in the generated ```constructor``` function, ```copy``` Function，If the property is a non-null primitive type,
   it is automatically converted to a nullable type. And in the process of actually creating the instance，
   Will judge whether the parameter value is null, if it is null, an exception will be thrown
 
