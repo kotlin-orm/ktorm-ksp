@@ -670,15 +670,15 @@ ktorm-ksp生成的表类代码由多个代码生成器进行生成，这些生�
 
 ktorm-ksp通过[SPI](https://docs.oracle.com/javase/tutorial/sound/SPI-intro.html) 机制实现生成器的自定义扩展，模块依赖关系如下（经过简化）：
 
-![ext_dependency graph](image/ext_dependency_graph.png)
+![ext_dependency graph](docs/img/ext_dependency_graph.png)
 
-ktorm-ksp-compiler模块通过SPI自动加载your-ext-module中定义的生成器，并使用它参与生成代码，从而达到自定义生成器的目的。
+ktorm-ksp-compiler模块通过SPI自动加载```my-ktorm-ksp-ext```中定义的生成器，并使用它参与生成代码，从而达到自定义生成器的目的。
 
 #### 自定义生成器的步骤
 
 （请参考项目[ktorm-ksp-ext-batch](https://github.com/kotlin-orm/ktorm-ksp-ext-batch)的代码实现）
 
-新建实现生成器的module（对应上图中的your-ext-module），在```build.gradle```或```pom.xml```中添加依赖
+新建实现生成器的module（对应上图中的```my-ktorm-ksp-ext```），在```build.gradle```或```pom.xml```中添加依赖
 
 ```groovy
 // groovy dsl gradle 
@@ -716,7 +716,7 @@ public class SequenceUpdateAllFunctionGenerator : TopLevelFunctionGenerator {
 }
 ```
 
-在resources/META-INF/services目录下新建文件，文件名为生成器接口的全限定类名（org.ktorm.ksp.codegen.TopLevelFunctionGenerator）
+在resources/META-INF/services目录下新建文件，文件名为生成器接口的全限定类名（org.ktorm.ksp.spi.TopLevelFunctionGenerator）
 并中文件中新增自定义的生成器的全限定类名，多个类以换行分割。
 
 ```
@@ -724,14 +724,14 @@ org.ktorm.ksp.ext.SequenceAddAllFunctionGenerator
 org.ktorm.ksp.ext.SequenceUpdateAllFunctionGenerator
 ```
 
-将上面的```your-ext-module```模块添加到需要用它来生成代码的模块（对应上图中的your-app-module）
+将上面的```my-ktorm-ksp-ext```模块添加到需要用它来生成代码的模块（对应上图中的```app```模块）
 
 ```groovy
 // groovy dsl gradle 
 dependencies {
     implementation 'org.ktorm:ktorm-ksp-api:${ktorm_ksp.version}'
     ksp 'org.ktorm:ktorm-ksp-compiler:${ktorm_ksp.version}'
-    ksp project(':your-ext-module')
+    ksp project(':my-ktorm-ksp-ext')
 }
 ```
 
@@ -740,7 +740,7 @@ dependencies {
 dependencies {
     implementation("org.ktorm:ktorm-ksp-api:${ktorm_ksp.version}")
     ksp("org.ktorm:ktorm-ksp-compiler:${ktorm_ksp.version}")
-    ksp(project(":your-ext-module"))
+    ksp(project(":my-ktorm-ksp-ext"))
 }
 ```
 
@@ -771,9 +771,9 @@ dependencies {
             <version>${ktorm_ksp.version}</version>
         </dependency>
         <dependency>
-            <groupId><!-- your-ext-module groupId --></groupId>
-            <artifactId><!-- your-ext-module artifactId --></artifactId>
-            <version><!-- your-ext-module version --></version>
+            <groupId><!-- my-ktorm-ksp-ext groupId --></groupId>
+            <artifactId><!-- my-ktorm-ksp-ext artifactId --></artifactId>
+            <version><!-- my-ktorm-ksp-ext version --></version>
         </dependency>
     </dependencies>
     <executions>

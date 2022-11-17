@@ -689,16 +689,16 @@ ktorm-ksp implements the custom extension of the generator through
 the [SPI](https://docs.oracle.com/javase/tutorial/sound/SPI-intro.html) mechanism. The module dependencies are as
 follows (simplified):
 
-![ext_dependency graph](image/ext_dependency_graph.png)
+![ext_dependency graph](docs/img/ext_dependency_graph.png)
 
-The ```ktorm-ksp-compiler``` module automatically loads the generator defined in ```your-ext-module``` through SPI, and
+The ```ktorm-ksp-compiler``` module automatically loads the generator defined in ```my-ktorm-ksp-ext``` through SPI, and
 uses it to participate in ```code generator```, to achieve the purpose of custom generator.
 
 #### Steps To Customize The Generator
 
 Please refer to project [ktorm-ksp-ext-batch](https://github.com/kotlin-orm/ktorm-ksp-ext-batch)
 
-Create a new module that implements the generator (corresponding to ```your-ext-module``` in the above figure), and add
+Create a new module that implements the generator (corresponding to ```my-ktorm-ksp-ext``` in the above figure), and add
 dependencies in ```build.gradle``` or ```pom.xml```
 
 ```groovy
@@ -738,7 +738,7 @@ public class SequenceUpdateAllFunctionGenerator : TopLevelFunctionGenerator {
 ```
 
 Create a new file in the ```resources/META-INF/services``` directory, the file name is the fully qualified class name of
-the generator interface (org.ktorm.ksp.codegen.TopLevelFunctionGenerator), and add the fully qualified class name of the
+the generator interface (org.ktorm.ksp.spi.TopLevelFunctionGenerator), and add the fully qualified class name of the
 custom generator in the file. name, and multiple classes are separated by newlines.
 
 ```
@@ -746,7 +746,7 @@ org.ktorm.ksp.ext.SequenceAddAllFunctionGenerator
 org.ktorm.ksp.ext.SequenceUpdateAllFunctionGenerator
 ```
 
-Add the ```your-ext-module``` to the modules that need to generate code with it (corresponding to ```your-app-module```
+Add the ```my-ktorm-ksp-ext``` to the modules that need to generate code with it (corresponding to ```app```
 in the above figure)
 
 ```groovy
@@ -754,7 +754,7 @@ in the above figure)
 dependencies {
     implementation 'org.ktorm:ktorm-ksp-api:${ktorm_ksp.version}'
     ksp 'org.ktorm:ktorm-ksp-compiler:${ktorm_ksp.version}'
-    ksp project(':your-ext-module')
+    ksp project(':my-ktorm-ksp-ext')
 }
 ```
 
@@ -763,7 +763,7 @@ dependencies {
 dependencies {
     implementation("org.ktorm:ktorm-ksp-api:${ktorm_ksp.version}")
     ksp("org.ktorm:ktorm-ksp-compiler:${ktorm_ksp.version}")
-    ksp(project(":your-ext-module"))
+    ksp(project(":my-ktorm-ksp-ext"))
 }
 ```
 
@@ -794,9 +794,9 @@ dependencies {
             <version>${ktorm_ksp.version}</version>
         </dependency>
         <dependency>
-            <groupId><!-- your-ext-module groupId --></groupId>
-            <artifactId><!-- your-ext-module artifactId --></artifactId>
-            <version><!-- your-ext-module version --></version>
+          <groupId><!-- my-ktorm-ksp-ext groupId --></groupId>
+          <artifactId><!-- my-ktorm-ksp-ext artifactId --></artifactId>
+          <version><!-- my-ktorm-ksp-ext version --></version>
         </dependency>
     </dependencies>
     <executions>
