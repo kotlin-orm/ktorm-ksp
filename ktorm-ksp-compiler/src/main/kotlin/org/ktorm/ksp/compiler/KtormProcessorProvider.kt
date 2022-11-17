@@ -32,13 +32,13 @@ import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
 import org.ktorm.entity.Entity
 import org.ktorm.ksp.api.*
-import org.ktorm.ksp.codegen.CodeGenerateConfig
-import org.ktorm.ksp.codegen.ExtensionGeneratorConfig
-import org.ktorm.ksp.codegen.definition.ColumnDefinition
-import org.ktorm.ksp.codegen.definition.KtormEntityType
-import org.ktorm.ksp.codegen.definition.TableDefinition
 import org.ktorm.ksp.compiler.generator.KtormCodeGenerator
 import org.ktorm.ksp.compiler.generator.util.NameGenerator
+import org.ktorm.ksp.spi.CodeGenerateConfig
+import org.ktorm.ksp.spi.ExtensionGeneratorConfig
+import org.ktorm.ksp.spi.definition.ColumnDefinition
+import org.ktorm.ksp.spi.definition.KtormEntityType
+import org.ktorm.ksp.spi.definition.TableDefinition
 import org.ktorm.schema.SqlType
 
 public class KtormProcessorProvider : SymbolProcessorProvider {

@@ -23,8 +23,8 @@ import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.asClassName
 import org.ktorm.database.Database
 import org.ktorm.entity.EntitySequence
-import org.ktorm.ksp.codegen.TableGenerateContext
-import org.ktorm.ksp.codegen.TopLevelPropertyGenerator
+import org.ktorm.ksp.spi.TableGenerateContext
+import org.ktorm.ksp.spi.TopLevelPropertyGenerator
 
 /**
  * Generate entity sequence extend property to [Database].

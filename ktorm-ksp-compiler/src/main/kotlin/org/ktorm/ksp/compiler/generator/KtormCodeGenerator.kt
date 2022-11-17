@@ -23,9 +23,9 @@ import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.KSPLogger
 import com.squareup.kotlinpoet.FileSpec
-import org.ktorm.ksp.codegen.CodeGenerateConfig
-import org.ktorm.ksp.codegen.TableGenerateContext
-import org.ktorm.ksp.codegen.definition.TableDefinition
+import org.ktorm.ksp.spi.CodeGenerateConfig
+import org.ktorm.ksp.spi.TableGenerateContext
+import org.ktorm.ksp.spi.definition.TableDefinition
 
 public object KtormCodeGenerator {
 

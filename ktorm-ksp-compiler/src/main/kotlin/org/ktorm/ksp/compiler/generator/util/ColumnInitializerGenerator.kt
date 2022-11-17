@@ -23,8 +23,8 @@ import com.squareup.kotlinpoet.MemberName
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
-import org.ktorm.ksp.codegen.TableGenerateContext
-import org.ktorm.ksp.codegen.definition.ColumnDefinition
+import org.ktorm.ksp.spi.TableGenerateContext
+import org.ktorm.ksp.spi.definition.ColumnDefinition
 import java.math.BigDecimal
 import java.sql.Date
 import java.sql.Time

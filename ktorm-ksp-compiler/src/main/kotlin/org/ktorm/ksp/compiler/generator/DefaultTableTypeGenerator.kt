@@ -18,10 +18,10 @@ package org.ktorm.ksp.compiler.generator
 
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import org.ktorm.ksp.codegen.TableGenerateContext
-import org.ktorm.ksp.codegen.TableTypeGenerator
-import org.ktorm.ksp.codegen.definition.KtormEntityType
 import org.ktorm.ksp.compiler.generator.util.NameGenerator
+import org.ktorm.ksp.spi.TableGenerateContext
+import org.ktorm.ksp.spi.TableTypeGenerator
+import org.ktorm.ksp.spi.definition.KtormEntityType
 import org.ktorm.schema.BaseTable
 import org.ktorm.schema.Table
 

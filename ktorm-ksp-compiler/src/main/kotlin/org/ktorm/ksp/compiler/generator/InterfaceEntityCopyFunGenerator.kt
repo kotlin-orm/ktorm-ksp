@@ -18,11 +18,11 @@ package org.ktorm.ksp.compiler.generator
 
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.buildCodeBlock
-import org.ktorm.ksp.codegen.TableGenerateContext
-import org.ktorm.ksp.codegen.TopLevelFunctionGenerator
-import org.ktorm.ksp.codegen.definition.KtormEntityType
 import org.ktorm.ksp.compiler.generator.util.CodeFactory
 import org.ktorm.ksp.compiler.generator.util.NameAllocator
+import org.ktorm.ksp.spi.TableGenerateContext
+import org.ktorm.ksp.spi.TopLevelFunctionGenerator
+import org.ktorm.ksp.spi.definition.KtormEntityType
 
 public class InterfaceEntityCopyFunGenerator : TopLevelFunctionGenerator {
 

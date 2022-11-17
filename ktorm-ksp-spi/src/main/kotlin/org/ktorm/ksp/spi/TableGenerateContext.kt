@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package org.ktorm.ksp.codegen
+package org.ktorm.ksp.spi
 
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSFile
-import org.ktorm.ksp.codegen.definition.TableDefinition
+import org.ktorm.ksp.spi.definition.TableDefinition
 
 /**
  * Context information for generating table code.

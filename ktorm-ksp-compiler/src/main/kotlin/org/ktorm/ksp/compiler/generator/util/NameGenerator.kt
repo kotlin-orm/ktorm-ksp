@@ -29,8 +29,8 @@ import org.atteo.evo.inflector.English
 import org.ktorm.ksp.api.Column
 import org.ktorm.ksp.api.References
 import org.ktorm.ksp.api.Table
-import org.ktorm.ksp.codegen.TableGenerateContext
-import org.ktorm.ksp.codegen.definition.ColumnDefinition
+import org.ktorm.ksp.spi.TableGenerateContext
+import org.ktorm.ksp.spi.definition.ColumnDefinition
 
 public object NameGenerator {
 
