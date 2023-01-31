@@ -8,7 +8,7 @@ buildscript {
     }
 }
 
-val fileVersion = file("ktorm-ksp.version").readText().trim()
+val fileVersion = file("ktorm-ksp.version").readLines()[0]
 
 allprojects {
     group = "org.ktorm"
@@ -33,7 +33,6 @@ subprojects {
 
     repositories {
         mavenCentral()
-        jcenter()
     }
 
     configureDetekt()

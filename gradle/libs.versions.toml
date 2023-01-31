@@ -1,5 +1,5 @@
 [versions]
-kotlin = "1.6.21"
+kotlin = "1.7.22"
 googleKsp = "1.6.21-1.0.5"
 ktorm = "3.5.0"
 kotlinpoetKsp = "1.11.0"
