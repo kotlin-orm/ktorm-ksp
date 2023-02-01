@@ -53,7 +53,7 @@ complexity:
     includeStaticDeclarations: false
   ComplexMethod:
     active: true
-    threshold: 15
+    threshold: 20
     ignoreSingleWhenExpression: true
     ignoreSimpleWhenEntries: true
   LabeledExpression:
@@ -63,10 +63,10 @@ complexity:
     active: true
     threshold: 600
   LongMethod:
-    active: false
+    active: true
     threshold: 60
   LongParameterList:
-    active: false
+    active: true
     functionThreshold: 6
     constructorThreshold: 6
     ignoreDefaultParameters: true
@@ -194,8 +194,9 @@ formatting:
     active: true
     autoCorrect: false
     indentSize: 4
+    continuationIndentSize: 4
   MaximumLineLength:
-    active: true
+    active: false
     maxLineLength: 120
   ModifierOrdering:
     active: true
@@ -359,7 +360,7 @@ potential-bugs:
     active: true
   LateinitUsage:
     active: false
-    excludeAnnotatedProperties: ""
+    ignoreAnnotated: []
     ignoreOnClassesPattern: ""
   UnconditionalJumpStatementInLoop:
     active: true
@@ -407,7 +408,7 @@ style:
     maxJumpCount: 2
   MagicNumber:
     active: true
-    ignoreNumbers: '-1,0,1,2,3'
+    ignoreNumbers: '-1,0,1,2,3,60'
     ignoreHashCodeFunction: true
     ignorePropertyDeclaration: false
     ignoreConstantDeclaration: true
@@ -458,16 +459,16 @@ style:
   SpacingBetweenPackageAndImports:
     active: true
   ThrowsCount:
-    active: true
+    active: false
     max: 2
   TrailingWhitespace:
     active: true
   UnderscoresInNumericLiterals:
     active: true
-    acceptableDecimalLength: 5
+    acceptableLength: 5
   UnnecessaryAbstractClass:
     active: true
-    excludeAnnotatedClasses: "dagger.Module"
+    ignoreAnnotated: ["dagger.Module"]
   UnnecessaryApply:
     active: true
   UnnecessaryInheritance:
@@ -487,7 +488,7 @@ style:
     allowedNames: "(_|ignored|expected|serialVersionUID)"
   UseDataClass:
     active: true
-    excludeAnnotatedClasses: ""
+    ignoreAnnotated: []
   UtilityClassWithPublicConstructor:
     active: true
   VarCouldBeVal:

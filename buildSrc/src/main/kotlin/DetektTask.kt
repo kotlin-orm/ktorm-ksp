@@ -20,11 +20,10 @@ import org.gradle.kotlin.dsl.*
 
 fun Project.configureDetekt() {
     val detekt by configurations.creating
-    val detektVersion: String by project
 
     dependencies {
-        detekt("io.gitlab.arturbosch.detekt:detekt-cli:${detektVersion}")
-        detekt("io.gitlab.arturbosch.detekt:detekt-formatting:${detektVersion}")
+        detekt("io.gitlab.arturbosch.detekt:detekt-cli:1.20.0")
+        detekt("io.gitlab.arturbosch.detekt:detekt-formatting:1.20.0")
     }
 
     tasks.register<JavaExec>("detekt") {

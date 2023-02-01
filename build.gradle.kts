@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") apply false
+    id("kotlin") apply false
 }
 
 buildscript {

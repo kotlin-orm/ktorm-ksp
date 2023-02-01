@@ -1,37 +1,24 @@
-/*
- * Copyright 2022 the original author or authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+
+plugins {
+    id("com.gradle.enterprise") version("3.9")
+}
+
+include("ktorm-ksp-api")
+include("ktorm-ksp-compiler")
+include("ktorm-ksp-example")
+include("ktorm-ksp-spi")
 
 rootProject.name = "ktorm-ksp"
+rootProject.children.forEach { project ->
+    project.buildFileName = "${project.name}.gradle.kts"
+}
 
-pluginManagement {
-    val kotlinVersion: String by settings
-    val googleKspVersion: String by settings
-    resolutionStrategy {
-        eachPlugin {
-            when (requested.id.id) {
-                "org.jetbrains.kotlin.jvm" -> useVersion(kotlinVersion)
-                "com.google.devtools.ksp" -> useVersion(googleKspVersion)
-            }
+gradleEnterprise {
+    if (System.getenv("CI") == "true") {
+        buildScan {
+            publishAlways()
+            termsOfServiceUrl = "https://gradle.com/terms-of-service"
+            termsOfServiceAgree = "yes"
         }
     }
 }
-
-enableFeaturePreview("VERSION_CATALOGS")
-
-include("ktorm-ksp-api")
-include("ktorm-ksp-spi")
-include("ktorm-ksp-compiler")
-include("ktorm-ksp-example")
