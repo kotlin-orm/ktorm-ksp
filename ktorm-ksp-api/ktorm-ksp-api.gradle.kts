@@ -5,7 +5,5 @@ plugins {
 }
 
 dependencies {
-    api(libs.ktorm.core)
-    testImplementation(libs.junit)
-    testImplementation(libs.assertj.core)
+    compileOnly(libs.ktorm.core)
 }
