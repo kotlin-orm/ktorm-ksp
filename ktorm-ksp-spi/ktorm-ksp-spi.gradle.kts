@@ -9,5 +9,3 @@ dependencies {
     api(libs.ksp.api)
     api(libs.kotlinpoet.ksp)
 }
-
-configureMavenPublishing()

@@ -13,5 +13,3 @@ dependencies {
     testImplementation(libs.kotlinCompileTesting.ksp)
     testImplementation(libs.h2database)
 }
-
-configureMavenPublishing()

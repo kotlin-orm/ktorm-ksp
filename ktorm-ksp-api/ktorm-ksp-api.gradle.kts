@@ -9,5 +9,3 @@ dependencies {
     testImplementation(libs.assertj.core)
 }
 
-configureMavenPublishing()
-
