@@ -1,11 +1,11 @@
+
 plugins {
-    kotlin("jvm")
+    id("ktorm-ksp.module")
+    id("ktorm-ksp.publish")
 }
 
 dependencies {
-    api(kotlin("stdlib"))
     api(libs.ktorm.core)
     testImplementation(libs.junit)
     testImplementation(libs.assertj.core)
 }
-

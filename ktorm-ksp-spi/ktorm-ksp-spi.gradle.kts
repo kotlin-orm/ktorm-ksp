@@ -1,5 +1,7 @@
+
 plugins {
-    kotlin("jvm")
+    id("ktorm-ksp.module")
+    id("ktorm-ksp.publish")
 }
 
 dependencies {
