@@ -81,7 +81,7 @@ public class SequencePropertyGeneratorTest : BaseKspTest() {
             val employees = result2.invokeBridge("getEmployees", database) as EntitySequence<*, *>
             assertThat(employees.sourceTable.tableName).isEqualTo("employee")
             assertThat(employees.toList().toString())
-                .isEqualTo("[Employee{id=1, name=vince, job=engineer, hireDate=2018-01-01}, Employee{id=2, name=marry, job=trainee, hireDate=2019-01-01}, Employee{id=3, name=tom, job=director, hireDate=2018-01-01}, Employee{id=4, name=penny, job=assistant, hireDate=2019-01-01}]")
+                .isEqualTo("[Employee(id=1, name=vince, job=engineer, hireDate=2018-01-01), Employee(id=2, name=marry, job=trainee, hireDate=2019-01-01), Employee(id=3, name=tom, job=director, hireDate=2018-01-01), Employee(id=4, name=penny, job=assistant, hireDate=2019-01-01)]")
         }
     }
 

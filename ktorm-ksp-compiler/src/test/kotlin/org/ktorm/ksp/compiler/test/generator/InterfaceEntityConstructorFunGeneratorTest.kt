@@ -66,11 +66,11 @@ public class InterfaceEntityConstructorFunGeneratorTest : BaseKspTest() {
         assertThat(result2.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         useDatabase { database ->
             val employee1 = result2.invokeBridge("createEmployee1", database) as Any
-            assertThat(employee1.toString()).isEqualTo("Employee{}")
+            assertThat(employee1.toString()).isEqualTo("Employee()")
             val employee2 = result2.invokeBridge("createEmployee2", database) as Any
-            assertThat(employee2.toString()).isEqualTo("Employee{id=null}")
+            assertThat(employee2.toString()).isEqualTo("Employee(id=null)")
             val employee3 = result2.invokeBridge("createEmployee3", database) as Any
-            assertThat(employee3.toString()).isEqualTo("Employee{id=null, name=}")
+            assertThat(employee3.toString()).isEqualTo("Employee(id=null, name=)")
         }
     }
 
