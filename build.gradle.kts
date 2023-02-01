@@ -36,5 +36,4 @@ subprojects {
     }
 
     configureDetekt()
-    configureCopyrightCheck()
 }
