@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 the original author or authors.
+ * Copyright 2022-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,7 @@ import org.ktorm.schema.Table
 @Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.SOURCE)
 public annotation class References(
+
     /**
      * Column names in SQL, Corresponds to [org.ktorm.schema.Column.name] property. If the value is an empty string,
      * the default value will be used. The [KtormKspConfig.namingStrategy] property can affect the default column
@@ -57,7 +58,6 @@ public annotation class References(
      * @see [KtormKspConfig.namingStrategy]
      */
     val name: String = "",
-
 
     /**
      * property names in generate [Table]. If the value is an empty string, will use the name of the property
