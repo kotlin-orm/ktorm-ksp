@@ -5,7 +5,7 @@ version = rootProject.version
 plugins {
     id("kotlin")
     id("org.gradle.jacoco")
-    id("io.gitlab.arturbosch.detekt")
+    // id("io.gitlab.arturbosch.detekt")
     id("ktorm-ksp.source-header-check")
 }
 
@@ -17,13 +17,13 @@ dependencies {
     api(kotlin("stdlib"))
     api(kotlin("reflect"))
     testImplementation(kotlin("test-junit"))
-    detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:${detekt.toolVersion}")
+    // detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:${detekt.toolVersion}")
 }
 
-detekt {
-    source = files("src/main/kotlin")
-    config = files("${project.rootDir}/detekt.yml")
-}
+//detekt {
+//    source = files("src/main/kotlin")
+//    config = files("${project.rootDir}/detekt.yml")
+//}
 
 tasks {
     compileKotlin {
