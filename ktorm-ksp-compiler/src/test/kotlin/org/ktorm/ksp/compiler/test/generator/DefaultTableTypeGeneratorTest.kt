@@ -86,7 +86,7 @@ public class DefaultTableTypeGeneratorTest : BaseKspTest() {
                 import org.ktorm.ksp.api.PrimaryKey
                 import org.ktorm.ksp.api.Table
                 
-                @Table(name = "t_user","UserTable","t_user_alias","catalog","schema", ["age"])
+                @Table("t_user","t_user_alias","catalog","schema","UserTable","userTable",["age"])
                 data class User(
                     @PrimaryKey
                     var id: Int,
@@ -115,7 +115,7 @@ public class DefaultTableTypeGeneratorTest : BaseKspTest() {
                 import org.ktorm.ksp.api.PrimaryKey
                 import org.ktorm.ksp.api.Table
                 
-                @Table(name = "t_user","UserTable","t_user_alias","catalog","schema")
+                @Table("t_user","t_user_alias","catalog","schema","UserTable")
                 data class User(
                     @PrimaryKey
                     var id: Int,
