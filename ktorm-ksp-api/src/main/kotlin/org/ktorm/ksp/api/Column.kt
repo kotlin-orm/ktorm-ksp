@@ -20,7 +20,7 @@ import org.ktorm.schema.SqlType
 import kotlin.reflect.KClass
 
 /**
- * Specifies the mapped column for an entity property. If no Column annotation is specified, the default values apply.
+ * Specify the mapped column for an entity property. If no Column annotation is specified, the default values apply.
  */
 @Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.SOURCE)

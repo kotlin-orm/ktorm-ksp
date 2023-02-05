@@ -24,6 +24,7 @@ import kotlin.reflect.KClass
  * Global ktorm-ksp configuration, you can add this annotation to any class, but only allow this
  * annotation to be added once.
  */
+@Deprecated("Use ksp options instead.")
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.SOURCE)
 public annotation class KtormKspConfig(
