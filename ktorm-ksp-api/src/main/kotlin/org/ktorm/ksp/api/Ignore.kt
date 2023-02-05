@@ -17,7 +17,7 @@
 package org.ktorm.ksp.api
 
 /**
- * Ignore the annotated property and not generate the column definition.
+ * Ignore the annotated property, not generating the column definition.
  */
 @Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.SOURCE)
