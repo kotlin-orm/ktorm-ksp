@@ -2,6 +2,7 @@
 plugins {
     id("ktorm-ksp.module")
     id("ktorm-ksp.publish")
+    id("ktorm-ksp.source-header-check")
 }
 
 dependencies {

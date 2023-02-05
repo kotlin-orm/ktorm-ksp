@@ -6,7 +6,6 @@ plugins {
     id("kotlin")
     id("org.gradle.jacoco")
     // id("io.gitlab.arturbosch.detekt")
-    id("ktorm-ksp.source-header-check")
 }
 
 repositories {
