@@ -18,8 +18,11 @@ package org.ktorm.ksp.spi.definition
 
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
+import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
+import org.ktorm.entity.Entity
 import org.ktorm.ksp.api.Table
+import org.ktorm.ksp.spi.isSubclassOf
 
 /**
  * Table definition metadata.
@@ -72,4 +75,19 @@ public class TableDefinition(_class: KSClassDeclaration, _columns: List<ColumnDe
      * Columns in the table.
      */
     public val columns: List<ColumnDefinition> = _columns
+
+    /**
+     * Validate arguments.
+     */
+    init {
+        if (_class.classKind != ClassKind.CLASS && _class.classKind != ClassKind.INTERFACE) {
+            val name = _class.qualifiedName?.asString()
+            throw IllegalStateException("$name is expected to be a class or interface but actually ${_class.classKind}")
+        }
+
+        if (_class.classKind == ClassKind.INTERFACE && !_class.isSubclassOf<Entity<*>>()) {
+            val name = _class.qualifiedName?.asString()
+            throw IllegalStateException("$name must extends from org.ktorm.entity.Entity")
+        }
+    }
 }
