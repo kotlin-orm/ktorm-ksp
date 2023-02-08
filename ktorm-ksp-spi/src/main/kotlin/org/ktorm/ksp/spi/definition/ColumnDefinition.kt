@@ -23,6 +23,7 @@ import org.ktorm.ksp.api.Column
 import org.ktorm.ksp.api.PrimaryKey
 import org.ktorm.ksp.api.References
 import org.ktorm.ksp.api.SqlTypeFactory
+import org.ktorm.ksp.spi.isSubclassOf
 import org.ktorm.schema.SqlType
 import kotlin.reflect.jvm.jvmName
 
@@ -78,4 +79,34 @@ public class ColumnDefinition(_property: KSPropertyDeclaration, _table: TableDef
      */
     public val tablePropertyName: String? =
         (column?.propertyName ?: reference?.propertyName ?: "").takeIf { it.isNotEmpty() }
+
+    /**
+     * Validate arguments.
+     */
+    init {
+        if (column != null && reference != null) {
+            throw IllegalStateException("@Column and @References cannot use together on the same property: $_property")
+        }
+
+        if (reference != null) {
+            if (table.ktormEntityType != KtormEntityType.ENTITY_INTERFACE) {
+                throw IllegalStateException("@References can only be used on entities based on Entity interface.")
+            }
+
+            // TODO: check referenced entity class.
+        }
+
+        if (sqlType != null) {
+            val declaration = sqlType.declaration as KSClassDeclaration
+            if (declaration.classKind != ClassKind.OBJECT) {
+                val name = declaration.qualifiedName?.asString()
+                throw IllegalArgumentException("The sqlType class $name must be a Kotlin singleton object.")
+            }
+
+            if (!declaration.isSubclassOf<SqlType<*>>() && !declaration.isSubclassOf<SqlTypeFactory>()) {
+                val name = declaration.qualifiedName?.asString()
+                throw IllegalArgumentException("The sqlType class $name must be subtype of SqlType or SqlTypeFactory.")
+            }
+        }
+    }
 }

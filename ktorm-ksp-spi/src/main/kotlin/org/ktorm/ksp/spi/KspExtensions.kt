@@ -14,18 +14,31 @@
  * limitations under the License.
  */
 
-package org.ktorm.ksp.compiler
+package org.ktorm.ksp.spi
 
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSTypeReference
+import kotlin.reflect.jvm.jvmName
 
+/**
+ * Check if this class is a subclass of [T].
+ */
+public inline fun <reified T : Any> KSClassDeclaration.isSubclassOf(): Boolean {
+    return findSuperTypeReference(T::class.jvmName) != null
+}
+
+/**
+ * Find the specific super type reference for this class.
+ */
 public fun KSClassDeclaration.findSuperTypeReference(name: String): KSTypeReference? {
     for (superType in this.superTypes) {
         val ksType = superType.resolve()
         val declaration = ksType.declaration
+
         if (declaration is KSClassDeclaration && declaration.qualifiedName!!.asString() == name) {
             return superType
         }
+
         if (declaration is KSClassDeclaration) {
             val result = declaration.findSuperTypeReference(name)
             if (result != null) {
@@ -33,5 +46,6 @@ public fun KSClassDeclaration.findSuperTypeReference(name: String): KSTypeRefere
             }
         }
     }
+
     return null
 }

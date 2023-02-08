@@ -39,6 +39,7 @@ import org.ktorm.ksp.spi.ExtensionGeneratorConfig
 import org.ktorm.ksp.spi.definition.ColumnDefinition
 import org.ktorm.ksp.spi.definition.KtormEntityType
 import org.ktorm.ksp.spi.definition.TableDefinition
+import org.ktorm.ksp.spi.findSuperTypeReference
 import org.ktorm.schema.SqlType
 
 public class KtormProcessorProvider : SymbolProcessorProvider {
@@ -103,29 +104,29 @@ public class KtormProcessor(
         tableDefinitions
             .asSequence()
             .flatMap { it.columns }
-            .filter { it.isReferences }
+            .filter { it.isReference }
             .forEach {
-                if (it.tableDefinition.ktormEntityType != KtormEntityType.ENTITY_INTERFACE) {
-                    error("Wrong references column: ${it.tablePropertyName.canonicalName}, References Column are only allowed for interface entity type")
+                if (it.table.ktormEntityType != KtormEntityType.ENTITY_INTERFACE) {
+                    error("Wrong references column: ${it.tablePropertyName}, References Column are only allowed for interface entity type")
                 }
                 val nonNullPropertyTypeName = it.nonNullPropertyTypeName
                 val table = entityClassMap[nonNullPropertyTypeName]
                     ?: error(
-                        "Wrong references column: ${it.tablePropertyName.canonicalName} , Type $nonNullPropertyTypeName " +
+                        "Wrong references column: ${it.tablePropertyName} , Type $nonNullPropertyTypeName " +
                                 "is not an entity type, please check if a @Table annotation is added to type $nonNullPropertyTypeName"
                     )
                 if (table.ktormEntityType != KtormEntityType.ENTITY_INTERFACE) {
                     error(
-                        "Wrong references column: ${it.tablePropertyName.canonicalName}. Type $nonNullPropertyTypeName is not an interface entity type, " +
+                        "Wrong references column: ${it.tablePropertyName}. Type $nonNullPropertyTypeName is not an interface entity type, " +
                                 "References column must be interface entity type"
                     )
                 }
                 val primaryKeyColumns = table.columns.filter { column -> column.isPrimaryKey }
                 if (primaryKeyColumns.isEmpty()) {
-                    error("Wrong references column: ${it.tablePropertyName.canonicalName} , Table $nonNullPropertyTypeName must have a primary key")
+                    error("Wrong references column: ${it.tablePropertyName} , Table $nonNullPropertyTypeName must have a primary key")
                 }
                 if (primaryKeyColumns.size > 1) {
-                    error("Wrong references column: ${it.tablePropertyName.canonicalName} , Table $nonNullPropertyTypeName cannot have more than one primary key")
+                    error("Wrong references column: ${it.tablePropertyName} , Table $nonNullPropertyTypeName cannot have more than one primary key")
                 }
                 it.referencesColumn = primaryKeyColumns.first()
             }
@@ -222,84 +223,26 @@ public class KtormProcessor(
                     ktormEntityType
                 )
                 tableDefinitions.add(tableDef)
+
                 // parse column definition
-                classDeclaration.getAllProperties()
-                    .forEach { ksProperty ->
-                        val propertyKSType = ksProperty.type.resolve()
-                        val propertyName = ksProperty.simpleName.asString()
-                        if (ksProperty.isAnnotationPresent(Ignore::class)
-                            || propertyName in table.ignoreProperties
-                        ) {
-                            logger.info(
-                                "ignore column: ${tableDef.entityClassName.canonicalName}.$propertyName, " +
-                                        "because the configuration specifies to ignore this column"
-                            )
-                            return@forEach
-                        }
-                        val parentDeclaration = ksProperty.parentDeclaration
-                        if (parentDeclaration is KSClassDeclaration
-                            && parentDeclaration.classKind != ClassKind.INTERFACE
-                            && !ksProperty.hasBackingField
-                        ) {
-                            logger.info(
-                                "ignore column: ${tableDef.entityClassName.canonicalName}.$propertyName, " +
-                                        "because it has no backingField"
-                            )
-                            return@forEach
-                        }
-                        if (tableDef.ktormEntityType == KtormEntityType.ENTITY_INTERFACE && propertyName in ignoreInterfaceEntityProperties) {
-                            logger.info(
-                                "ignore column: ${tableDef.entityClassName.canonicalName}.$propertyName," +
-                                        "because it is from 'org.ktorm.entity.Entity' class definition property."
-                            )
-                            return@forEach
-                        }
-                        val columnAnnotation = ksProperty.getAnnotationsByType(Column::class).firstOrNull()
-                        val ksColumnAnnotation =
-                            ksProperty.annotations.firstOrNull { anno -> anno.annotationType.resolve().declaration.qualifiedName?.asString() == columnQualifiedName }
-                        val referencesAnnotation = ksProperty.getAnnotationsByType(References::class).firstOrNull()
-                        if (columnAnnotation != null && referencesAnnotation != null) {
-                            error("Only one of the annotations @Column or @References is allowed to be used alone on the property")
-                        }
-
-                        val sqlType =
-                            ksColumnAnnotation?.arguments?.firstOrNull { it.name?.asString() == Column::sqlType.name }?.value as KSType?
-                        var actualSqlType: ClassName? = null
-                        var actualSqlFactoryType: ClassName? = null
-                        if (sqlType != null && sqlType.declaration.qualifiedName!!.asString() != Nothing::class.qualifiedName) {
-                            val sqlTypeDeclaration = sqlType.declaration as KSClassDeclaration
-                            if (sqlTypeDeclaration.classKind != ClassKind.OBJECT) {
-                                error(
-                                    "wrong entity column declaration: ${entityClassName.canonicalName}." +
-                                            "$propertyName, sqlType must be a Kotlin singleton object"
-                                )
-                            }
-                            when {
-                                sqlTypeDeclaration.findSuperTypeReference(sqlTypeClassName) != null -> {
-                                    actualSqlType = sqlType.toClassName()
-                                }
-                                sqlTypeDeclaration.findSuperTypeReference(sqlTypeFactoryClassName) != null -> {
-                                    actualSqlFactoryType = sqlType.toClassName()
-                                }
-                                else -> {
-                                    error(
-                                        "wrong entity column declaration: ${entityClassName.canonicalName}." +
-                                                "$propertyName, sqlType must be typed of [$sqlTypeClassName] or " +
-                                                "[$sqlTypeFactoryClassName]."
-                                    )
-                                }
-                            }
-                        }
-
-                        val isPrimaryKey = ksProperty.getAnnotationsByType(PrimaryKey::class).any()
-                        val columnName = columnAnnotation?.name ?: referencesAnnotation?.name ?: ""
-                        val tablePropertyName = NameGenerator.generateTablePropertyName(tableClassName, ksProperty)
-
-                        val columnDef = ColumnDefinition(
-                            null
-                        )
-                        columnDefs.add(columnDef)
+                for (property in classDeclaration.getAllProperties()) {
+                    val propertyName = property.simpleName.asString()
+                    if (property.isAnnotationPresent(Ignore::class) || propertyName in table.ignoreProperties) {
+                        continue
                     }
+
+                    val parent = property.parentDeclaration
+                    if (parent is KSClassDeclaration && parent.classKind == ClassKind.CLASS && !property.hasBackingField) {
+                        continue
+                    }
+
+                    if (tableDef.ktormEntityType == KtormEntityType.ENTITY_INTERFACE && propertyName in ignoreInterfaceEntityProperties) {
+                        continue
+                    }
+
+                    columnDefs.add(ColumnDefinition(property, tableDef))
+                }
+
             } catch (e: Exception) {
                 logger.error(
                     "EntityVisitor visitClassDeclaration error. className:" +
@@ -308,10 +251,5 @@ public class KtormProcessor(
                 throw e
             }
         }
-    }
-
-    private fun KSType.isInline(): Boolean {
-        val cls = declaration as KSClassDeclaration
-        return cls.isAnnotationPresent(JvmInline::class) && cls.modifiers.contains(Modifier.VALUE)
     }
 }
