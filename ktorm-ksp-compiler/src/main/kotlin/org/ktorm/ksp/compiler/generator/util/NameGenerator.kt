@@ -78,22 +78,22 @@ public object NameGenerator {
     }
 
     public fun generateSqlColumnName(context: TableGenerateContext, column: ColumnDefinition): CodeBlock {
-        if (column.columnName.isNotEmpty()) {
-            return CodeBlock.of("%S", column.columnName)
+        if (column.name != null) {
+            return CodeBlock.of("%S", column.name)
         }
 
-        val propertyName = if (column.isReferences) {
+        val propertyName = if (column.isReference) {
             val referencesColumnName = column.referencesColumn!!.entityPropertyName.simpleName
             // virtualPropertyName
             buildString {
-                append(column.entityPropertyName.simpleName)
+                append(column.entityProperty.simpleName.asString())
                 append(referencesColumnName.substring(0, 1).uppercase())
                 if (referencesColumnName.length > 1) {
                     append(referencesColumnName.substring(1))
                 }
             }
         } else {
-            column.entityPropertyName.simpleName
+            column.entityProperty.simpleName.asString()
         }
 
         val localNamingStrategy = context.config.localNamingStrategy
