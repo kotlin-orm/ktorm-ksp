@@ -296,18 +296,6 @@ public class KtormProcessor(
                         val tablePropertyName = NameGenerator.generateTablePropertyName(tableClassName, ksProperty)
 
                         val columnDef = ColumnDefinition(
-                            columnName,
-                            isPrimaryKey,
-                            propertyKSType.toTypeName(),
-                            propertyKSType.isInline(),
-                            MemberName(entityClassName, propertyName),
-                            tablePropertyName,
-                            actualSqlType,
-                            actualSqlFactoryType,
-                            ksProperty,
-                            propertyKSType,
-                            tableDef,
-                            referencesAnnotation != null,
                             null
                         )
                         columnDefs.add(columnDef)

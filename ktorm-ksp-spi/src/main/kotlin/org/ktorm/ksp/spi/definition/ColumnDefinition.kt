@@ -16,106 +16,66 @@
 
 package org.ktorm.ksp.spi.definition
 
+import com.google.devtools.ksp.KspExperimental
+import com.google.devtools.ksp.getAnnotationsByType
 import com.google.devtools.ksp.symbol.*
-import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.MemberName
-import com.squareup.kotlinpoet.TypeName
+import org.ktorm.ksp.api.Column
+import org.ktorm.ksp.api.PrimaryKey
+import org.ktorm.ksp.api.References
+import org.ktorm.ksp.api.SqlTypeFactory
+import org.ktorm.schema.SqlType
+import kotlin.reflect.jvm.jvmName
 
 /**
- * Column definitions, which contain all the information about the column, including column names,
- * converters, types, etc.
+ * Column definition metadata.
  */
-public data class ColumnDefinition(
+@OptIn(KspExperimental::class)
+public class ColumnDefinition(_property: KSPropertyDeclaration, _table: TableDefinition) {
+    private val column = _property.getAnnotationsByType(Column::class).firstOrNull()
+    private val reference = _property.getAnnotationsByType(References::class).firstOrNull()
+    private val primaryKey = _property.getAnnotationsByType(PrimaryKey::class).firstOrNull()
 
     /**
-     * The column name，Corresponds to the [org.ktorm.ksp.api.Column.name] property, may be an empty string.
+     * The annotated entity property of the column.
      */
-    val columnName: String,
+    public val entityProperty: KSPropertyDeclaration = _property
 
     /**
-     * Specifies whether the column is the primary key, Corresponds to the [org.ktorm.ksp.api.PrimaryKey] annotation.
+     * The belonging table.
      */
-    val isPrimaryKey: Boolean,
+    public val table: TableDefinition = _table
 
     /**
-     * Type name of the entity property.
+     * The name of the column.
      */
-    val propertyTypeName: TypeName,
+    public val name: String? = (column?.name ?: reference?.name ?: "").takeIf { it.isNotEmpty() }
 
     /**
-     * Whether the property's type is inline.
+     * Check if the column is a primary key.
      */
-    val isInlinePropertyType: Boolean,
+    public val isPrimaryKey: Boolean = primaryKey != null
 
     /**
-     * Name of the entity property.
+     * Check if the column is a reference column.
      */
-    val entityPropertyName: MemberName,
+    public val isReference: Boolean = reference != null
 
     /**
-     * Name of the table property.
+     * The SQL type of the column.
+     *
+     * The specified class might be a subclass of [SqlType] or [SqlTypeFactory].
      */
-    val tablePropertyName: MemberName,
+    public val sqlType: KSType? = _property.annotations
+        .find { anno -> anno.annotationType.resolve().declaration.qualifiedName?.asString() == Column::class.jvmName }
+        ?.let { anno ->
+            val argument = anno.arguments.find { it.name?.asString() == Column::sqlType.name }
+            val sqlType = argument?.value as KSType?
+            sqlType?.takeIf { it.declaration.qualifiedName?.asString() != Nothing::class.jvmName }
+        }
 
     /**
-     * The SqlType for this column.
+     * The name of the corresponding column property in the generated table object.
      */
-    val sqlType: ClassName?,
-
-    /**
-     * The SqlTypeFactory for this column
-     */
-    val sqlTypeFactory: ClassName?,
-
-    /**
-     * Entity property declaration.
-     */
-    val propertyDeclaration: KSPropertyDeclaration,
-
-    /**
-     * Entity property type.
-     */
-    val propertyType: KSType,
-
-    /**
-     * The table definition.
-     */
-    val tableDefinition: TableDefinition,
-
-    /**
-     * Is it a reference column，Corresponds to the [org.ktorm.ksp.api.Column.isReferences] property.
-     */
-    val isReferences: Boolean,
-
-    /**
-     * Column definitions for referenced columns.
-     */
-    var referencesColumn: ColumnDefinition?
-) {
-
-    /**
-     * Is it a mutable property.
-     */
-    val isMutable: Boolean = propertyDeclaration.isMutable
-
-    /**
-     * Is it a nullable property.
-     */
-    val isNullable: Boolean = propertyType.nullability != Nullability.NOT_NULL
-
-    /**
-     * Is it an Enum type property.
-     */
-    val isEnum: Boolean = (propertyType.declaration as KSClassDeclaration).classKind == ClassKind.ENUM_CLASS
-
-    /**
-     * Non-null type name of the entity property.
-     */
-    val nonNullPropertyTypeName: TypeName = propertyTypeName.copy(nullable = false)
-
-    override fun toString(): String {
-        return "ColumnDefinition(columnName='$columnName', isPrimaryKey=$isPrimaryKey, propertyTypeName=" +
-                "$propertyTypeName, entityPropertyName=$entityPropertyName, tablePropertyName=$tablePropertyName, " +
-                "sqlType=$sqlType, referencesColumn=$referencesColumn)"
-    }
+    public val tablePropertyName: String? =
+        (column?.propertyName ?: reference?.propertyName ?: "").takeIf { it.isNotEmpty() }
 }
