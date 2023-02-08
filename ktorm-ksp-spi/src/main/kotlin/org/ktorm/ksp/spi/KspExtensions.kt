@@ -16,8 +16,12 @@
 
 package org.ktorm.ksp.spi
 
+import com.google.devtools.ksp.KspExperimental
+import com.google.devtools.ksp.isAnnotationPresent
 import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.Modifier
 import kotlin.reflect.jvm.jvmName
 
 /**
@@ -48,4 +52,13 @@ public fun KSClassDeclaration.findSuperTypeReference(name: String): KSTypeRefere
     }
 
     return null
+}
+
+/**
+ * Check if this type is an inline class.
+ */
+@OptIn(KspExperimental::class)
+public fun KSType.isInline(): Boolean {
+    val declaration = declaration as KSClassDeclaration
+    return declaration.isAnnotationPresent(JvmInline::class) && declaration.modifiers.contains(Modifier.VALUE)
 }

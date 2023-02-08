@@ -17,10 +17,13 @@
 package org.ktorm.ksp.compiler.generator.util
 
 import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
+import com.squareup.kotlinpoet.ksp.toTypeName
 import org.ktorm.entity.Entity
 import org.ktorm.expression.*
 import org.ktorm.ksp.api.Undefined
 import org.ktorm.ksp.spi.TableGenerateContext
+import org.ktorm.ksp.spi.isInline
 import org.ktorm.schema.Column
 import org.ktorm.schema.SqlType
 import kotlin.reflect.KClass
@@ -74,6 +77,7 @@ public inline fun CodeBlock.Builder.withControlFlow(
     endControlFlow()
 }
 
+@OptIn(KotlinPoetKspPreview::class)
 public object CodeFactory {
 
     /**
@@ -93,11 +97,12 @@ public object CodeFactory {
     ): CodeBlock {
         return buildCodeBlock {
             for (column in context.table.columns) {
-                val propertyName = column.entityPropertyName.simpleName
+                val propertyName = column.entityProperty.simpleName
                 val propertyParameterName = nameAllocator[propertyName]
+                val propertyType = column.entityProperty.type.resolve()
 
                 val condition: String
-                if (column.isInlinePropertyType) {
+                if (propertyType.isInline()) {
                     condition = "if·((%N·as·Any?)·!==·(%T.of<%T>()·as·Any?))"
                 } else {
                     condition = "if·(%N·!==·%T.of<%T>())"
@@ -105,16 +110,16 @@ public object CodeFactory {
 
                 withControlFlow(
                     condition,
-                    arrayOf(propertyParameterName, ClassNames.undefined, column.nonNullPropertyTypeName)
+                    arrayOf(propertyParameterName, ClassNames.undefined, propertyType.toTypeName().copy(nullable = false))
                 ) {
                     var statement: String
-                    if (column.isMutable) {
+                    if (column.entityProperty.isMutable) {
                         statement = "%1N.%2N·=·%3N"
                     } else {
                         statement = "%1N[%2S]·=·%3N"
                     }
 
-                    if (!column.isNullable) {
+                    if (!propertyType.isMarkedNullable) {
                         statement += "·?:·error(\"`%2L` should not be null.\")"
                     }
 
@@ -130,8 +135,9 @@ public object CodeFactory {
         nameAllocator: NameAllocator,
     ): List<ParameterSpec> {
         return context.table.columns.map {
-            val name = nameAllocator.newName(it.entityPropertyName.simpleName, it.entityPropertyName.simpleName)
-            val type = it.nonNullPropertyTypeName.copy(nullable = true)
+            val propertyType = it.entityProperty.type.resolve()
+            val name = nameAllocator.newName(it.entityProperty.simpleName.asString(), it.entityProperty.simpleName)
+            val type = propertyType.toTypeName().copy(nullable = true)
             ParameterSpec.builder(name, type)
                 .defaultValue("%T.of()", ClassNames.undefined)
                 .build()
