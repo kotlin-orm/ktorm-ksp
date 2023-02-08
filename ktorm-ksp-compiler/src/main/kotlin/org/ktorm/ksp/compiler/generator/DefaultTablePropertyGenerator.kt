@@ -20,6 +20,8 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.buildCodeBlock
+import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
+import com.squareup.kotlinpoet.ksp.toTypeName
 import org.ktorm.ksp.compiler.generator.util.ColumnInitializerGenerator
 import org.ktorm.ksp.compiler.generator.util.MemberNames
 import org.ktorm.ksp.spi.TableGenerateContext
@@ -27,6 +29,7 @@ import org.ktorm.ksp.spi.TablePropertyGenerator
 import org.ktorm.ksp.spi.definition.KtormEntityType
 import org.ktorm.schema.Column
 
+@OptIn(KotlinPoetKspPreview::class)
 public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
 
     override fun generate(context: TableGenerateContext): List<PropertySpec> {
@@ -41,22 +44,22 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
         return table.columns
             .asSequence()
             .map { column ->
-                val columnType = if (column.isReferences) {
+                val columnType = if (column.isReference) {
                     Column::class.asClassName().parameterizedBy(column.referencesColumn!!.nonNullPropertyTypeName)
                 } else {
-                    Column::class.asClassName().parameterizedBy(column.nonNullPropertyTypeName)
+                    Column::class.asClassName().parameterizedBy(column.entityProperty.type.resolve().toTypeName().copy(nullable = true))
                 }
                 val localNamingStrategy = config.localNamingStrategy
 
                 val columnName = when {
-                    column.columnName.isNotEmpty() -> column.columnName
-                    localNamingStrategy != null -> localNamingStrategy.toColumnName(column.entityPropertyName.simpleName)
-                    else -> column.entityPropertyName.simpleName
+                    column.name != null -> column.name!!
+                    localNamingStrategy != null -> localNamingStrategy.toColumnName(column.entityProperty.simpleName.asString())
+                    else -> column.entityProperty.simpleName.asString()
                 }
 
                 PropertySpec
-                    .builder(column.tablePropertyName.simpleName, columnType)
-                    .addKdoc("Column %L. %L", columnName, column.propertyDeclaration.docString?.trimIndent().orEmpty())
+                    .builder(column.tablePropertyName!!, columnType)
+                    .addKdoc("Column %L. %L", columnName, column.entityProperty.docString?.trimIndent().orEmpty())
                     .initializer(buildCodeBlock {
                         add(ColumnInitializerGenerator.generate(context, column))
                         val params = mutableMapOf(
@@ -64,13 +67,13 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
                             "references" to MemberNames.references,
                             "primaryKey" to MemberNames.primaryKey,
                             "referencesTable" to column.referencesColumn?.tableDefinition?.tableClassName,
-                            "entityPropertyName" to column.entityPropertyName.simpleName
+                            "entityPropertyName" to column.entityProperty.simpleName.asString()
                         )
                         val code = buildString {
                             if (column.isPrimaryKey) {
                                 append(".%primaryKey:M()")
                             }
-                            if (column.isReferences) {
+                            if (column.isReference) {
                                 append(".%references:M(%referencesTable:T)·{·it.%entityPropertyName:L·}·")
                             } else {
                                 append(".%bindTo:M·{·it.%entityPropertyName:N·}")
@@ -88,17 +91,18 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
         return table.columns
             .asSequence()
             .map { column ->
-                val columnType = Column::class.asClassName().parameterizedBy(column.nonNullPropertyTypeName)
+                val propertyType = column.entityProperty.type.resolve()
+                val columnType = Column::class.asClassName().parameterizedBy(propertyType.toTypeName().copy(nullable = true))
                 val localNamingStrategy = config.localNamingStrategy
                 val columnName = when {
-                    column.columnName.isNotEmpty() -> column.columnName
-                    localNamingStrategy != null -> localNamingStrategy.toColumnName(column.entityPropertyName.simpleName)
-                    else -> column.entityPropertyName.simpleName
+                    column.name != null -> column.name!!
+                    localNamingStrategy != null -> localNamingStrategy.toColumnName(column.entityProperty.simpleName.asString())
+                    else -> column.entityProperty.simpleName.asString()
                 }
 
                 PropertySpec
-                    .builder(column.tablePropertyName.simpleName, columnType)
-                    .addKdoc("Column %L. %L", columnName, column.propertyDeclaration.docString?.trimIndent().orEmpty())
+                    .builder(column.tablePropertyName!!, columnType)
+                    .addKdoc("Column %L. %L", columnName, column.entityProperty.docString?.trimIndent().orEmpty())
                     .initializer(buildCodeBlock {
                         add(ColumnInitializerGenerator.generate(context, column))
                         if (column.isPrimaryKey) {

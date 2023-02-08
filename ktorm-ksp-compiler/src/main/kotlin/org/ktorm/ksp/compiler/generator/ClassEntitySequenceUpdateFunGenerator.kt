@@ -87,8 +87,8 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
             for (column in targetColumns) {
                 addStatement(
                     "addAssignment(sourceTable.%N, entity.%N, isDynamic, assignments)",
-                    column.tablePropertyName.simpleName,
-                    column.entityPropertyName.simpleName,
+                    column.tablePropertyName,
+                    column.entityProperty.simpleName.asString(),
                 )
             }
             add("\n")
@@ -105,30 +105,30 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
         return buildCodeBlock {
             if (primaryKeys.size == 1) {
                 val pk = primaryKeys[0]
-                if (pk.isNullable) {
+                if (pk.entityProperty.type.resolve().isMarkedNullable) {
                     addStatement(
                         "val conditions = sourceTable.%N·%M·entity.%N!!",
-                        pk.tablePropertyName.simpleName, MemberNames.eq, pk.entityPropertyName.simpleName
+                        pk.tablePropertyName, MemberNames.eq, pk.entityProperty.simpleName.asString()
                     )
                 } else {
                     addStatement(
                         "val conditions = sourceTable.%N·%M·entity.%N",
-                        pk.tablePropertyName.simpleName, MemberNames.eq, pk.entityPropertyName.simpleName
+                        pk.tablePropertyName, MemberNames.eq, pk.entityProperty.simpleName.asString()
                     )
                 }
             } else {
                 add("«val conditions = ")
 
                 for ((i, pk) in primaryKeys.withIndex()) {
-                    if (pk.isNullable) {
+                    if (pk.entityProperty.type.resolve().isMarkedNullable) {
                         add(
                             "(sourceTable.%N·%M·entity.%N!!)",
-                            pk.tablePropertyName.simpleName, MemberNames.eq, pk.entityPropertyName.simpleName
+                            pk.tablePropertyName, MemberNames.eq, pk.entityProperty.simpleName.asString()
                         )
                     } else {
                         add(
                             "(sourceTable.%N·%M·entity.%N)",
-                            pk.tablePropertyName.simpleName, MemberNames.eq, pk.entityPropertyName.simpleName
+                            pk.tablePropertyName, MemberNames.eq, pk.entityProperty.simpleName.asString()
                         )
                     }
 

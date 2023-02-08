@@ -48,7 +48,9 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
         }
 
         val primaryKeys = table.columns.filter { it.isPrimaryKey }
-        val useGeneratedKey = primaryKeys.size == 1 && primaryKeys[0].isMutable && primaryKeys[0].isNullable
+        val useGeneratedKey = primaryKeys.size == 1
+            && primaryKeys[0].entityProperty.isMutable
+            && primaryKeys[0].entityProperty.type.resolve().isMarkedNullable
 
         var kdoc = "" +
                 "Insert the given entity into this sequence and return the affected record number. " +
@@ -87,11 +89,11 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
                 table.columns.size
             )
             for (column in table.columns) {
-                val forceDynamic = useGeneratedKey && column.isPrimaryKey && column.isNullable
+                val forceDynamic = useGeneratedKey && column.isPrimaryKey && column.entityProperty.type.resolve().isMarkedNullable
                 addStatement(
                     "addAssignment(sourceTable.%N, entity.%N, %L, assignments)",
-                    column.tablePropertyName.simpleName,
-                    column.entityPropertyName.simpleName,
+                    column.tablePropertyName,
+                    column.entityProperty.simpleName.asString(),
                     if (forceDynamic) "true" else "isDynamic"
                 )
             }
@@ -124,7 +126,7 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
                 addStatement("return database.executeUpdate(expression)")
             } else {
                 // If the primary key value is manually specified, not obtain the generated key.
-                beginControlFlow("if (entity.%N != null)", primaryKeys[0].entityPropertyName.simpleName)
+                beginControlFlow("if (entity.%N != null)", primaryKeys[0].entityProperty.simpleName.asString())
                 addStatement("return database.executeUpdate(expression)")
 
                 // Else obtain the generated key value.
@@ -148,8 +150,8 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
                     """.trimIndent(),
 
                     arguments = mapOf(
-                        "columnName" to primaryKeys[0].tablePropertyName.simpleName,
-                        "propertyName" to primaryKeys[0].entityPropertyName.simpleName
+                        "columnName" to primaryKeys[0].tablePropertyName,
+                        "propertyName" to primaryKeys[0].entityProperty.simpleName.asString()
                     )
                 )
 

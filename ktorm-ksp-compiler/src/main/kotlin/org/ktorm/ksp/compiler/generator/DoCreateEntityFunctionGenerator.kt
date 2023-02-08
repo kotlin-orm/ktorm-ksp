@@ -49,11 +49,11 @@ public class DoCreateEntityFunctionGenerator : TableFunctionGenerator {
                 val constructorParameters = constructor.parameters
                 val constructorParameterNames = constructorParameters.map { it.name!!.asString() }.toSet()
                 val nonConstructorColumnPropertyNames = table.columns
-                    .map { it.entityPropertyName.simpleName }
+                    .map { it.entityProperty.simpleName.asString() }
                     .filter { it !in constructorParameterNames }
                     .toSet()
                 // propertyName -> columnMember
-                val columnMap = table.columns.associateBy { it.entityPropertyName.simpleName }
+                val columnMap = table.columns.associateBy { it.entityProperty.simpleName.asString() }
                 // Constructor parameters must be column or have default value
                 val unknownParameters = constructor.parameters.filter {
                     !it.hasDefault && it.name?.asString() !in columnMap.keys
@@ -95,14 +95,14 @@ public class DoCreateEntityFunctionGenerator : TableFunctionGenerator {
                                 val parameterName = parameter.name!!.asString()
                                 val column = columnMap[parameterName]!!
                                 withControlFlow("%S -> ", arrayOf(parameterName)) {
-                                    addStatement("val value = row[this.%N]", column.tablePropertyName.simpleName)
+                                    addStatement("val value = row[this.%N]", column.tablePropertyName)
                                     // hasDefault
                                     if (parameter.hasDefault) {
                                         withControlFlow("if (value != null)") {
                                             addStatement("parameterMap[parameter] = value")
                                         }
                                     } else {
-                                        val notNullOperator = if (column.isNullable) "" else "!!"
+                                        val notNullOperator = if (column.entityProperty.type.resolve().isMarkedNullable) "" else "!!"
                                         addStatement("parameterMap[parameter] = value%L", notNullOperator)
                                     }
                                 }
@@ -128,13 +128,13 @@ public class DoCreateEntityFunctionGenerator : TableFunctionGenerator {
                         withIndent {
                             for (parameter in constructorColumnParameters) {
                                 val column = table.columns.first {
-                                    it.entityPropertyName.simpleName == parameter.name!!.asString()
+                                    it.entityProperty.simpleName.asString() == parameter.name!!.asString()
                                 }
-                                val notNullOperator = if (column.isNullable) "" else "!!"
+                                val notNullOperator = if (column.entityProperty.type.resolve().isMarkedNullable) "" else "!!"
                                 addStatement(
                                     "%N·=·row[this.%N]%L,",
                                     parameter.name!!.asString(),
-                                    column.tablePropertyName.simpleName,
+                                    column.tablePropertyName,
                                     notNullOperator
                                 )
                             }
@@ -146,14 +146,14 @@ public class DoCreateEntityFunctionGenerator : TableFunctionGenerator {
                     // non-structural property
                     for (property in nonConstructorColumnPropertyNames) {
                         val column = columnMap[property]!!
-                        if (!column.isMutable) {
+                        if (!column.entityProperty.isMutable) {
                             continue
                         }
-                        val notNullOperator = if (column.isNullable) "" else "!!"
+                        val notNullOperator = if (column.entityProperty.type.resolve().isMarkedNullable) "" else "!!"
                         addStatement(
                             "entity.%N·=·row[this.%N]%L",
                             property,
-                            column.tablePropertyName.simpleName,
+                            column.tablePropertyName,
                             notNullOperator
                         )
                     }

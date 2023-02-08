@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-@file:OptIn(KotlinPoetKspPreview::class, KspExperimental::class)
 
 package org.ktorm.ksp.compiler
 
@@ -49,6 +48,7 @@ public class KtormProcessorProvider : SymbolProcessorProvider {
     }
 }
 
+@OptIn(KotlinPoetKspPreview::class, KspExperimental::class)
 public class KtormProcessor(
     private val environment: SymbolProcessorEnvironment,
 ) : SymbolProcessor {

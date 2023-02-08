@@ -18,10 +18,13 @@ package org.ktorm.ksp.compiler.generator
 
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
+import com.squareup.kotlinpoet.ksp.toTypeName
 import org.ktorm.ksp.spi.TableGenerateContext
 import org.ktorm.ksp.spi.TopLevelFunctionGenerator
 import org.ktorm.ksp.spi.definition.KtormEntityType
 
+@OptIn(KotlinPoetKspPreview::class)
 public class InterfaceEntityComponentFunGenerator : TopLevelFunctionGenerator {
 
     override fun generate(context: TableGenerateContext): List<FunSpec> {
@@ -35,12 +38,12 @@ public class InterfaceEntityComponentFunGenerator : TopLevelFunctionGenerator {
                 .addKdoc(
                     "Return the value of [%L.%L]. ",
                     table.entityClassName.simpleName,
-                    column.entityPropertyName.simpleName
+                    column.entityProperty.simpleName.asString()
                 )
                 .addModifiers(KModifier.OPERATOR)
-                .returns(column.propertyTypeName)
+                .returns(column.entityProperty.type.toTypeName())
                 .receiver(table.entityClassName)
-                .addCode("return·this.%N", column.entityPropertyName.simpleName)
+                .addCode("return·this.%N", column.entityProperty.simpleName.asString())
                 .build()
         }
     }
