@@ -22,15 +22,9 @@ import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.processing.SymbolProcessorProvider
 import com.google.devtools.ksp.symbol.*
-import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
-import com.squareup.kotlinpoet.ksp.toClassName
-import org.ktorm.entity.Entity
 import org.ktorm.ksp.api.*
-import org.ktorm.ksp.compiler.generator.KtormCodeGenerator
-import org.ktorm.ksp.compiler.generator.util.NameGenerator
 import org.ktorm.ksp.spi.definition.ColumnDefinition
 import org.ktorm.ksp.spi.definition.TableDefinition
-import org.ktorm.ksp.spi.findSuperTypeReference
 import kotlin.reflect.jvm.jvmName
 
 class KtormProcessorProvider : SymbolProcessorProvider {
@@ -40,6 +34,7 @@ class KtormProcessorProvider : SymbolProcessorProvider {
     }
 }
 
+@OptIn(KspExperimental::class)
 class KtormProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor {
     private val logger = environment.logger
     private val options = environment.options
@@ -52,35 +47,24 @@ class KtormProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor 
         val tables = symbols
             .filterIsInstance<KSClassDeclaration>()
             .map { entityClass ->
-                val entityClassName = classDeclaration.toClassName()
-                val table = classDeclaration.getAnnotationsByType(Table::class).first()
-                val tableClassName = NameGenerator.generateTableClassName(classDeclaration)
-                val tableName = table.name
+                val columns = ArrayList<ColumnDefinition>()
+                TableDefinition(entityClass, columns).also { table ->
+                    for (property in entityClass.getAllProperties()) {
+                        val propertyName = property.simpleName.asString()
+                        if (property.isAnnotationPresent(Ignore::class) || propertyName in table.ignoreProperties) {
+                            continue
+                        }
 
-                val columnDefs = mutableListOf<ColumnDefinition>()
-                val tableDef = TableDefinition()
-                tableDefinitions.add(tableDef)
+                        val parent = property.parentDeclaration
+                        if (parent is KSClassDeclaration && parent.classKind == ClassKind.CLASS && !property.hasBackingField) {
+                            continue
+                        }
 
-                // parse column definition
-                for (property in classDeclaration.getAllProperties()) {
-                    val propertyName = property.simpleName.asString()
-                    if (property.isAnnotationPresent(Ignore::class) || propertyName in table.ignoreProperties) {
-                        continue
+                        // TODO: skip properties in Entity interface.
+                        columns += ColumnDefinition(property, table)
                     }
-
-                    val parent = property.parentDeclaration
-                    if (parent is KSClassDeclaration && parent.classKind == ClassKind.CLASS && !property.hasBackingField) {
-                        continue
-                    }
-
-                    if (tableDef.ktormEntityType == KtormEntityType.ENTITY_INTERFACE && propertyName in ignoreInterfaceEntityProperties) {
-                        continue
-                    }
-
-                    columnDefs.add(ColumnDefinition(property, tableDef))
                 }
             }
-
 
         // TODO: check if referenced class is an interface entity (递归)
         // TODO: check if referenced class is marked with @Table (递归)
