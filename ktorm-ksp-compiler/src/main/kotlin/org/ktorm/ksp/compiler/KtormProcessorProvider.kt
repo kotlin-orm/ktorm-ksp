@@ -52,9 +52,6 @@ class KtormProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor 
                 parseTableDefinition(entityClass)
             }
 
-        // TODO: check if referenced class is an interface entity (递归)
-        // TODO: check if referenced class is marked with @Table (递归)
-        // TODO: check if the referenced table has only one primary key.
         // KtormCodeGenerator.generate(tableDefinitions, environment.codeGenerator, config, logger)
         return deferral
     }
@@ -124,6 +121,9 @@ class KtormProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor 
 //            }
 //
 //            // TODO: check referenced entity class.
+//            // TODO: check if referenced class is an interface entity (递归)
+//            // TODO: check if referenced class is marked with @Table (递归)
+//            // TODO: check if the referenced table has only one primary key.
 //        }
 
         if (sqlType != null) {
