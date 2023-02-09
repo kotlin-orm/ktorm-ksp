@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.ktorm.ksp.spi
+package org.ktorm.ksp.compiler
 
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.isAnnotationPresent
@@ -27,14 +27,14 @@ import kotlin.reflect.jvm.jvmName
 /**
  * Check if this class is a subclass of [T].
  */
-public inline fun <reified T : Any> KSClassDeclaration.isSubclassOf(): Boolean {
+inline fun <reified T : Any> KSClassDeclaration.isSubclassOf(): Boolean {
     return findSuperTypeReference(T::class.jvmName) != null
 }
 
 /**
  * Find the specific super type reference for this class.
  */
-public fun KSClassDeclaration.findSuperTypeReference(name: String): KSTypeReference? {
+fun KSClassDeclaration.findSuperTypeReference(name: String): KSTypeReference? {
     for (superType in this.superTypes) {
         val ksType = superType.resolve()
         val declaration = ksType.declaration
@@ -58,7 +58,7 @@ public fun KSClassDeclaration.findSuperTypeReference(name: String): KSTypeRefere
  * Check if this type is an inline class.
  */
 @OptIn(KspExperimental::class)
-public fun KSType.isInline(): Boolean {
+fun KSType.isInline(): Boolean {
     val declaration = declaration as KSClassDeclaration
     return declaration.isAnnotationPresent(JvmInline::class) && declaration.modifiers.contains(Modifier.VALUE)
 }

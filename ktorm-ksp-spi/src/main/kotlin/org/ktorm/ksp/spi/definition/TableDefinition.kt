@@ -16,78 +16,56 @@
 
 package org.ktorm.ksp.spi.definition
 
-import com.google.devtools.ksp.KspExperimental
-import com.google.devtools.ksp.getAnnotationsByType
-import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
-import org.ktorm.entity.Entity
 import org.ktorm.ksp.api.Table
-import org.ktorm.ksp.spi.isSubclassOf
 
 /**
  * Table definition metadata.
  */
-@OptIn(KspExperimental::class)
-public class TableDefinition(_class: KSClassDeclaration, _columns: List<ColumnDefinition>) {
-    private val table = _class.getAnnotationsByType(Table::class).first()
+public data class TableDefinition(
 
     /**
      * The annotated entity class of the table.
      */
-    public val entityClass: KSClassDeclaration = _class
+    val entityClass: KSClassDeclaration,
 
     /**
-     * The name of the table.
+     * The name of the table, see [Table.name].
      */
-    public val name: String? = table.name.takeIf { it.isNotEmpty() }
+    val name: String?,
 
     /**
-     * The alias of the table.
+     * The alias of the table, see [Table.alias].
      */
-    public val alias: String? = table.alias.takeIf { it.isNotEmpty() }
+    val alias: String?,
 
     /**
-     * The catalog of the table.
+     * The catalog of the table, see [Table.catalog].
      */
-    public val catalog: String? = table.catalog.takeIf { it.isNotEmpty() }
+    val catalog: String?,
 
     /**
-     * The schema of the table.
+     * The schema of the table, see [Table.schema].
      */
-    public val schema: String? = table.schema.takeIf { it.isNotEmpty() }
+    val schema: String?,
 
     /**
-     * The name of the corresponding table class in the generated code.
+     * The name of the corresponding table class in the generated code, see [Table.className].
      */
-    public val tableClassName: String? = table.className.takeIf { it.isNotEmpty() }
+    val tableClassName: String?,
 
     /**
-     * The name of the corresponding entity sequence in the generated code.
+     * The name of the corresponding entity sequence in the generated code, see [Table.entitySequenceName].
      */
-    public val entitySequenceName: String? = table.entitySequenceName.takeIf { it.isNotEmpty() }
+    val entitySequenceName: String?,
 
     /**
-     * Specify properties that should be ignored for generating column definitions.
+     * Properties that should be ignored for generating column definitions, see [Table.ignoreProperties].
      */
-    public val ignoreProperties: Set<String> = table.ignoreProperties.toSet()
+    val ignoreProperties: Set<String>,
 
     /**
      * Columns in the table.
      */
-    public val columns: List<ColumnDefinition> = _columns
-
-    /**
-     * Validate arguments.
-     */
-    init {
-        if (_class.classKind != ClassKind.CLASS && _class.classKind != ClassKind.INTERFACE) {
-            val name = _class.qualifiedName?.asString()
-            throw IllegalStateException("$name is expected to be a class or interface but actually ${_class.classKind}")
-        }
-
-        if (_class.classKind == ClassKind.INTERFACE && !_class.isSubclassOf<Entity<*>>()) {
-            val name = _class.qualifiedName?.asString()
-            throw IllegalStateException("$name must extends from org.ktorm.entity.Entity")
-        }
-    }
-}
+    val columns: List<ColumnDefinition>
+)
