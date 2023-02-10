@@ -108,7 +108,28 @@ class KtormProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor 
     private fun parseColumnDefinition(property: KSPropertyDeclaration, table: TableDefinition): ColumnDefinition {
         val column = property.getAnnotationsByType(Column::class).firstOrNull()
         val reference = property.getAnnotationsByType(References::class).firstOrNull()
-        val primaryKey = property.getAnnotationsByType(PrimaryKey::class).firstOrNull()
+
+        if (column != null && reference != null) {
+            throw IllegalStateException("@Column and @References cannot use together on the same property: $property")
+        }
+
+        var referenceTable: TableDefinition? = null
+        if (reference != null) {
+            // TODO: check circular reference.
+            referenceTable = parseTableDefinition(property.type.resolve().declaration as KSClassDeclaration)
+
+            if (table.entityClass.classKind != ClassKind.INTERFACE) {
+                throw IllegalStateException("@References can only be used on interface-based entities.")
+            }
+
+            if (referenceTable.entityClass.classKind != ClassKind.INTERFACE) {
+                val name = referenceTable.entityClass.qualifiedName?.asString()
+                throw IllegalStateException("The referenced entity class ($name) should be an interface.")
+            }
+
+            // TODO: check if referenced class is marked with @Table (递归)
+            // TODO: check if the referenced table has only one primary key.
+        }
 
         val sqlType = property.annotations
             .find { anno -> anno.annotationType.resolve().declaration.qualifiedName?.asString() == Column::class.jvmName }
@@ -117,21 +138,6 @@ class KtormProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor 
                 val sqlType = argument?.value as KSType?
                 sqlType?.takeIf { it.declaration.qualifiedName?.asString() != Nothing::class.jvmName }
             }
-
-        if (column != null && reference != null) {
-            throw IllegalStateException("@Column and @References cannot use together on the same property: $property")
-        }
-
-//        if (reference != null) {
-//            if (table.ktormEntityType != KtormEntityType.ENTITY_INTERFACE) {
-//                throw IllegalStateException("@References can only be used on entities based on Entity interface.")
-//            }
-//
-//            // TODO: check referenced entity class.
-//            // TODO: check if referenced class is an interface entity (递归)
-//            // TODO: check if referenced class is marked with @Table (递归)
-//            // TODO: check if the referenced table has only one primary key.
-//        }
 
         if (sqlType != null) {
             val declaration = sqlType.declaration as KSClassDeclaration
@@ -150,10 +156,10 @@ class KtormProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor 
             entityProperty = property,
             table = table,
             name = (column?.name ?: reference?.name ?: "").takeIf { it.isNotEmpty() },
-            isPrimaryKey = primaryKey != null,
+            isPrimaryKey = property.isAnnotationPresent(PrimaryKey::class),
             sqlType = sqlType,
             isReference = reference != null,
-            referenceTable = parseTableDefinition(property.type.resolve().declaration as KSClassDeclaration),
+            referenceTable = referenceTable,
             tablePropertyName = (column?.propertyName ?: reference?.propertyName ?: "").takeIf { it.isNotEmpty() }
         )
     }

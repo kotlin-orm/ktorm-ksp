@@ -60,7 +60,7 @@ public data class ColumnDefinition(
     /**
      * The referenced table of the column.
      */
-    val referenceTable: TableDefinition,
+    val referenceTable: TableDefinition?,
 
     /**
      * The name of the corresponding column property in the generated table object,
