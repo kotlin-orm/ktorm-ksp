@@ -39,7 +39,7 @@ fun KSClassDeclaration.findSuperTypeReference(name: String): KSTypeReference? {
         val ksType = superType.resolve()
         val declaration = ksType.declaration
 
-        if (declaration is KSClassDeclaration && declaration.qualifiedName!!.asString() == name) {
+        if (declaration is KSClassDeclaration && declaration.qualifiedName?.asString() == name) {
             return superType
         }
 

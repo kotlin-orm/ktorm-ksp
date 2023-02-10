@@ -82,16 +82,23 @@ class KtormProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor 
 
         for (property in cls.getAllProperties()) {
             val propertyName = property.simpleName.asString()
-            if (property.isAnnotationPresent(Ignore::class) || propertyName in table.ignoreProperties) {
+            if (propertyName in tableDef.ignoreProperties) {
                 continue
             }
 
-            val parent = property.parentDeclaration
-            if (parent is KSClassDeclaration && parent.classKind == ClassKind.CLASS && !property.hasBackingField) {
+            if (property.isAnnotationPresent(Ignore::class)) {
                 continue
             }
 
-            // TODO: skip properties in Entity interface.
+            if (cls.classKind == ClassKind.CLASS && !property.hasBackingField) {
+                continue
+            }
+
+            if (cls.classKind == ClassKind.INTERFACE && propertyName in setOf("entityClass", "properties")) {
+                continue
+            }
+
+            // TODO: skip non-abstract properties for interface-based entities.
             (tableDef.columns as MutableList) += parseColumnDefinition(property, tableDef)
         }
 
