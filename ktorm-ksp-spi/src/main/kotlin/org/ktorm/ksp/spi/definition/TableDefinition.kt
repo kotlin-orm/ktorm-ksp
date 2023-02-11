@@ -17,7 +17,6 @@
 package org.ktorm.ksp.spi.definition
 
 import com.google.devtools.ksp.symbol.KSClassDeclaration
-import org.ktorm.ksp.api.Table
 
 /**
  * Table definition metadata.
@@ -30,37 +29,37 @@ public data class TableDefinition(
     val entityClass: KSClassDeclaration,
 
     /**
-     * The name of the table, see [Table.name].
+     * The name of the table.
      */
-    val name: String?,
+    val name: String,
 
     /**
-     * The alias of the table, see [Table.alias].
+     * The alias of the table.
      */
     val alias: String?,
 
     /**
-     * The catalog of the table, see [Table.catalog].
+     * The catalog of the table.
      */
     val catalog: String?,
 
     /**
-     * The schema of the table, see [Table.schema].
+     * The schema of the table.
      */
     val schema: String?,
 
     /**
-     * The name of the corresponding table class in the generated code, see [Table.className].
+     * The name of the corresponding table class in the generated code.
      */
-    val tableClassName: String?,
+    val tableClassName: String,
 
     /**
-     * The name of the corresponding entity sequence in the generated code, see [Table.entitySequenceName].
+     * The name of the corresponding entity sequence in the generated code.
      */
-    val entitySequenceName: String?,
+    val entitySequenceName: String,
 
     /**
-     * Properties that should be ignored for generating column definitions, see [Table.ignoreProperties].
+     * Properties that should be ignored for generating column definitions.
      */
     val ignoreProperties: Set<String>,
 

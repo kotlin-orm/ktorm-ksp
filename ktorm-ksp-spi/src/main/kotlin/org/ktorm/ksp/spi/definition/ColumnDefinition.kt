@@ -18,9 +18,6 @@ package org.ktorm.ksp.spi.definition
 
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSType
-import org.ktorm.ksp.api.Column
-import org.ktorm.ksp.api.PrimaryKey
-import org.ktorm.ksp.api.References
 
 /**
  * Column definition metadata.
@@ -38,22 +35,22 @@ public data class ColumnDefinition(
     val table: TableDefinition,
 
     /**
-     * The name of the column, see [Column.name] and [References.name].
+     * The name of the column.
      */
-    val name: String?,
+    val name: String,
 
     /**
-     * Check if the column is a primary key, see [PrimaryKey].
+     * Check if the column is a primary key.
      */
     val isPrimaryKey: Boolean,
 
     /**
-     * The SQL type of the column, see [Column.sqlType].
+     * The SQL type of the column.
      */
-    val sqlType: KSType?,
+    val sqlType: KSType,
 
     /**
-     * Check if the column is a reference column, see [References].
+     * Check if the column is a reference column.
      */
     val isReference: Boolean,
 
@@ -63,8 +60,7 @@ public data class ColumnDefinition(
     val referenceTable: TableDefinition?,
 
     /**
-     * The name of the corresponding column property in the generated table object,
-     * see [Column.propertyName] and [References.propertyName].
+     * The name of the corresponding column property in the generated table object.
      */
-    val tablePropertyName: String?
+    val tablePropertyName: String
 )

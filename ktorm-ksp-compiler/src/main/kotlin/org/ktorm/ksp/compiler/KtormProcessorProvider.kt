@@ -24,6 +24,7 @@ import com.google.devtools.ksp.processing.SymbolProcessorProvider
 import com.google.devtools.ksp.symbol.*
 import org.ktorm.entity.Entity
 import org.ktorm.ksp.api.*
+import org.ktorm.ksp.spi.LowerSnakeCaseNamingStrategy
 import org.ktorm.ksp.spi.definition.ColumnDefinition
 import org.ktorm.ksp.spi.definition.TableDefinition
 import org.ktorm.schema.SqlType
@@ -41,6 +42,7 @@ class KtormProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor 
     private val logger = environment.logger
     private val options = environment.options
     private val codeGenerator = environment.codeGenerator
+    private val namingStrategy = LowerSnakeCaseNamingStrategy
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
         logger.info("Starting ktorm ksp processor.")
@@ -57,6 +59,7 @@ class KtormProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor 
     }
 
     private fun parseTableDefinition(cls: KSClassDeclaration): TableDefinition {
+        // TODO: add cache for table parsing.
         if (cls.classKind != ClassKind.CLASS && cls.classKind != ClassKind.INTERFACE) {
             val name = cls.qualifiedName?.asString()
             throw IllegalStateException("$name is expected to be a class or interface but actually ${cls.classKind}")
@@ -70,10 +73,10 @@ class KtormProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor 
         val table = cls.getAnnotationsByType(Table::class).first()
         val tableDef = TableDefinition(
             entityClass = cls,
-            name = table.name.takeIf { it.isNotEmpty() },
+            name = table.name.ifEmpty { namingStrategy.getTableName(cls) },
             alias = table.alias.takeIf { it.isNotEmpty() },
-            catalog = table.catalog.takeIf { it.isNotEmpty() },
-            schema = table.schema.takeIf { it.isNotEmpty() },
+            catalog = table.catalog.ifEmpty { options["ktorm.catalog"] }?.takeIf { it.isNotEmpty() },
+            schema = table.schema.ifEmpty { options["ktorm.schema"] }?.takeIf { it.isNotEmpty() },
             tableClassName = table.className.takeIf { it.isNotEmpty() },
             entitySequenceName = table.entitySequenceName.takeIf { it.isNotEmpty() },
             ignoreProperties = table.ignoreProperties.toSet(),
@@ -152,10 +155,16 @@ class KtormProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor 
             }
         }
 
+        val name = if (reference != null) {
+            reference.name.ifEmpty { namingStrategy.getRefColumnName(table.entityClass, property, referenceTable!!) }
+        } else {
+            (column?.name ?: "").ifEmpty { namingStrategy.getColumnName(table.entityClass, property) }
+        }
+
         return ColumnDefinition(
             entityProperty = property,
             table = table,
-            name = (column?.name ?: reference?.name ?: "").takeIf { it.isNotEmpty() },
+            name = name,
             isPrimaryKey = property.isAnnotationPresent(PrimaryKey::class),
             sqlType = sqlType,
             isReference = reference != null,
