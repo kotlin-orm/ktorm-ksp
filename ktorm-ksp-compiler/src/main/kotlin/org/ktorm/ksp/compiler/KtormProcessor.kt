@@ -71,29 +71,35 @@ class KtormProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor 
         )
 
         for (property in cls.getAllProperties()) {
-            val propertyName = property.simpleName.asString()
-            if (propertyName in tableDef.ignoreProperties) {
-                continue
+            if (shouldInclude(property, tableDef)) {
+                (tableDef.columns as MutableList) += parseColumnDefinition(property, tableDef)
             }
-
-            if (property.isAnnotationPresent(Ignore::class)) {
-                continue
-            }
-
-            if (cls.classKind == ClassKind.CLASS && !property.hasBackingField) {
-                continue
-            }
-
-            if (cls.classKind == ClassKind.INTERFACE && propertyName in setOf("entityClass", "properties")) {
-                continue
-            }
-
-            // TODO: skip non-abstract properties for interface-based entities.
-            (tableDef.columns as MutableList) += parseColumnDefinition(property, tableDef)
         }
 
         tablesCache[cls.qualifiedName!!.asString()] = tableDef
         return tableDef
+    }
+    
+    private fun shouldInclude(property: KSPropertyDeclaration, table: TableDefinition): Boolean {
+        val propertyName = property.simpleName.asString()
+        if (propertyName in table.ignoreProperties) {
+            return false
+        }
+
+        if (property.isAnnotationPresent(Ignore::class)) {
+            return false
+        }
+
+        if (table.entityClass.classKind == ClassKind.CLASS && !property.hasBackingField) {
+            return false
+        }
+
+        if (table.entityClass.classKind == ClassKind.INTERFACE && propertyName in setOf("entityClass", "properties")) {
+            return false
+        }
+
+        // TODO: skip non-abstract properties for interface-based entities.
+        return true
     }
 
     private fun parseColumnDefinition(property: KSPropertyDeclaration, table: TableDefinition): ColumnDefinition {
