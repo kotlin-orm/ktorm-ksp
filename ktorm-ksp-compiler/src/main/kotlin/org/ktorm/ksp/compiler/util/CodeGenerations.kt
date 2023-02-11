@@ -23,7 +23,6 @@ import org.ktorm.entity.Entity
 import org.ktorm.expression.*
 import org.ktorm.ksp.api.Undefined
 import org.ktorm.ksp.spi.TableGenerateContext
-import org.ktorm.ksp.compiler.isInline
 import org.ktorm.schema.Column
 import org.ktorm.schema.SqlType
 import kotlin.reflect.KClass
