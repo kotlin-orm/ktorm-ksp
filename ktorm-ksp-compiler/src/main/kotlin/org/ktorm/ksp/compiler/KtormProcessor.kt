@@ -71,7 +71,13 @@ class KtormProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor 
         )
 
         for (property in cls.getAllProperties()) {
-            if (shouldInclude(property, tableDef)) {
+            if (shouldSkip(property, tableDef)) {
+                continue
+            }
+
+            if (property.isAnnotationPresent(References::class)) {
+                (tableDef.columns as MutableList) += parseRefColumnDefinition(property, tableDef)
+            } else {
                 (tableDef.columns as MutableList) += parseColumnDefinition(property, tableDef)
             }
         }
@@ -79,54 +85,31 @@ class KtormProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor 
         tablesCache[cls.qualifiedName!!.asString()] = tableDef
         return tableDef
     }
-    
-    private fun shouldInclude(property: KSPropertyDeclaration, table: TableDefinition): Boolean {
+
+    private fun shouldSkip(property: KSPropertyDeclaration, table: TableDefinition): Boolean {
         val propertyName = property.simpleName.asString()
         if (propertyName in table.ignoreProperties) {
-            return false
+            return true
         }
 
         if (property.isAnnotationPresent(Ignore::class)) {
-            return false
+            return true
         }
 
         if (table.entityClass.classKind == ClassKind.CLASS && !property.hasBackingField) {
-            return false
+            return true
         }
 
         if (table.entityClass.classKind == ClassKind.INTERFACE && propertyName in setOf("entityClass", "properties")) {
-            return false
+            return true
         }
 
         // TODO: skip non-abstract properties for interface-based entities.
-        return true
+        return false
     }
 
     private fun parseColumnDefinition(property: KSPropertyDeclaration, table: TableDefinition): ColumnDefinition {
         val column = property.getAnnotationsByType(Column::class).firstOrNull()
-        val reference = property.getAnnotationsByType(References::class).firstOrNull()
-
-        if (column != null && reference != null) {
-            throw IllegalStateException("@Column and @References cannot use together on the same property: $property")
-        }
-
-        var referenceTable: TableDefinition? = null
-        if (reference != null) {
-            // TODO: check circular reference.
-            referenceTable = parseTableDefinition(property.type.resolve().declaration as KSClassDeclaration)
-
-            if (table.entityClass.classKind != ClassKind.INTERFACE) {
-                throw IllegalStateException("@References can only be used on interface-based entities.")
-            }
-
-            if (referenceTable.entityClass.classKind != ClassKind.INTERFACE) {
-                val name = referenceTable.entityClass.qualifiedName?.asString()
-                throw IllegalStateException("The referenced entity class ($name) should be an interface.")
-            }
-
-            // TODO: check if referenced class is marked with @Table (递归)
-            // TODO: check if the referenced table has only one primary key.
-        }
 
         val sqlType = property.annotations
             .find { anno -> anno.annotationType.resolve().declaration.qualifiedName?.asString() == Column::class.jvmName }
@@ -149,27 +132,70 @@ class KtormProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor 
             }
         }
 
-        val name = if (reference != null) {
-            reference.name.ifEmpty { databaseNamingStrategy.getRefColumnName(table.entityClass, property, referenceTable!!) }
-        } else {
-            (column?.name ?: "").ifEmpty { databaseNamingStrategy.getColumnName(table.entityClass, property) }
+        return ColumnDefinition(
+            entityProperty = property,
+            table = table,
+            name = (column?.name ?: "").ifEmpty { databaseNamingStrategy.getColumnName(table.entityClass, property) },
+            isPrimaryKey = property.isAnnotationPresent(PrimaryKey::class),
+            sqlType = sqlType,
+            isReference = false,
+            referenceTable = null,
+            tablePropertyName = (column?.propertyName ?: "").ifEmpty { codingNamingStrategy.getColumnPropertyName(table.entityClass, property) }
+        )
+    }
+
+    private fun parseRefColumnDefinition(property: KSPropertyDeclaration, table: TableDefinition): ColumnDefinition {
+        val column = property.getAnnotationsByType(Column::class).firstOrNull()
+        if (column != null) {
+            throw IllegalStateException("@Column and @References cannot use together on the same property: $property")
         }
 
-        val tablePropertyName = if (reference != null) {
-            reference.propertyName.ifEmpty { codingNamingStrategy.getRefColumnPropertyName(table.entityClass, property, referenceTable!!) }
-        } else {
-            (column?.propertyName ?: "").ifEmpty { codingNamingStrategy.getColumnPropertyName(table.entityClass, property) }
+        val reference = property.getAnnotationsByType(References::class).first()
+        // TODO: check circular reference.
+        val referenceTable = parseTableDefinition(property.type.resolve().declaration as KSClassDeclaration)
+
+        if (table.entityClass.classKind != ClassKind.INTERFACE) {
+            throw IllegalStateException("@References can only be used on interface-based entities.")
+        }
+
+        if (referenceTable.entityClass.classKind != ClassKind.INTERFACE) {
+            val name = referenceTable.entityClass.qualifiedName?.asString()
+            throw IllegalStateException("The referenced entity class ($name) should be an interface.")
+        }
+
+        // TODO: check if referenced class is marked with @Table (递归)
+        // TODO: check if the referenced table has only one primary key.
+
+        val sqlType = property.annotations
+            .find { anno -> anno.annotationType.resolve().declaration.qualifiedName?.asString() == Column::class.jvmName }
+            ?.let { anno ->
+                val argument = anno.arguments.find { it.name?.asString() == Column::sqlType.name }
+                val sqlType = argument?.value as KSType?
+                sqlType?.takeIf { it.declaration.qualifiedName?.asString() != Nothing::class.jvmName }
+            }
+
+        if (sqlType != null) {
+            val declaration = sqlType.declaration as KSClassDeclaration
+            if (declaration.classKind != ClassKind.OBJECT) {
+                val name = declaration.qualifiedName?.asString()
+                throw IllegalArgumentException("The sqlType class $name must be a Kotlin singleton object.")
+            }
+
+            if (!declaration.isSubclassOf<SqlType<*>>() && !declaration.isSubclassOf<SqlTypeFactory>()) {
+                val name = declaration.qualifiedName?.asString()
+                throw IllegalArgumentException("The sqlType class $name must be subtype of SqlType or SqlTypeFactory.")
+            }
         }
 
         return ColumnDefinition(
             entityProperty = property,
             table = table,
-            name = name,
+            name = reference.name.ifEmpty { databaseNamingStrategy.getRefColumnName(table.entityClass, property, referenceTable) },
             isPrimaryKey = property.isAnnotationPresent(PrimaryKey::class),
             sqlType = sqlType,
-            isReference = reference != null,
+            isReference = true,
             referenceTable = referenceTable,
-            tablePropertyName = tablePropertyName
+            tablePropertyName = reference.propertyName.ifEmpty { codingNamingStrategy.getRefColumnPropertyName(table.entityClass, property, referenceTable) }
         )
     }
 }
