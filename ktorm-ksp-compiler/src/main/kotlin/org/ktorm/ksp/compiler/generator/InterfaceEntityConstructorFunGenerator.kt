@@ -18,11 +18,11 @@ package org.ktorm.ksp.compiler.generator
 
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.buildCodeBlock
-import org.ktorm.ksp.compiler.generator.util.ClassNames
-import org.ktorm.ksp.compiler.generator.util.CodeFactory
-import org.ktorm.ksp.compiler.generator.util.NameAllocator
-import org.ktorm.ksp.compiler.generator.util.SuppressAnnotations
-import org.ktorm.ksp.compiler.generator.util.SuppressAnnotations.functionName
+import org.ktorm.ksp.compiler.util.ClassNames
+import org.ktorm.ksp.compiler.util.CodeFactory
+import org.ktorm.ksp.compiler.util.NameAllocator
+import org.ktorm.ksp.compiler.util.SuppressAnnotations
+import org.ktorm.ksp.compiler.util.SuppressAnnotations.functionName
 import org.ktorm.ksp.spi.TableGenerateContext
 import org.ktorm.ksp.spi.TopLevelFunctionGenerator
 import org.ktorm.ksp.spi.definition.KtormEntityType

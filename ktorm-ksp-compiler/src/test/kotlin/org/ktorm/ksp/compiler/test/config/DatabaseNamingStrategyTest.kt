@@ -22,7 +22,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import org.ktorm.ksp.compiler.test.BaseKspTest
 
-public class NamingStrategyTest : BaseKspTest() {
+public class DatabaseNamingStrategyTest : BaseKspTest() {
 
     @Test
     public fun lowerCaseCamelCaseToUnderscoresNamingStrategy() {

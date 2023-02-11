@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.ktorm.ksp.compiler.generator.util
+package org.ktorm.ksp.compiler.util
 
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
@@ -60,7 +60,7 @@ public object NameGenerator {
 
     public fun generateSqlTableName(context: TableGenerateContext): CodeBlock {
         val (table, config, _, _) = context
-        val localNamingStrategy = config.localNamingStrategy
+        val localNamingStrategy = config.localDatabaseNamingStrategy
         return when {
             table.tableName.isNotEmpty() -> {
                 CodeBlock.of("%S", table.tableName)
@@ -96,7 +96,7 @@ public object NameGenerator {
             column.entityProperty.simpleName.asString()
         }
 
-        val localNamingStrategy = context.config.localNamingStrategy
+        val localNamingStrategy = context.config.localDatabaseNamingStrategy
         val namingStrategy = context.config.namingStrategy
         return when {
             localNamingStrategy != null -> CodeBlock.of("%S", localNamingStrategy.toColumnName(propertyName))

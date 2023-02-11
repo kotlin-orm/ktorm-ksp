@@ -16,7 +16,7 @@
 
 @file:OptIn(KotlinPoetKspPreview::class)
 
-package org.ktorm.ksp.compiler.generator.util
+package org.ktorm.ksp.compiler.util
 
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.MemberName

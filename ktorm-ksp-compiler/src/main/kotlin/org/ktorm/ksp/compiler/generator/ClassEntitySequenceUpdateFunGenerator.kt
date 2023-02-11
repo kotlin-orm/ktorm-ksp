@@ -21,6 +21,7 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import org.ktorm.entity.EntitySequence
 import org.ktorm.expression.ColumnAssignmentExpression
 import org.ktorm.ksp.compiler.generator.util.*
+import org.ktorm.ksp.compiler.util.*
 import org.ktorm.ksp.spi.TableGenerateContext
 import org.ktorm.ksp.spi.TopLevelFunctionGenerator
 import org.ktorm.ksp.spi.definition.ColumnDefinition

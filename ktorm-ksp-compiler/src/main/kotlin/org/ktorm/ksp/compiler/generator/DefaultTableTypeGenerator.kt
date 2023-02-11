@@ -18,7 +18,7 @@ package org.ktorm.ksp.compiler.generator
 
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import org.ktorm.ksp.compiler.generator.util.NameGenerator
+import org.ktorm.ksp.compiler.util.NameGenerator
 import org.ktorm.ksp.spi.TableGenerateContext
 import org.ktorm.ksp.spi.TableTypeGenerator
 import org.ktorm.ksp.spi.definition.KtormEntityType
@@ -67,7 +67,7 @@ public open class DefaultTableTypeGenerator : TableTypeGenerator {
 
     private fun buildClassTable(context: TableGenerateContext, typeSpec: TypeSpec.Builder) {
         val (table, config, _, _) = context
-        val localNamingStrategy = config.localNamingStrategy
+        val localNamingStrategy = config.localDatabaseNamingStrategy
         val tableName = when {
             table.tableName.isNotEmpty() -> table.tableName
             localNamingStrategy != null -> localNamingStrategy.toTableName(table.entityClassName.simpleName)

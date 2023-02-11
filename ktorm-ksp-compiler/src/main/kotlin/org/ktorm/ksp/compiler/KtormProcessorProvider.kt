@@ -24,7 +24,7 @@ import com.google.devtools.ksp.processing.SymbolProcessorProvider
 import com.google.devtools.ksp.symbol.*
 import org.ktorm.entity.Entity
 import org.ktorm.ksp.api.*
-import org.ktorm.ksp.spi.LowerSnakeCaseNamingStrategy
+import org.ktorm.ksp.compiler.util.LowerSnakeCaseDatabaseNamingStrategy
 import org.ktorm.ksp.spi.definition.ColumnDefinition
 import org.ktorm.ksp.spi.definition.TableDefinition
 import org.ktorm.schema.SqlType
@@ -42,7 +42,7 @@ class KtormProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor 
     private val logger = environment.logger
     private val options = environment.options
     private val codeGenerator = environment.codeGenerator
-    private val namingStrategy = LowerSnakeCaseNamingStrategy
+    private val namingStrategy = LowerSnakeCaseDatabaseNamingStrategy
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
         logger.info("Starting ktorm ksp processor.")

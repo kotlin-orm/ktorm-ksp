@@ -18,9 +18,9 @@ package org.ktorm.ksp.compiler.generator
 
 import com.squareup.kotlinpoet.*
 import org.ktorm.dsl.QueryRowSet
-import org.ktorm.ksp.compiler.generator.util.ClassNames
-import org.ktorm.ksp.compiler.generator.util.MemberNames
-import org.ktorm.ksp.compiler.generator.util.withControlFlow
+import org.ktorm.ksp.compiler.util.ClassNames
+import org.ktorm.ksp.compiler.util.MemberNames
+import org.ktorm.ksp.compiler.util.withControlFlow
 import org.ktorm.ksp.spi.TableFunctionGenerator
 import org.ktorm.ksp.spi.TableGenerateContext
 import org.ktorm.ksp.spi.definition.KtormEntityType

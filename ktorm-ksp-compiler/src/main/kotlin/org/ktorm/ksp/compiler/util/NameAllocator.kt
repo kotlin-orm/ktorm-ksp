@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.ktorm.ksp.compiler.generator.util
+package org.ktorm.ksp.compiler.util
 
 import java.util.*
 

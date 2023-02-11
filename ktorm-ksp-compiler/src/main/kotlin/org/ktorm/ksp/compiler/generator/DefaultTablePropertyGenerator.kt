@@ -22,8 +22,8 @@ import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.buildCodeBlock
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toTypeName
-import org.ktorm.ksp.compiler.generator.util.ColumnInitializerGenerator
-import org.ktorm.ksp.compiler.generator.util.MemberNames
+import org.ktorm.ksp.compiler.util.ColumnInitializerGenerator
+import org.ktorm.ksp.compiler.util.MemberNames
 import org.ktorm.ksp.spi.TableGenerateContext
 import org.ktorm.ksp.spi.TablePropertyGenerator
 import org.ktorm.ksp.spi.definition.KtormEntityType
@@ -49,7 +49,7 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
                 } else {
                     Column::class.asClassName().parameterizedBy(column.entityProperty.type.resolve().toTypeName().copy(nullable = true))
                 }
-                val localNamingStrategy = config.localNamingStrategy
+                val localNamingStrategy = config.localDatabaseNamingStrategy
 
                 val columnName = when {
                     column.name != null -> column.name!!
@@ -93,7 +93,7 @@ public open class DefaultTablePropertyGenerator : TablePropertyGenerator {
             .map { column ->
                 val propertyType = column.entityProperty.type.resolve()
                 val columnType = Column::class.asClassName().parameterizedBy(propertyType.toTypeName().copy(nullable = true))
-                val localNamingStrategy = config.localNamingStrategy
+                val localNamingStrategy = config.localDatabaseNamingStrategy
                 val columnName = when {
                     column.name != null -> column.name!!
                     localNamingStrategy != null -> localNamingStrategy.toColumnName(column.entityProperty.simpleName.asString())

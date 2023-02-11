@@ -20,10 +20,10 @@ import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import org.ktorm.entity.EntitySequence
 import org.ktorm.expression.ColumnAssignmentExpression
-import org.ktorm.ksp.compiler.generator.util.ClassNames
-import org.ktorm.ksp.compiler.generator.util.CodeFactory
-import org.ktorm.ksp.compiler.generator.util.SuppressAnnotations
-import org.ktorm.ksp.compiler.generator.util.withControlFlow
+import org.ktorm.ksp.compiler.util.ClassNames
+import org.ktorm.ksp.compiler.util.CodeFactory
+import org.ktorm.ksp.compiler.util.SuppressAnnotations
+import org.ktorm.ksp.compiler.util.withControlFlow
 import org.ktorm.ksp.spi.TableGenerateContext
 import org.ktorm.ksp.spi.TopLevelFunctionGenerator
 import org.ktorm.ksp.spi.definition.ColumnDefinition

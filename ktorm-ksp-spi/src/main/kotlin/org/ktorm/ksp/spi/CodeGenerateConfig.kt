@@ -19,7 +19,6 @@ package org.ktorm.ksp.spi
 import com.google.devtools.ksp.symbol.KSFile
 import com.squareup.kotlinpoet.ClassName
 import org.ktorm.ksp.api.KtormKspConfig
-import org.ktorm.ksp.api.NamingStrategy
 
 /**
  * @see [KtormKspConfig]
@@ -28,7 +27,7 @@ public data class CodeGenerateConfig(
     public val allowReflectionCreateEntity: Boolean,
     public val configDependencyFile: KSFile?,
     public val namingStrategy: ClassName?,
-    public val localNamingStrategy: NamingStrategy?,
+    public val localDatabaseNamingStrategy: DatabaseNamingStrategy?,
     public val extensionGenerator: ExtensionGeneratorConfig
 ) {
 
@@ -39,7 +38,7 @@ public data class CodeGenerateConfig(
         public var allowReflectionCreateEntity: Boolean = true
         public var configDependencyFile: KSFile? = null
         public var namingStrategy: ClassName? = null
-        public var localNamingStrategy: NamingStrategy? = null
+        public var localDatabaseNamingStrategy: DatabaseNamingStrategy? = null
         public var extension: ExtensionGeneratorConfig = ExtensionGeneratorConfig()
 
         /**
@@ -50,7 +49,7 @@ public data class CodeGenerateConfig(
                 allowReflectionCreateEntity,
                 configDependencyFile,
                 namingStrategy,
-                localNamingStrategy,
+                localDatabaseNamingStrategy,
                 extension
             )
         }
