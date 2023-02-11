@@ -21,7 +21,7 @@ import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import org.ktorm.ksp.spi.definition.TableDefinition
 
 /**
- * Naming strategy for the generated code.
+ * Naming strategy for database tables and columns.
  */
 public interface DatabaseNamingStrategy {
 
