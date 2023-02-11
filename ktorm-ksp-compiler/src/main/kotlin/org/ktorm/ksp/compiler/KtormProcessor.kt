@@ -25,6 +25,7 @@ class KtormProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor 
     private val codeGenerator = environment.codeGenerator
     private val databaseNamingStrategy = LowerSnakeCaseDatabaseNamingStrategy
     private val codingNamingStrategy = DefaultCodingNamingStrategy
+    private val tablesCache = HashMap<String, TableDefinition>()
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
         logger.info("Starting ktorm ksp processor.")
@@ -41,14 +42,18 @@ class KtormProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor 
     }
 
     private fun parseTableDefinition(cls: KSClassDeclaration): TableDefinition {
-        // TODO: add cache for table parsing.
+        val r = tablesCache[cls.qualifiedName!!.asString()]
+        if (r != null) {
+            return r
+        }
+
         if (cls.classKind != ClassKind.CLASS && cls.classKind != ClassKind.INTERFACE) {
-            val name = cls.qualifiedName?.asString()
+            val name = cls.qualifiedName!!.asString()
             throw IllegalStateException("$name is expected to be a class or interface but actually ${cls.classKind}")
         }
 
         if (cls.classKind == ClassKind.INTERFACE && !cls.isSubclassOf<Entity<*>>()) {
-            val name = cls.qualifiedName?.asString()
+            val name = cls.qualifiedName!!.asString()
             throw IllegalStateException("$name must extends from org.ktorm.entity.Entity")
         }
 
@@ -87,6 +92,7 @@ class KtormProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor 
             (tableDef.columns as MutableList) += parseColumnDefinition(property, tableDef)
         }
 
+        tablesCache[cls.qualifiedName!!.asString()] = tableDef
         return tableDef
     }
 
