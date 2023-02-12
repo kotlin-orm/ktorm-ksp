@@ -4,7 +4,7 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import org.atteo.evo.inflector.English
 import org.ktorm.ksp.spi.CodingNamingStrategy
-import org.ktorm.ksp.spi.definition.TableDefinition
+import org.ktorm.ksp.spi.TableMetadata
 
 object DefaultCodingNamingStrategy : CodingNamingStrategy {
 
@@ -24,7 +24,7 @@ object DefaultCodingNamingStrategy : CodingNamingStrategy {
     override fun getRefColumnPropertyName(
         cls: KSClassDeclaration,
         property: KSPropertyDeclaration,
-        referenceTable: TableDefinition
+        referenceTable: TableMetadata
     ): String {
         return property.simpleName.asString()
     }

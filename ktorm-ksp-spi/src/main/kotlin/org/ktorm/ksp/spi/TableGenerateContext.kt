@@ -18,7 +18,6 @@ package org.ktorm.ksp.spi
 
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSFile
-import org.ktorm.ksp.spi.definition.TableDefinition
 
 /**
  * Context information for generating table code.
@@ -28,7 +27,7 @@ public data class TableGenerateContext(
     /**
      * The table definition.
      */
-    val table: TableDefinition,
+    val table: TableMetadata,
 
     /**
      * The global code generate config.

@@ -1,47 +1,27 @@
-package org.ktorm.ksp.compiler
+package org.ktorm.ksp.compiler.util
 
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
 import com.google.devtools.ksp.isAnnotationPresent
 import com.google.devtools.ksp.processing.Resolver
-import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.*
-import com.google.devtools.ksp.validate
 import org.ktorm.entity.Entity
 import org.ktorm.ksp.api.*
-import org.ktorm.ksp.compiler.util.DefaultCodingNamingStrategy
-import org.ktorm.ksp.compiler.util.LowerSnakeCaseDatabaseNamingStrategy
-import org.ktorm.ksp.compiler.util.isSubclassOf
-import org.ktorm.ksp.spi.definition.ColumnDefinition
-import org.ktorm.ksp.spi.definition.TableDefinition
+import org.ktorm.ksp.spi.ColumnMetadata
+import org.ktorm.ksp.spi.TableMetadata
 import org.ktorm.schema.SqlType
 import kotlin.reflect.jvm.jvmName
 
 @OptIn(KspExperimental::class)
-class KtormProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor {
-    private val logger = environment.logger
-    private val options = environment.options
-    private val codeGenerator = environment.codeGenerator
+class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironment) {
+    private val resolver = _resolver
+    private val options = _environment.options
     private val databaseNamingStrategy = LowerSnakeCaseDatabaseNamingStrategy
     private val codingNamingStrategy = DefaultCodingNamingStrategy
-    private val tablesCache = HashMap<String, TableDefinition>()
+    private val tablesCache = HashMap<String, TableMetadata>()
 
-    override fun process(resolver: Resolver): List<KSAnnotated> {
-        logger.info("Starting ktorm ksp processor.")
-        val (symbols, deferral) = resolver.getSymbolsWithAnnotation(Table::class.jvmName).partition { it.validate() }
-
-        val tables = symbols
-            .filterIsInstance<KSClassDeclaration>()
-            .map { entityClass ->
-                parseTableDefinition(entityClass)
-            }
-
-        // KtormCodeGenerator.generate(tableDefinitions, environment.codeGenerator, config, logger)
-        return deferral
-    }
-
-    private fun parseTableDefinition(cls: KSClassDeclaration): TableDefinition {
+    fun parseTableMetadata(cls: KSClassDeclaration): TableMetadata {
         val r = tablesCache[cls.qualifiedName!!.asString()]
         if (r != null) {
             return r
@@ -58,7 +38,7 @@ class KtormProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor 
         }
 
         val table = cls.getAnnotationsByType(Table::class).first()
-        val tableDef = TableDefinition(
+        val tableDef = TableMetadata(
             entityClass = cls,
             name = table.name.ifEmpty { databaseNamingStrategy.getTableName(cls) },
             alias = table.alias.takeIf { it.isNotEmpty() },
@@ -76,9 +56,9 @@ class KtormProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor 
             }
 
             if (property.isAnnotationPresent(References::class)) {
-                (tableDef.columns as MutableList) += parseRefColumnDefinition(property, tableDef)
+                (tableDef.columns as MutableList) += parseRefColumnMetadata(property, tableDef)
             } else {
-                (tableDef.columns as MutableList) += parseColumnDefinition(property, tableDef)
+                (tableDef.columns as MutableList) += parseColumnMetadata(property, tableDef)
             }
         }
 
@@ -86,7 +66,7 @@ class KtormProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor 
         return tableDef
     }
 
-    private fun shouldSkip(property: KSPropertyDeclaration, table: TableDefinition): Boolean {
+    private fun shouldSkip(property: KSPropertyDeclaration, table: TableMetadata): Boolean {
         val propertyName = property.simpleName.asString()
         if (propertyName in table.ignoreProperties) {
             return true
@@ -108,7 +88,7 @@ class KtormProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor 
         return false
     }
 
-    private fun parseColumnDefinition(property: KSPropertyDeclaration, table: TableDefinition): ColumnDefinition {
+    private fun parseColumnMetadata(property: KSPropertyDeclaration, table: TableMetadata): ColumnMetadata {
         val column = property.getAnnotationsByType(Column::class).firstOrNull()
 
         val sqlType = property.annotations
@@ -132,7 +112,7 @@ class KtormProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor 
             }
         }
 
-        return ColumnDefinition(
+        return ColumnMetadata(
             entityProperty = property,
             table = table,
             name = (column?.name ?: "").ifEmpty { databaseNamingStrategy.getColumnName(table.entityClass, property) },
@@ -144,7 +124,7 @@ class KtormProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor 
         )
     }
 
-    private fun parseRefColumnDefinition(property: KSPropertyDeclaration, table: TableDefinition): ColumnDefinition {
+    private fun parseRefColumnMetadata(property: KSPropertyDeclaration, table: TableMetadata): ColumnMetadata {
         val column = property.getAnnotationsByType(Column::class).firstOrNull()
         if (column != null) {
             throw IllegalStateException("@Column and @References cannot use together on the same property: $property")
@@ -152,7 +132,7 @@ class KtormProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor 
 
         val reference = property.getAnnotationsByType(References::class).first()
         // TODO: check circular reference.
-        val referenceTable = parseTableDefinition(property.type.resolve().declaration as KSClassDeclaration)
+        val referenceTable = parseTableMetadata(property.type.resolve().declaration as KSClassDeclaration)
 
         if (table.entityClass.classKind != ClassKind.INTERFACE) {
             throw IllegalStateException("@References can only be used on interface-based entities.")
@@ -187,7 +167,7 @@ class KtormProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor 
             }
         }
 
-        return ColumnDefinition(
+        return ColumnMetadata(
             entityProperty = property,
             table = table,
             name = reference.name.ifEmpty { databaseNamingStrategy.getRefColumnName(table.entityClass, property, referenceTable) },

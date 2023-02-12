@@ -25,12 +25,12 @@ import com.google.devtools.ksp.processing.KSPLogger
 import com.squareup.kotlinpoet.FileSpec
 import org.ktorm.ksp.spi.CodeGenerateConfig
 import org.ktorm.ksp.spi.TableGenerateContext
-import org.ktorm.ksp.spi.definition.TableDefinition
+import org.ktorm.ksp.spi.TableMetadata
 
 public object KtormCodeGenerator {
 
     public fun generate(
-        tables: List<TableDefinition>,
+        tables: List<TableMetadata>,
         codeGenerator: CodeGenerator,
         config: CodeGenerateConfig,
         logger: KSPLogger,

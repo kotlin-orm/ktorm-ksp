@@ -26,9 +26,9 @@ import org.ktorm.ksp.compiler.util.SuppressAnnotations
 import org.ktorm.ksp.compiler.util.withControlFlow
 import org.ktorm.ksp.spi.TableGenerateContext
 import org.ktorm.ksp.spi.TopLevelFunctionGenerator
-import org.ktorm.ksp.spi.definition.ColumnDefinition
+import org.ktorm.ksp.spi.ColumnMetadata
 import org.ktorm.ksp.spi.definition.KtormEntityType
-import org.ktorm.ksp.spi.definition.TableDefinition
+import org.ktorm.ksp.spi.TableMetadata
 
 /**
  * Generate add extend function to [EntitySequence].
@@ -80,7 +80,7 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
         return listOf(funSpec)
     }
 
-    private fun buildAssignmentsCode(table: TableDefinition, useGeneratedKey: Boolean): CodeBlock {
+    private fun buildAssignmentsCode(table: TableMetadata, useGeneratedKey: Boolean): CodeBlock {
         return buildCodeBlock {
             addStatement(
                 "val assignments = %T<%T<*>>(%L)",
@@ -120,7 +120,7 @@ public class ClassEntitySequenceAddFunGenerator : TopLevelFunctionGenerator {
         )
     }
 
-    private fun buildExecuteCode(useGeneratedKey: Boolean, primaryKeys: List<ColumnDefinition>): CodeBlock {
+    private fun buildExecuteCode(useGeneratedKey: Boolean, primaryKeys: List<ColumnMetadata>): CodeBlock {
         return buildCodeBlock {
             if (!useGeneratedKey) {
                 addStatement("return database.executeUpdate(expression)")

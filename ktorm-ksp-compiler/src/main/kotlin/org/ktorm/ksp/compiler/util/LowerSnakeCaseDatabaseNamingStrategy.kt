@@ -3,7 +3,7 @@ package org.ktorm.ksp.compiler.util
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import org.ktorm.ksp.spi.DatabaseNamingStrategy
-import org.ktorm.ksp.spi.definition.TableDefinition
+import org.ktorm.ksp.spi.TableMetadata
 
 /**
  * Generating lower snake-case names.
@@ -18,7 +18,7 @@ object LowerSnakeCaseDatabaseNamingStrategy : DatabaseNamingStrategy {
         return property.simpleName.asString().toSnakeCase()
     }
 
-    override fun getRefColumnName(cls: KSClassDeclaration, property: KSPropertyDeclaration, referenceTable: TableDefinition): String {
+    override fun getRefColumnName(cls: KSClassDeclaration, property: KSPropertyDeclaration, referenceTable: TableMetadata): String {
         return property.simpleName.asString().toSnakeCase()
     }
 

@@ -2,7 +2,6 @@ package org.ktorm.ksp.spi
 
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
-import org.ktorm.ksp.spi.definition.TableDefinition
 
 /**
  * Naming strategy for Kotlin symbols in the generated code.
@@ -22,10 +21,10 @@ public interface CodingNamingStrategy {
     /**
      * Generate the column property name.
      */
-    public fun getColumnPropertyName(cls: KSClassDeclaration, property: KSPropertyDeclaration): String
+    public fun getColumnPropertyName(cls: KSClassDeclaration, prop: KSPropertyDeclaration): String
 
     /**
      * Generate the reference column property name.
      */
-    public fun getRefColumnPropertyName(cls: KSClassDeclaration, property: KSPropertyDeclaration, referenceTable: TableDefinition): String
+    public fun getRefColumnPropertyName(cls: KSClassDeclaration, prop: KSPropertyDeclaration, refTable: TableMetadata): String
 }

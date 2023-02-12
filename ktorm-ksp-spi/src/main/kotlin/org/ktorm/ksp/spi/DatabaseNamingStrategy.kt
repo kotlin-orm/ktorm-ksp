@@ -18,7 +18,6 @@ package org.ktorm.ksp.spi
 
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
-import org.ktorm.ksp.spi.definition.TableDefinition
 
 /**
  * Naming strategy for database tables and columns.
@@ -33,10 +32,10 @@ public interface DatabaseNamingStrategy {
     /**
      * Generate the column name.
      */
-    public fun getColumnName(cls: KSClassDeclaration, property: KSPropertyDeclaration): String
+    public fun getColumnName(cls: KSClassDeclaration, prop: KSPropertyDeclaration): String
 
     /**
      * Generate the reference column name.
      */
-    public fun getRefColumnName(cls: KSClassDeclaration, property: KSPropertyDeclaration, referenceTable: TableDefinition): String
+    public fun getRefColumnName(cls: KSClassDeclaration, prop: KSPropertyDeclaration, refTable: TableMetadata): String
 }

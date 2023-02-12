@@ -24,9 +24,9 @@ import org.ktorm.ksp.compiler.generator.util.*
 import org.ktorm.ksp.compiler.util.*
 import org.ktorm.ksp.spi.TableGenerateContext
 import org.ktorm.ksp.spi.TopLevelFunctionGenerator
-import org.ktorm.ksp.spi.definition.ColumnDefinition
+import org.ktorm.ksp.spi.ColumnMetadata
 import org.ktorm.ksp.spi.definition.KtormEntityType
-import org.ktorm.ksp.spi.definition.TableDefinition
+import org.ktorm.ksp.spi.TableMetadata
 
 /**
  * Generate update extend function to [EntitySequence].
@@ -74,7 +74,7 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
         return listOf(funSpec)
     }
 
-    private fun buildAssignmentsCode(table: TableDefinition): CodeBlock {
+    private fun buildAssignmentsCode(table: TableMetadata): CodeBlock {
         return buildCodeBlock {
             val targetColumns = table.columns.filter { !it.isPrimaryKey }
 
@@ -102,7 +102,7 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
         }
     }
 
-    private fun buildConditionsCode(primaryKeys: List<ColumnDefinition>): CodeBlock {
+    private fun buildConditionsCode(primaryKeys: List<ColumnMetadata>): CodeBlock {
         return buildCodeBlock {
             if (primaryKeys.size == 1) {
                 val pk = primaryKeys[0]

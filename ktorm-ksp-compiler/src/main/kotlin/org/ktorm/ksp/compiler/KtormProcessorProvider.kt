@@ -16,13 +16,35 @@
 
 package org.ktorm.ksp.compiler
 
+import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.processing.SymbolProcessorProvider
+import com.google.devtools.ksp.symbol.KSAnnotated
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.validate
+import org.ktorm.ksp.api.Table
+import org.ktorm.ksp.compiler.util.MetadataParser
+import kotlin.reflect.jvm.jvmName
 
 class KtormProcessorProvider : SymbolProcessorProvider {
 
     override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {
-        return KtormProcessor(environment)
+        return object : SymbolProcessor {
+            override fun process(resolver: Resolver): List<KSAnnotated> {
+                val symbols = resolver.getSymbolsWithAnnotation(Table::class.jvmName)
+                val (validSymbols, deferral) = symbols.partition { it.validate() }
+
+                val parser = MetadataParser(resolver, environment)
+                val tables = validSymbols
+                    .filterIsInstance<KSClassDeclaration>()
+                    .map { entityClass ->
+                        parser.parseTableMetadata(entityClass)
+                    }
+
+                // KtormCodeGenerator.generate(tableDefinitions, environment.codeGenerator, config, logger)
+                return deferral
+            }
+        }
     }
 }

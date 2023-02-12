@@ -30,7 +30,7 @@ import org.ktorm.ksp.api.Column
 import org.ktorm.ksp.api.References
 import org.ktorm.ksp.api.Table
 import org.ktorm.ksp.spi.TableGenerateContext
-import org.ktorm.ksp.spi.definition.ColumnDefinition
+import org.ktorm.ksp.spi.ColumnMetadata
 
 public object NameGenerator {
 
@@ -77,7 +77,7 @@ public object NameGenerator {
         }
     }
 
-    public fun generateSqlColumnName(context: TableGenerateContext, column: ColumnDefinition): CodeBlock {
+    public fun generateSqlColumnName(context: TableGenerateContext, column: ColumnMetadata): CodeBlock {
         if (column.name != null) {
             return CodeBlock.of("%S", column.name)
         }
