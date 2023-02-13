@@ -7,5 +7,6 @@ plugins {
 
 dependencies {
     compileOnly(libs.ktorm.core)
+    compileOnly(libs.ktorm.jackson)
     testImplementation(libs.ktorm.core)
 }

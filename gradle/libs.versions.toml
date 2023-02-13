@@ -15,6 +15,7 @@ ktfmt = "0.40"
 gradlePlugin-kotlin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 
 ktorm-core = { module = "org.ktorm:ktorm-core", version.ref = "ktorm" }
+ktorm-jackson = { module = "org.ktorm:ktorm-jackson", version.ref = "ktorm" }
 kotlinpoet-ksp = { module = "com.squareup:kotlinpoet-ksp", version.ref = "kotlinpoetKsp" }
 ksp-api = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "googleKsp" }
 evoInflector = { module = "org.atteo:evo-inflector", version.ref = "evoInflector" }
