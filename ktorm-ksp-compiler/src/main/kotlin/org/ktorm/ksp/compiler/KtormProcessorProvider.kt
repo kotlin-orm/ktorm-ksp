@@ -32,19 +32,22 @@ class KtormProcessorProvider : SymbolProcessorProvider {
     override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {
         return object : SymbolProcessor {
             override fun process(resolver: Resolver): List<KSAnnotated> {
-                val symbols = resolver.getSymbolsWithAnnotation(Table::class.jvmName)
-                val (validSymbols, deferral) = symbols.partition { it.validate() }
-
-                val parser = MetadataParser(resolver, environment)
-                val tables = validSymbols
-                    .filterIsInstance<KSClassDeclaration>()
-                    .map { entityClass ->
-                        parser.parseTableMetadata(entityClass)
-                    }
-
-                // KtormCodeGenerator.generate(tableDefinitions, environment.codeGenerator, config, logger)
-                return deferral
+                return doProcess(resolver, environment)
             }
         }
+    }
+
+    private fun doProcess(resolver: Resolver, environment: SymbolProcessorEnvironment): List<KSAnnotated> {
+        val (symbols, deferral) = resolver.getSymbolsWithAnnotation(Table::class.jvmName).partition { it.validate() }
+
+        val parser = MetadataParser(resolver, environment)
+        val tables = symbols
+            .filterIsInstance<KSClassDeclaration>()
+            .map { entityClass ->
+                parser.parseTableMetadata(entityClass)
+            }
+
+        // KtormCodeGenerator.generate(tableDefinitions, environment.codeGenerator, config, logger)
+        return deferral
     }
 }
