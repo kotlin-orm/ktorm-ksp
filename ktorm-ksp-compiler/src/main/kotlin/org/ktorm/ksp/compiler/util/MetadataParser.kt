@@ -91,25 +91,31 @@ class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironme
     private fun parseColumnMetadata(property: KSPropertyDeclaration, table: TableMetadata): ColumnMetadata {
         val column = property.getAnnotationsByType(Column::class).firstOrNull()
 
-        val sqlType = property.annotations
+        var sqlType = property.annotations
             .find { anno -> anno.annotationType.resolve().declaration.qualifiedName?.asString() == Column::class.jvmName }
             ?.let { anno ->
                 val argument = anno.arguments.find { it.name?.asString() == Column::sqlType.name }
                 val sqlType = argument?.value as KSType?
                 sqlType?.takeIf { it.declaration.qualifiedName?.asString() != Nothing::class.jvmName }
             }
+        
+        if (sqlType == null) {
+            sqlType = property.type.resolve().getSqlType(resolver)
+        }
 
-        if (sqlType != null) {
-            val declaration = sqlType.declaration as KSClassDeclaration
-            if (declaration.classKind != ClassKind.OBJECT) {
-                val name = declaration.qualifiedName?.asString()
-                throw IllegalArgumentException("The sqlType class $name must be a Kotlin singleton object.")
-            }
+        if (sqlType == null) {
+            throw IllegalStateException("Cannot infer sqlType for property: $property, please specify manually.")
+        }
 
-            if (!declaration.isSubclassOf<SqlType<*>>() && !declaration.isSubclassOf<SqlTypeFactory>()) {
-                val name = declaration.qualifiedName?.asString()
-                throw IllegalArgumentException("The sqlType class $name must be subtype of SqlType or SqlTypeFactory.")
-            }
+        val declaration = sqlType.declaration as KSClassDeclaration
+        if (declaration.classKind != ClassKind.OBJECT) {
+            val name = declaration.qualifiedName?.asString()
+            throw IllegalArgumentException("The sqlType class $name must be a Kotlin singleton object.")
+        }
+
+        if (!declaration.isSubclassOf<SqlType<*>>() && !declaration.isSubclassOf<SqlTypeFactory>()) {
+            val name = declaration.qualifiedName?.asString()
+            throw IllegalArgumentException("The sqlType class $name must be subtype of SqlType or SqlTypeFactory.")
         }
 
         return ColumnMetadata(
