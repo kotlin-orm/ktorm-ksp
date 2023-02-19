@@ -91,14 +91,41 @@ class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironme
     private fun parseColumnMetadata(property: KSPropertyDeclaration, table: TableMetadata): ColumnMetadata {
         val column = property.getAnnotationsByType(Column::class).firstOrNull()
 
-        var sqlType = property.annotations
-            .find { anno -> anno.annotationType.resolve().declaration.qualifiedName?.asString() == Column::class.jvmName }
-            ?.let { anno ->
-                val argument = anno.arguments.find { it.name?.asString() == Column::sqlType.name }
-                val sqlType = argument?.value as KSType?
-                sqlType?.takeIf { it.declaration.qualifiedName?.asString() != Nothing::class.jvmName }
-            }
-        
+        var name = column?.name
+        if (name.isNullOrEmpty()) {
+            name = databaseNamingStrategy.getColumnName(table.entityClass, property)
+        }
+
+        var propertyName = column?.propertyName
+        if (propertyName.isNullOrEmpty()) {
+            propertyName = codingNamingStrategy.getColumnPropertyName(table.entityClass, property)
+        }
+
+        return ColumnMetadata(
+            entityProperty = property,
+            table = table,
+            name = name,
+            isPrimaryKey = property.isAnnotationPresent(PrimaryKey::class),
+            sqlType = parseColumnSqlType(property),
+            isReference = false,
+            referenceTable = null,
+            tablePropertyName = propertyName
+        )
+    }
+
+    private fun parseColumnSqlType(property: KSPropertyDeclaration): KSType {
+        val annotation = property.annotations.find { anno ->
+            val annoType = anno.annotationType.resolve()
+            annoType.declaration.qualifiedName?.asString() == Column::class.jvmName
+        }
+
+        val argument = annotation?.arguments?.find { it.name?.asString() == Column::sqlType.name }
+
+        var sqlType = argument?.value as KSType?
+        if (sqlType?.declaration?.qualifiedName?.asString() == Nothing::class.jvmName) {
+            sqlType = null
+        }
+
         if (sqlType == null) {
             sqlType = property.type.resolve().getSqlType(resolver)
         }
@@ -118,16 +145,7 @@ class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironme
             throw IllegalArgumentException("The sqlType class $name must be subtype of SqlType or SqlTypeFactory.")
         }
 
-        return ColumnMetadata(
-            entityProperty = property,
-            table = table,
-            name = (column?.name ?: "").ifEmpty { databaseNamingStrategy.getColumnName(table.entityClass, property) },
-            isPrimaryKey = property.isAnnotationPresent(PrimaryKey::class),
-            sqlType = sqlType,
-            isReference = false,
-            referenceTable = null,
-            tablePropertyName = (column?.propertyName ?: "").ifEmpty { codingNamingStrategy.getColumnPropertyName(table.entityClass, property) }
-        )
+        return sqlType
     }
 
     private fun parseRefColumnMetadata(property: KSPropertyDeclaration, table: TableMetadata): ColumnMetadata {
