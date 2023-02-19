@@ -154,52 +154,52 @@ class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironme
             throw IllegalStateException("@Column and @References cannot use together on the same property: $property")
         }
 
-        val reference = property.getAnnotationsByType(References::class).first()
-        // TODO: check circular reference.
-        val referenceTable = parseTableMetadata(property.type.resolve().declaration as KSClassDeclaration)
-
         if (table.entityClass.classKind != ClassKind.INTERFACE) {
             throw IllegalStateException("@References can only be used on interface-based entities.")
         }
 
-        if (referenceTable.entityClass.classKind != ClassKind.INTERFACE) {
-            val name = referenceTable.entityClass.qualifiedName?.asString()
-            throw IllegalStateException("The referenced entity class ($name) should be an interface.")
+        // TODO: check circular reference.
+        val reference = property.getAnnotationsByType(References::class).first()
+        val referenceTable = parseTableMetadata(property.type.resolve().declaration as KSClassDeclaration)
+
+        var name = reference.name
+        if (name.isEmpty()) {
+            name = databaseNamingStrategy.getRefColumnName(table.entityClass, property, referenceTable)
         }
 
-        // TODO: check if referenced class is marked with @Table (递归)
-        // TODO: check if the referenced table has only one primary key.
+        var propertyName = reference.propertyName
+        if (propertyName.isEmpty()) {
+            propertyName = codingNamingStrategy.getRefColumnPropertyName(table.entityClass, property, referenceTable)
+        }
 
-        val sqlType = property.annotations
-            .find { anno -> anno.annotationType.resolve().declaration.qualifiedName?.asString() == Column::class.jvmName }
-            ?.let { anno ->
-                val argument = anno.arguments.find { it.name?.asString() == Column::sqlType.name }
-                val sqlType = argument?.value as KSType?
-                sqlType?.takeIf { it.declaration.qualifiedName?.asString() != Nothing::class.jvmName }
-            }
+        if (referenceTable.entityClass.classKind != ClassKind.INTERFACE) {
+            val n = referenceTable.entityClass.qualifiedName?.asString()
+            throw IllegalStateException("The referenced entity class ($n) should be an interface.")
+        }
 
-        if (sqlType != null) {
-            val declaration = sqlType.declaration as KSClassDeclaration
-            if (declaration.classKind != ClassKind.OBJECT) {
-                val name = declaration.qualifiedName?.asString()
-                throw IllegalArgumentException("The sqlType class $name must be a Kotlin singleton object.")
-            }
+        if (!referenceTable.entityClass.isAnnotationPresent(Table::class)) {
+            val n = referenceTable.entityClass.qualifiedName?.asString()
+            throw IllegalStateException("The referenced entity class ($n) should be marked with @Table.")
+        }
 
-            if (!declaration.isSubclassOf<SqlType<*>>() && !declaration.isSubclassOf<SqlTypeFactory>()) {
-                val name = declaration.qualifiedName?.asString()
-                throw IllegalArgumentException("The sqlType class $name must be subtype of SqlType or SqlTypeFactory.")
-            }
+        val primaryKeys = referenceTable.columns.filter { it.isPrimaryKey }
+        if (primaryKeys.isEmpty()) {
+            throw IllegalStateException("Table `${referenceTable.name}` doesn't have a primary key.")
+        }
+
+        if (primaryKeys.size > 1) {
+            throw IllegalStateException("Reference table '${referenceTable.name}' cannot have compound primary keys.")
         }
 
         return ColumnMetadata(
             entityProperty = property,
             table = table,
-            name = reference.name.ifEmpty { databaseNamingStrategy.getRefColumnName(table.entityClass, property, referenceTable) },
+            name = name,
             isPrimaryKey = property.isAnnotationPresent(PrimaryKey::class),
-            sqlType = sqlType,
+            sqlType = primaryKeys[0].sqlType,
             isReference = true,
             referenceTable = referenceTable,
-            tablePropertyName = reference.propertyName.ifEmpty { codingNamingStrategy.getRefColumnPropertyName(table.entityClass, property, referenceTable) }
+            tablePropertyName = propertyName
         )
     }
 }
