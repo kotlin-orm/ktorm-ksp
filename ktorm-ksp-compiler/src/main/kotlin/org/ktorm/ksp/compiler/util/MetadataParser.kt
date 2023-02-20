@@ -8,7 +8,9 @@ import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.*
 import org.ktorm.entity.Entity
 import org.ktorm.ksp.api.*
+import org.ktorm.ksp.spi.CodingNamingStrategy
 import org.ktorm.ksp.spi.ColumnMetadata
+import org.ktorm.ksp.spi.DatabaseNamingStrategy
 import org.ktorm.ksp.spi.TableMetadata
 import org.ktorm.schema.SqlType
 import kotlin.reflect.jvm.jvmName
@@ -17,9 +19,32 @@ import kotlin.reflect.jvm.jvmName
 class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironment) {
     private val resolver = _resolver
     private val options = _environment.options
-    private val databaseNamingStrategy = LowerSnakeCaseDatabaseNamingStrategy
-    private val codingNamingStrategy = DefaultCodingNamingStrategy
+    private val databaseNamingStrategy = loadDatabaseNamingStrategy()
+    private val codingNamingStrategy = loadCodingNamingStrategy()
     private val tablesCache = HashMap<String, TableMetadata>()
+
+    private fun loadDatabaseNamingStrategy(): DatabaseNamingStrategy {
+        val name = options["ktorm.dbNamingStrategy"] ?: "lower-snake-case"
+        if (name == "lower-snake-case") {
+            return LowerSnakeCaseDatabaseNamingStrategy
+        }
+        if (name == "upper-snake-case") {
+            return UpperSnakeCaseDatabaseNamingStrategy
+        }
+
+        val cls = Class.forName(name)
+        return (cls.kotlin.objectInstance ?: cls.newInstance()) as DatabaseNamingStrategy
+    }
+
+    private fun loadCodingNamingStrategy(): CodingNamingStrategy {
+        val name = options["ktorm.codingNamingStrategy"]
+        if (name == null) {
+            return DefaultCodingNamingStrategy
+        } else {
+            val cls = Class.forName(name)
+            return (cls.kotlin.objectInstance ?: cls.newInstance()) as CodingNamingStrategy
+        }
+    }
 
     fun parseTableMetadata(cls: KSClassDeclaration): TableMetadata {
         val r = tablesCache[cls.qualifiedName!!.asString()]
