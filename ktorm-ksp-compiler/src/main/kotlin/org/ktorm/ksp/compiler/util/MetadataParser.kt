@@ -174,8 +174,7 @@ class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironme
     }
 
     private fun parseRefColumnMetadata(property: KSPropertyDeclaration, table: TableMetadata): ColumnMetadata {
-        val column = property.getAnnotationsByType(Column::class).firstOrNull()
-        if (column != null) {
+        if (property.isAnnotationPresent(Column::class)) {
             throw IllegalStateException("@Column and @References cannot use together on the same property: $property")
         }
 
@@ -199,12 +198,12 @@ class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironme
 
         if (referenceTable.entityClass.classKind != ClassKind.INTERFACE) {
             val n = referenceTable.entityClass.qualifiedName?.asString()
-            throw IllegalStateException("The referenced entity class ($n) should be an interface.")
+            throw IllegalStateException("The referenced entity class ($n) must be an interface.")
         }
 
         if (!referenceTable.entityClass.isAnnotationPresent(Table::class)) {
             val n = referenceTable.entityClass.qualifiedName?.asString()
-            throw IllegalStateException("The referenced entity class ($n) should be marked with @Table.")
+            throw IllegalStateException("The referenced entity class ($n) must be annotated with @Table.")
         }
 
         val primaryKeys = referenceTable.columns.filter { it.isPrimaryKey }
