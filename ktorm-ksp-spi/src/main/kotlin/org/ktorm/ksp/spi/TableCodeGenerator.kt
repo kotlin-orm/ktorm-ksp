@@ -16,6 +16,7 @@
 
 package org.ktorm.ksp.spi
 
+import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
@@ -31,7 +32,7 @@ public sealed interface TableCodeGenerator<T : Any> {
      * global configuration, etc.
      * @return generated code
      */
-    public fun generate(context: TableGenerateContext): T
+    public fun generate(table: TableMetadata, environment: SymbolProcessorEnvironment): T
 }
 
 /**
