@@ -22,9 +22,9 @@ import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 
 /**
- * Ktorm KSP code generator interface.
+ * Ktorm KSP code generator interface for third-party extensions.
  */
-public interface CodeGenerator {
+public interface ExtCodeGenerator {
 
     /**
      * Generate types for the [table] in the corresponding resulting file.
