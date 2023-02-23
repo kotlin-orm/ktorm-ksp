@@ -46,5 +46,5 @@ public data class ColumnMetadata(
     /**
      * The name of the corresponding column property in the generated table object.
      */
-    val tablePropertyName: String
+    val columnPropertyName: String
 )

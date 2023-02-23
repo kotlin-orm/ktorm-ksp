@@ -134,7 +134,7 @@ class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironme
             sqlType = parseColumnSqlType(property),
             isReference = false,
             referenceTable = null,
-            tablePropertyName = propertyName
+            columnPropertyName = propertyName
         )
     }
 
@@ -223,7 +223,7 @@ class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironme
             sqlType = primaryKeys[0].sqlType,
             isReference = true,
             referenceTable = referenceTable,
-            tablePropertyName = propertyName
+            columnPropertyName = propertyName
         )
     }
 }

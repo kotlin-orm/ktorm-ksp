@@ -1,12 +1,16 @@
 package org.ktorm.ksp.compiler.generator
 
 import com.google.devtools.ksp.symbol.ClassKind
+import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toClassName
+import com.squareup.kotlinpoet.ksp.toTypeName
+import org.ktorm.ksp.spi.ColumnMetadata
 import org.ktorm.ksp.spi.TableMetadata
 import org.ktorm.schema.BaseTable
+import org.ktorm.schema.Column
 import org.ktorm.schema.Table
 
 @OptIn(KotlinPoetKspPreview::class)
@@ -40,6 +44,15 @@ object TableClassGenerator {
                     typeSpec.addSuperclassConstructorParameter("schema·=·%S", table.schema!!)
                 }
             }
+            .also { typeSpec ->
+                for (column in table.columns) {
+                    val propertySpec = PropertySpec.builder(column.columnPropertyName, column.getColumnType())
+                        .addKdoc("Column %L. %L", column.name, column.entityProperty.docString?.trimIndent().orEmpty())
+                        .build()
+
+                    typeSpec.addProperty(propertySpec)
+                }
+            }
             .addFunction(
                 FunSpec.builder("aliased")
                     .addKdoc(
@@ -60,5 +73,14 @@ object TableClassGenerator {
                     .build()
             )
             .build()
+    }
+
+    private fun ColumnMetadata.getColumnType(): TypeName {
+        if (isReference) {
+            return referenceTable!!.columns.single { it.isPrimaryKey }.getColumnType()
+        } else {
+            val propType = entityProperty.type.resolve().makeNotNullable().toTypeName()
+            return Column::class.asClassName().parameterizedBy(propType)
+        }
     }
 }
