@@ -152,7 +152,7 @@ class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironme
         }
 
         if (sqlType == null) {
-            sqlType = property.type.resolve().getSqlType(resolver)
+            sqlType = property.getSqlType(resolver)
         }
 
         if (sqlType == null) {
