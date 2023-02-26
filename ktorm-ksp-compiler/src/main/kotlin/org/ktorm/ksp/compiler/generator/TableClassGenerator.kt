@@ -7,6 +7,8 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
+import org.ktorm.ksp.compiler.util.MemberNames
+import org.ktorm.ksp.compiler.util.toRegisterCodeBlock
 import org.ktorm.ksp.spi.ColumnMetadata
 import org.ktorm.ksp.spi.TableMetadata
 import org.ktorm.schema.BaseTable
@@ -48,6 +50,24 @@ object TableClassGenerator {
                 for (column in table.columns) {
                     val propertySpec = PropertySpec.builder(column.columnPropertyName, column.getColumnType())
                         .addKdoc("Column %L. %L", column.name, column.entityProperty.docString?.trimIndent().orEmpty())
+                        .initializer(buildCodeBlock {
+                            add(column.toRegisterCodeBlock())
+
+                            if (column.isPrimaryKey) {
+                                add(".primaryKey()")
+                            }
+
+                            if (table.entityClass.classKind == ClassKind.INTERFACE) {
+                                if (column.isReference) {
+                                    val pkg = column.referenceTable!!.entityClass.packageName.asString()
+                                    val name = column.referenceTable!!.tableClassName
+                                    val propName = column.entityProperty.simpleName.asString()
+                                    add(".references(%T)·{·it.%N·}", ClassName(pkg, name), propName)
+                                } else {
+                                    add(".bindTo·{·it.%N·}", column.entityProperty.simpleName.asString())
+                                }
+                            }
+                        })
                         .build()
 
                     typeSpec.addProperty(propertySpec)

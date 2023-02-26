@@ -103,7 +103,7 @@ fun ColumnMetadata.toRegisterCodeBlock(): CodeBlock {
             name,
             sqlType.toTypeName(),
             table.entityClass.toClassName(),
-            entityProperty.simpleName
+            entityProperty.simpleName.asString()
         )
     }
 
