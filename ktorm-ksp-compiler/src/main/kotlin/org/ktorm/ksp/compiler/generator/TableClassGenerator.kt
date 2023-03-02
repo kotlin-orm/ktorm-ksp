@@ -1,13 +1,11 @@
 package org.ktorm.ksp.compiler.generator
 
 import com.google.devtools.ksp.symbol.ClassKind
-import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
-import org.ktorm.ksp.compiler.util.MemberNames
 import org.ktorm.ksp.compiler.util.toRegisterCodeBlock
 import org.ktorm.ksp.spi.ColumnMetadata
 import org.ktorm.ksp.spi.TableMetadata
@@ -29,7 +27,7 @@ object TableClassGenerator {
             .configureCompanionObject(table)
             .build()
     }
-    
+
     private fun TypeSpec.Builder.configureSuperClass(table: TableMetadata): TypeSpec.Builder {
         if (table.entityClass.classKind == ClassKind.INTERFACE) {
             superclass(Table::class.asClassName().parameterizedBy(table.entityClass.toClassName()))
@@ -99,7 +97,7 @@ object TableClassGenerator {
             .addModifiers(KModifier.OVERRIDE)
             .addParameter("alias", typeNameOf<String>())
             .returns(ClassName(table.entityClass.packageName.asString(), table.tableClassName))
-            .addCode("return %T(alias)", table.tableClassName)
+            .addCode("return %L(alias)", table.tableClassName)
             .build()
 
         addFunction(func)
