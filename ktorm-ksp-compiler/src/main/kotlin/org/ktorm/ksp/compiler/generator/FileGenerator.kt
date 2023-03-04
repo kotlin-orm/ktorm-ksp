@@ -17,6 +17,7 @@ object FileGenerator {
 
         if (table.entityClass.classKind == ClassKind.INTERFACE) {
             fileSpec.addFunction(PseudoConstructorFunctionGenerator.generate(table))
+            fileSpec.addFunction(CopyFunctionGenerator.generate(table))
         }
 
         for (generator in ServiceLoader.load(ExtCodeGenerator::class.java)) {

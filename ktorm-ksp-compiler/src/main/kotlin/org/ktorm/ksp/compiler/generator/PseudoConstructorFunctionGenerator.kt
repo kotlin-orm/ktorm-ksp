@@ -22,11 +22,11 @@ object PseudoConstructorFunctionGenerator {
             .addAnnotation(AnnotationSpec.builder(Suppress::class).addMember("%S", "FunctionName").build())
             .addParameters(buildParameters(table))
             .returns(table.entityClass.toClassName())
-            .addCode(buildCodeBlock { buildFunctionBody(table) })
+            .addCode(buildFunctionBody(table))
             .build()
     }
 
-    private fun buildParameters(table: TableMetadata): List<ParameterSpec> {
+    internal fun buildParameters(table: TableMetadata): List<ParameterSpec> {
         return table.columns.map { column ->
             val propName = column.entityProperty.simpleName.asString()
             val propType = column.entityProperty.type.resolve().makeNullable().toTypeName()
@@ -37,8 +37,12 @@ object PseudoConstructorFunctionGenerator {
         }
     }
 
-    private fun CodeBlock.Builder.buildFunctionBody(table: TableMetadata) {
-        addStatement("val·entity·=·%T.create<%T>()", Entity::class.asClassName(), table.entityClass.toClassName())
+    internal fun buildFunctionBody(table: TableMetadata, isCopy: Boolean = false): CodeBlock = buildCodeBlock {
+        if (isCopy) {
+            addStatement("val·entity·=·this.copy()")
+        } else {
+            addStatement("val·entity·=·%T.create<%T>()", Entity::class.asClassName(), table.entityClass.toClassName())
+        }
 
         for (column in table.columns) {
             val propName = column.entityProperty.simpleName.asString()
