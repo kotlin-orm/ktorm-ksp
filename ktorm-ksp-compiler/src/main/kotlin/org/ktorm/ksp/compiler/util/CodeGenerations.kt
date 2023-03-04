@@ -129,20 +129,6 @@ public object CodeFactory {
         }
     }
 
-    public fun buildEntityConstructorParameters(
-        context: TableGenerateContext,
-        nameAllocator: NameAllocator,
-    ): List<ParameterSpec> {
-        return context.table.columns.map {
-            val propertyType = it.entityProperty.type.resolve()
-            val name = nameAllocator.newName(it.entityProperty.simpleName.asString(), it.entityProperty.simpleName)
-            val type = propertyType.toTypeName().copy(nullable = true)
-            ParameterSpec.builder(name, type)
-                .defaultValue("%T.of()", ClassNames.undefined)
-                .build()
-        }
-    }
-
     public fun convertDefaultImplementationFunName(functionName: String): String {
         return "$${functionName}\$implementation"
     }
