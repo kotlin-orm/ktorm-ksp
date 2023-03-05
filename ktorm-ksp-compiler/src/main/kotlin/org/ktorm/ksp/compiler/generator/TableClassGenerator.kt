@@ -159,21 +159,21 @@ object TableClassGenerator {
             }
         } else {
             if (table.columns.all { it.entityProperty.simpleName.asString() in constructorParams }) {
-                addStatement("return·%T(", table.entityClass.toClassName())
+                add("return·%T(", table.entityClass.toClassName())
             } else {
-                addStatement("val·entity·=·%T(", table.entityClass.toClassName())
+                add("val·entity·=·%T(", table.entityClass.toClassName())
             }
 
             for (column in table.columns) {
                 val parameter = constructorParams[column.entityProperty.simpleName.asString()] ?: continue
                 if (parameter.type.resolve().isMarkedNullable) {
-                    addStatement("%N·=·row[this.%N],", parameter.name!!.asString(), column.columnPropertyName)
+                    add("%N·=·row[this.%N],", parameter.name!!.asString(), column.columnPropertyName)
                 } else {
-                    addStatement("%N·=·row[this.%N]!!,", parameter.name!!.asString(), column.columnPropertyName)
+                    add("%N·=·row[this.%N]!!,", parameter.name!!.asString(), column.columnPropertyName)
                 }
             }
 
-            addStatement(")")
+            add(")\n")
         }
 
         for (column in table.columns) {

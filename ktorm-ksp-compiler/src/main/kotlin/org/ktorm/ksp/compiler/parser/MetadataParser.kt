@@ -14,6 +14,7 @@ import org.ktorm.ksp.spi.ColumnMetadata
 import org.ktorm.ksp.spi.DatabaseNamingStrategy
 import org.ktorm.ksp.spi.TableMetadata
 import org.ktorm.schema.SqlType
+import java.lang.reflect.InvocationTargetException
 import kotlin.reflect.jvm.jvmName
 
 @OptIn(KspExperimental::class)
@@ -33,17 +34,22 @@ class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironme
             return UpperSnakeCaseDatabaseNamingStrategy
         }
 
-        val cls = Class.forName(name)
-        return (cls.kotlin.objectInstance ?: cls.newInstance()) as DatabaseNamingStrategy
+        try {
+            val cls = Class.forName(name)
+            return (cls.kotlin.objectInstance ?: cls.getDeclaredConstructor().newInstance()) as DatabaseNamingStrategy
+        } catch (e: InvocationTargetException) {
+            throw e.targetException
+        }
     }
 
     private fun loadCodingNamingStrategy(): CodingNamingStrategy {
-        val name = options["ktorm.codingNamingStrategy"]
-        if (name == null) {
-            return DefaultCodingNamingStrategy
-        } else {
+        val name = options["ktorm.codingNamingStrategy"] ?: return DefaultCodingNamingStrategy
+
+        try {
             val cls = Class.forName(name)
-            return (cls.kotlin.objectInstance ?: cls.newInstance()) as CodingNamingStrategy
+            return (cls.kotlin.objectInstance ?: cls.getDeclaredConstructor().newInstance()) as CodingNamingStrategy
+        } catch (e: InvocationTargetException) {
+            throw e.targetException
         }
     }
 

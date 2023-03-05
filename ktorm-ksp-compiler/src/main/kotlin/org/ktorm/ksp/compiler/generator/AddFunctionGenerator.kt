@@ -108,7 +108,7 @@ object AddFunctionGenerator {
                 }
                 val expression = %2T(
                     column = column.asExpression(),
-                    expression = %4T(value, column.sqlType)
+                    expression = %3T(value, column.sqlType)
                 )
                 assignments.add(expression)
             }

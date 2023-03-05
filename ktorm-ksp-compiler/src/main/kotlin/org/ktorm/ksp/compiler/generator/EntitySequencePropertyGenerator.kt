@@ -22,7 +22,7 @@ object EntitySequencePropertyGenerator {
             .getter(
                 FunSpec.getterBuilder()
                     .addStatement(
-                        "return·this.%M(%T)",
+                        "return·this.%M(%N)",
                         MemberName("org.ktorm.entity", "sequenceOf", true),
                         table.tableClassName)
                     .build())
