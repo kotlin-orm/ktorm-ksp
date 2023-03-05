@@ -24,6 +24,10 @@ object FileGenerator {
             }
         } else {
             fileSpec.addFunction(AddFunctionGenerator.generate(table))
+
+            if (table.columns.any { it.isPrimaryKey }) {
+                fileSpec.addFunction(UpdateFunctionGenerator.generate(table))
+            }
         }
 
         for (generator in ServiceLoader.load(ExtCodeGenerator::class.java)) {

@@ -18,80 +18,61 @@ package org.ktorm.ksp.compiler.generator
 
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
+import com.squareup.kotlinpoet.ksp.toClassName
 import org.ktorm.entity.EntitySequence
 import org.ktorm.expression.ColumnAssignmentExpression
-import org.ktorm.ksp.compiler.generator.util.*
+import org.ktorm.expression.UpdateExpression
 import org.ktorm.ksp.compiler.util.*
-import org.ktorm.ksp.spi.TableGenerateContext
-import org.ktorm.ksp.spi.TopLevelFunctionGenerator
-import org.ktorm.ksp.spi.ColumnMetadata
-import org.ktorm.ksp.spi.definition.KtormEntityType
 import org.ktorm.ksp.spi.TableMetadata
 
-/**
- * Generate update extend function to [EntitySequence].
- * e.g:
- * ```kotlin
- * public fun EntitySequence<Customer, Customers>.update(entity: Customer): Int {
- *      // Ignore code
- * }
- * ```
- */
-public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
+@OptIn(KotlinPoetKspPreview::class)
+object UpdateFunctionGenerator {
 
-    /**
-     * Generate entity sequence update function.
-     */
-    override fun generate(context: TableGenerateContext): List<FunSpec> {
-        val table = context.table
-        if (table.ktormEntityType != KtormEntityType.ANY_KIND_CLASS) {
-            return emptyList()
-        }
-
-        val primaryKeys = table.columns.filter { it.isPrimaryKey }
-        if (primaryKeys.isEmpty()) {
-            return emptyList()
-        }
-
+    fun generate(table: TableMetadata): FunSpec {
         val kdoc = "" +
-                "Update the given entity to the database and return the affected record number. " +
-                "If [isDynamic] is set to true, the generated SQL will include only the non-null columns. "
+            "Update the given entity to the database and return the affected record number. " +
+            "If [isDynamic] is set to true, the generated SQL will include only the non-null columns. "
 
-        val funSpec = FunSpec.builder("update")
-            .receiver(EntitySequence::class.asClassName().parameterizedBy(table.entityClassName, table.tableClassName))
-            .addParameter("entity", table.entityClassName)
+        val entityClass = table.entityClass.toClassName()
+        val tableClass = ClassName(table.entityClass.packageName.asString(), table.tableClassName)
+
+        return FunSpec.builder("update")
+            .addKdoc(kdoc)
+            .addAnnotation(AnnotationSpec.builder(Suppress::class).addMember("%S", "UNCHECKED_CAST").build())
+            .receiver(EntitySequence::class.asClassName().parameterizedBy(entityClass, tableClass))
+            .addParameter("entity", entityClass)
             .addParameter(ParameterSpec.builder("isDynamic", typeNameOf<Boolean>()).defaultValue("false").build())
             .returns(Int::class.asClassName())
-            .addAnnotation(SuppressAnnotations.buildSuppress(SuppressAnnotations.uncheckedCast))
-            .addKdoc(kdoc)
-            .addCode(CodeFactory.buildCheckDmlCode())
-            .addCode(CodeFactory.buildAddAssignmentCode())
-            .addCode(buildAssignmentsCode(table))
-            .addCode(buildConditionsCode(primaryKeys))
-            .addCode(buildExpressionCode())
+            .addCode(AddFunctionGenerator.checkForDml())
+            .addCode(AddFunctionGenerator.addAssignmentFun())
+            .addCode(addAssignments(table))
+            .addCode(buildConditions(table))
+            .addCode(createExpression())
             .addStatement("return database.executeUpdate(expression)")
             .build()
-        return listOf(funSpec)
     }
 
-    private fun buildAssignmentsCode(table: TableMetadata): CodeBlock {
+    private fun addAssignments(table: TableMetadata): CodeBlock {
         return buildCodeBlock {
-            val targetColumns = table.columns.filter { !it.isPrimaryKey }
-
             addStatement(
-                "val assignments = %T<%T<*>>(%L)",
+                "val assignments = %T<%T<*>>()",
                 ArrayList::class.asClassName(),
-                ColumnAssignmentExpression::class.asClassName(),
-                targetColumns.size
+                ColumnAssignmentExpression::class.asClassName()
             )
 
-            for (column in targetColumns) {
+            for (column in table.columns) {
+                if (column.isPrimaryKey) {
+                    continue
+                }
+
                 addStatement(
                     "addAssignment(sourceTable.%N, entity.%N, isDynamic, assignments)",
-                    column.tablePropertyName,
+                    column.columnPropertyName,
                     column.entityProperty.simpleName.asString(),
                 )
             }
+
             add("\n")
 
             withControlFlow("if (assignments.isEmpty())") {
@@ -102,19 +83,25 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
         }
     }
 
-    private fun buildConditionsCode(primaryKeys: List<ColumnMetadata>): CodeBlock {
+    private fun buildConditions(table: TableMetadata): CodeBlock {
         return buildCodeBlock {
+            val primaryKeys = table.columns.filter { it.isPrimaryKey }
+
             if (primaryKeys.size == 1) {
                 val pk = primaryKeys[0]
                 if (pk.entityProperty.type.resolve().isMarkedNullable) {
                     addStatement(
                         "val conditions = sourceTable.%N·%M·entity.%N!!",
-                        pk.tablePropertyName, MemberNames.eq, pk.entityProperty.simpleName.asString()
+                        pk.columnPropertyName,
+                        MemberName("org.ktorm.dsl", "eq", true),
+                        pk.entityProperty.simpleName.asString()
                     )
                 } else {
                     addStatement(
                         "val conditions = sourceTable.%N·%M·entity.%N",
-                        pk.tablePropertyName, MemberNames.eq, pk.entityProperty.simpleName.asString()
+                        pk.columnPropertyName,
+                        MemberName("org.ktorm.dsl", "eq", true),
+                        pk.entityProperty.simpleName.asString()
                     )
                 }
             } else {
@@ -124,17 +111,21 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
                     if (pk.entityProperty.type.resolve().isMarkedNullable) {
                         add(
                             "(sourceTable.%N·%M·entity.%N!!)",
-                            pk.tablePropertyName, MemberNames.eq, pk.entityProperty.simpleName.asString()
+                            pk.columnPropertyName,
+                            MemberName("org.ktorm.dsl", "eq", true),
+                            pk.entityProperty.simpleName.asString()
                         )
                     } else {
                         add(
                             "(sourceTable.%N·%M·entity.%N)",
-                            pk.tablePropertyName, MemberNames.eq, pk.entityProperty.simpleName.asString()
+                            pk.columnPropertyName,
+                            MemberName("org.ktorm.dsl", "eq", true),
+                            pk.entityProperty.simpleName.asString()
                         )
                     }
 
                     if (i != primaryKeys.lastIndex) {
-                        add("·%M·", MemberNames.and)
+                        add("·%M·", MemberName("org.ktorm.dsl", "and", true))
                     }
                 }
 
@@ -143,16 +134,15 @@ public class ClassEntitySequenceUpdateFunGenerator : TopLevelFunctionGenerator {
         }
     }
 
-    private fun buildExpressionCode(): CodeBlock {
-        return CodeBlock.of(
-            """
+    private fun createExpression(): CodeBlock {
+        val code = """
             val expression = // AliasRemover.visit(
                 %T(table = sourceTable.asExpression(), assignments = assignments, where = conditions)
             // )
             
               
-            """.trimIndent(),
-            ClassNames.updateExpression
-        )
+        """.trimIndent()
+
+        return CodeBlock.of(code, UpdateExpression::class.asClassName())
     }
 }

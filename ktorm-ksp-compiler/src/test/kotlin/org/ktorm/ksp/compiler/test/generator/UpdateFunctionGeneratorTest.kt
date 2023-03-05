@@ -25,7 +25,7 @@ import org.ktorm.entity.toList
 import org.ktorm.ksp.compiler.test.BaseKspTest
 import java.lang.reflect.InvocationTargetException
 
-public class ClassEntitySequenceUpdateFunGeneratorTest : BaseKspTest() {
+public class UpdateFunctionGeneratorTest : BaseKspTest() {
 
     @Test
     public fun `sequence update function`() {

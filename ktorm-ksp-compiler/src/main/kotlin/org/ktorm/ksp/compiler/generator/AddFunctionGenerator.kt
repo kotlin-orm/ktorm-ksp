@@ -72,7 +72,7 @@ object AddFunctionGenerator {
         return kdoc
     }
 
-    private fun checkForDml(): CodeBlock {
+    internal fun checkForDml(): CodeBlock {
         val code = """
             val isModified =
                 expression.where != null ||
@@ -96,7 +96,7 @@ object AddFunctionGenerator {
         return CodeBlock.of(code)
     }
 
-    private fun addAssignmentFun(): CodeBlock {
+    internal fun addAssignmentFun(): CodeBlock {
         val code = """
             fun <T : Any> addAssignment(
                 column: %1T<T>,
