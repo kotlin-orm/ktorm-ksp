@@ -9,7 +9,6 @@ import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
 import org.ktorm.dsl.QueryRowSet
 import org.ktorm.ksp.compiler.util.toRegisterCodeBlock
-import org.ktorm.ksp.compiler.util.withControlFlow
 import org.ktorm.ksp.spi.ColumnMetadata
 import org.ktorm.ksp.spi.TableMetadata
 import org.ktorm.schema.BaseTable
@@ -193,6 +192,16 @@ object TableClassGenerator {
         if (table.columns.any { it.entityProperty.simpleName.asString() !in constructorParams }) {
             addStatement("return·entity")
         }
+    }
+
+    private inline fun CodeBlock.Builder.withControlFlow(
+        controlFlow: String,
+        args: Array<Any?> = emptyArray(),
+        block: CodeBlock.Builder.() -> Unit
+    ): CodeBlock.Builder = apply {
+        beginControlFlow(controlFlow, *args)
+        block(this)
+        endControlFlow()
     }
 
     private fun TypeSpec.Builder.configureAliasedFunction(table: TableMetadata): TypeSpec.Builder {

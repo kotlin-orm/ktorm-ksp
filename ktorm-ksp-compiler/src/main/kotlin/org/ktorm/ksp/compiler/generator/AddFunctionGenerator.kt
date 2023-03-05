@@ -24,7 +24,6 @@ import org.ktorm.entity.EntitySequence
 import org.ktorm.expression.ArgumentExpression
 import org.ktorm.expression.ColumnAssignmentExpression
 import org.ktorm.expression.InsertExpression
-import org.ktorm.ksp.compiler.util.withControlFlow
 import org.ktorm.ksp.spi.ColumnMetadata
 import org.ktorm.ksp.spi.TableMetadata
 import org.ktorm.schema.Column
@@ -144,9 +143,9 @@ object AddFunctionGenerator {
 
             add("\n")
 
-            withControlFlow("if (assignments.isEmpty())") {
-                addStatement("return 0")
-            }
+            beginControlFlow("if (assignments.isEmpty())")
+            addStatement("return 0")
+            endControlFlow()
 
             add("\n")
         }

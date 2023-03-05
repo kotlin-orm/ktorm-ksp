@@ -75,9 +75,9 @@ object UpdateFunctionGenerator {
 
             add("\n")
 
-            withControlFlow("if (assignments.isEmpty())") {
-                addStatement("return 0")
-            }
+            beginControlFlow("if (assignments.isEmpty())")
+            addStatement("return 0")
+            endControlFlow()
 
             add("\n")
         }
