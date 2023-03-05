@@ -11,20 +11,20 @@ public interface CodingNamingStrategy {
     /**
      * Generate the table class name.
      */
-    public fun getTableClassName(cls: KSClassDeclaration): String
+    public fun getTableClassName(c: KSClassDeclaration): String
 
     /**
      * Generate the entity sequence name.
      */
-    public fun getEntitySequenceName(cls: KSClassDeclaration): String
+    public fun getEntitySequenceName(c: KSClassDeclaration): String
 
     /**
      * Generate the column property name.
      */
-    public fun getColumnPropertyName(cls: KSClassDeclaration, prop: KSPropertyDeclaration): String
+    public fun getColumnPropertyName(c: KSClassDeclaration, prop: KSPropertyDeclaration): String
 
     /**
      * Generate the reference column property name.
      */
-    public fun getRefColumnPropertyName(cls: KSClassDeclaration, prop: KSPropertyDeclaration, refTable: TableMetadata): String
+    public fun getRefColumnPropertyName(c: KSClassDeclaration, prop: KSPropertyDeclaration, ref: TableMetadata): String
 }

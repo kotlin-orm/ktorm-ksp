@@ -27,15 +27,15 @@ public interface DatabaseNamingStrategy {
     /**
      * Generate the table name.
      */
-    public fun getTableName(cls: KSClassDeclaration): String
+    public fun getTableName(c: KSClassDeclaration): String
 
     /**
      * Generate the column name.
      */
-    public fun getColumnName(cls: KSClassDeclaration, prop: KSPropertyDeclaration): String
+    public fun getColumnName(c: KSClassDeclaration, prop: KSPropertyDeclaration): String
 
     /**
      * Generate the reference column name.
      */
-    public fun getRefColumnName(cls: KSClassDeclaration, prop: KSPropertyDeclaration, refTable: TableMetadata): String
+    public fun getRefColumnName(c: KSClassDeclaration, prop: KSPropertyDeclaration, ref: TableMetadata): String
 }

@@ -8,24 +8,23 @@ import org.ktorm.ksp.spi.TableMetadata
 
 object DefaultCodingNamingStrategy : CodingNamingStrategy {
 
-    override fun getTableClassName(cls: KSClassDeclaration): String {
-        return English.plural(cls.simpleName.asString())
+    override fun getTableClassName(c: KSClassDeclaration): String {
+        return English.plural(c.simpleName.asString())
     }
 
-    override fun getEntitySequenceName(cls: KSClassDeclaration): String {
-        val name = English.plural(cls.simpleName.asString())
+    override fun getEntitySequenceName(c: KSClassDeclaration): String {
+        // TODO: CDPService --> cdpServices
+        val name = English.plural(c.simpleName.asString())
         return name.first().lowercase() + name.substring(1)
     }
 
-    override fun getColumnPropertyName(cls: KSClassDeclaration, property: KSPropertyDeclaration): String {
-        return property.simpleName.asString()
+    override fun getColumnPropertyName(c: KSClassDeclaration, prop: KSPropertyDeclaration): String {
+        return prop.simpleName.asString()
     }
 
     override fun getRefColumnPropertyName(
-        cls: KSClassDeclaration,
-        property: KSPropertyDeclaration,
-        referenceTable: TableMetadata
+        c: KSClassDeclaration, prop: KSPropertyDeclaration, ref: TableMetadata
     ): String {
-        return property.simpleName.asString()
+        return prop.simpleName.asString()
     }
 }

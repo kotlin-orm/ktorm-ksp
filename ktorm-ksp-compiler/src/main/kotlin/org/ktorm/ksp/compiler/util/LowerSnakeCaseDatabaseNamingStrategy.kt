@@ -10,16 +10,16 @@ import org.ktorm.ksp.spi.TableMetadata
  */
 object LowerSnakeCaseDatabaseNamingStrategy : DatabaseNamingStrategy {
 
-    override fun getTableName(cls: KSClassDeclaration): String {
-        return cls.simpleName.asString().toSnakeCase()
+    override fun getTableName(c: KSClassDeclaration): String {
+        return c.simpleName.asString().toSnakeCase()
     }
 
-    override fun getColumnName(cls: KSClassDeclaration, property: KSPropertyDeclaration): String {
-        return property.simpleName.asString().toSnakeCase()
+    override fun getColumnName(c: KSClassDeclaration, prop: KSPropertyDeclaration): String {
+        return prop.simpleName.asString().toSnakeCase()
     }
 
-    override fun getRefColumnName(cls: KSClassDeclaration, property: KSPropertyDeclaration, referenceTable: TableMetadata): String {
-        return property.simpleName.asString().toSnakeCase()
+    override fun getRefColumnName(c: KSClassDeclaration, prop: KSPropertyDeclaration, ref: TableMetadata): String {
+        return prop.simpleName.asString().toSnakeCase()
     }
 
     private fun String.toSnakeCase(): String {
