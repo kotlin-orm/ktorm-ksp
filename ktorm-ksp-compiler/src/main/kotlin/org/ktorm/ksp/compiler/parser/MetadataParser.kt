@@ -1,4 +1,4 @@
-package org.ktorm.ksp.compiler.util
+package org.ktorm.ksp.compiler.parser
 
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
@@ -8,6 +8,7 @@ import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.*
 import org.ktorm.entity.Entity
 import org.ktorm.ksp.api.*
+import org.ktorm.ksp.compiler.util.*
 import org.ktorm.ksp.spi.CodingNamingStrategy
 import org.ktorm.ksp.spi.ColumnMetadata
 import org.ktorm.ksp.spi.DatabaseNamingStrategy

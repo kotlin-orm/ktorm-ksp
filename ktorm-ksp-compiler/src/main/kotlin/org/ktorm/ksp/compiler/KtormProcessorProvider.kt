@@ -26,7 +26,7 @@ import com.google.devtools.ksp.validate
 import com.squareup.kotlinpoet.FileSpec
 import org.ktorm.ksp.api.Table
 import org.ktorm.ksp.compiler.generator.FileGenerator
-import org.ktorm.ksp.compiler.util.MetadataParser
+import org.ktorm.ksp.compiler.parser.MetadataParser
 import org.ktorm.ksp.spi.TableMetadata
 import kotlin.reflect.jvm.jvmName
 
