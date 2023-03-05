@@ -15,11 +15,10 @@ object PseudoConstructorFunctionGenerator {
     fun generate(table: TableMetadata): FunSpec {
         return FunSpec.builder(table.entityClass.simpleName.asString())
             .addKdoc(
-                "Create an entity of [%L] and specify the initial values for each properties, " +
-                "properties that doesn't have an initial value will left unassigned. ",
-                table.entityClass.simpleName
+                "Create an entity of [%L] and specify the initial values for each property, " +
+                "properties that doesn't have an initial value will leave unassigned. ",
+                table.entityClass.simpleName.asString()
             )
-            .addAnnotation(AnnotationSpec.builder(Suppress::class).addMember("%S", "FunctionName").build())
             .addParameters(buildParameters(table))
             .returns(table.entityClass.toClassName())
             .addCode(buildFunctionBody(table))

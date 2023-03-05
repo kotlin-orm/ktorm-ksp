@@ -39,7 +39,6 @@ object UpdateFunctionGenerator {
 
         return FunSpec.builder("update")
             .addKdoc(kdoc)
-            .addAnnotation(AnnotationSpec.builder(Suppress::class).addMember("%S", "UNCHECKED_CAST").build())
             .receiver(EntitySequence::class.asClassName().parameterizedBy(entityClass, tableClass))
             .addParameter("entity", entityClass)
             .addParameter(ParameterSpec.builder("isDynamic", typeNameOf<Boolean>()).defaultValue("false").build())

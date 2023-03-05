@@ -42,7 +42,6 @@ object AddFunctionGenerator {
 
         return FunSpec.builder("add")
             .addKdoc(kdoc(useGeneratedKey))
-            .addAnnotation(AnnotationSpec.builder(Suppress::class).addMember("%S", "UNCHECKED_CAST").build())
             .receiver(EntitySequence::class.asClassName().parameterizedBy(entityClass, tableClass))
             .addParameter("entity", entityClass)
             .addParameter(ParameterSpec.builder("isDynamic", typeNameOf<Boolean>()).defaultValue("false").build())
