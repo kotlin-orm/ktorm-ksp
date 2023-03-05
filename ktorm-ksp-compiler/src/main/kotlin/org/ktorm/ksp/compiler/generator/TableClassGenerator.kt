@@ -120,7 +120,7 @@ object TableClassGenerator {
             .mapNotNull { constructorParams[it.entityProperty.simpleName.asString()] }
             .any { it.hasDefault }
 
-        if (hasDefaultValues && options["ktorm.useReflection"] == "true") {
+        if (hasDefaultValues && options["ktorm.allowReflection"] == "true") {
             addStatement(
                 "val constructor = %T::class.%M!!",
                 table.entityClass.toClassName(),

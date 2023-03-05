@@ -23,7 +23,7 @@ object FileGenerator {
                 fileSpec.addFunction(func)
             }
         } else {
-
+            fileSpec.addFunction(AddFunctionGenerator.generate(table))
         }
 
         for (generator in ServiceLoader.load(ExtCodeGenerator::class.java)) {

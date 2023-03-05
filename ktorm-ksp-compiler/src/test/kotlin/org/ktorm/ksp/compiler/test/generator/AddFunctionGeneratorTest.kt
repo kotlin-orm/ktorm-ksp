@@ -25,7 +25,7 @@ import org.ktorm.entity.toList
 import org.ktorm.ksp.compiler.test.BaseKspTest
 import java.lang.reflect.InvocationTargetException
 
-public class ClassEntitySequenceAddFunGeneratorTest : BaseKspTest() {
+public class AddFunctionGeneratorTest : BaseKspTest() {
 
     @Test
     public fun `sequence add function`() {
