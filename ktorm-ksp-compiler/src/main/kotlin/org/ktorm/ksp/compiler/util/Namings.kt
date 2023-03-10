@@ -62,7 +62,7 @@ object DefaultCodingNamingStrategy : CodingNamingStrategy {
 }
 
 private object CamelCase {
-    // Matches boundary among words, for example (abc|Def), (ABC|Def)
+    // Matches boundaries among words, for example (abc|Def), (ABC|Def)
     private val boundaries = listOf(Regex("([a-z])([A-Z])"), Regex("([A-Z])([A-Z][a-z])"))
 
     fun toLowerSnakeCase(name: String): String {
