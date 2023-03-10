@@ -19,15 +19,15 @@ package org.ktorm.ksp.example
 import org.ktorm.database.Database
 import org.ktorm.entity.toList
 
-public val database: Database = DatabaseFactory.database
+val database: Database = DatabaseFactory.database
 
-public fun main() {
+fun main() {
     query()
     add()
     update()
 }
 
-public fun query() {
+fun query() {
     for (employee in database.employees) {
         println(employee)
     }
@@ -36,7 +36,7 @@ public fun query() {
     }
 }
 
-public fun add() {
+fun add() {
     val customer = Customer(
         null,
         "mike",
@@ -47,7 +47,7 @@ public fun add() {
     println("add customer generated key: ${customer.id}")
 }
 
-public fun update() {
+fun update() {
     val customer = database.customers.toList().first()
     customer.name = "jack"
     database.customers.update(customer)

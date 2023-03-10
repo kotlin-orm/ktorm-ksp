@@ -10,38 +10,32 @@ import org.ktorm.ksp.spi.TableMetadata
 object LowerSnakeCaseDatabaseNamingStrategy : DatabaseNamingStrategy {
 
     override fun getTableName(c: KSClassDeclaration): String {
-        return c.simpleName.asString().toSnakeCase()
+        return CamelCase.toLowerSnakeCase(c.simpleName.asString())
     }
 
     override fun getColumnName(c: KSClassDeclaration, prop: KSPropertyDeclaration): String {
-        return prop.simpleName.asString().toSnakeCase()
+        return CamelCase.toLowerSnakeCase(prop.simpleName.asString())
     }
 
     override fun getRefColumnName(c: KSClassDeclaration, prop: KSPropertyDeclaration, ref: TableMetadata): String {
-        return prop.simpleName.asString().toSnakeCase()
-    }
-
-    private fun String.toSnakeCase(): String {
-        return replace(Regex("([a-z])([A-Z])"), "$1_$2").replace(Regex("([A-Z])([A-Z][a-z])"), "$1_$2").lowercase()
+        val pk = ref.columns.single { it.isPrimaryKey }
+        return CamelCase.toLowerSnakeCase(prop.simpleName.asString()) + "_" + pk.name
     }
 }
 
 object UpperSnakeCaseDatabaseNamingStrategy : DatabaseNamingStrategy {
 
     override fun getTableName(c: KSClassDeclaration): String {
-        return c.simpleName.asString().toSnakeCase()
+        return CamelCase.toUpperSnakeCase(c.simpleName.asString())
     }
 
     override fun getColumnName(c: KSClassDeclaration, prop: KSPropertyDeclaration): String {
-        return prop.simpleName.asString().toSnakeCase()
+        return CamelCase.toUpperSnakeCase(prop.simpleName.asString())
     }
 
     override fun getRefColumnName(c: KSClassDeclaration, prop: KSPropertyDeclaration, ref: TableMetadata): String {
-        return prop.simpleName.asString().toSnakeCase()
-    }
-
-    private fun String.toSnakeCase(): String {
-        return replace(Regex("([a-z])([A-Z])"), "$1_$2").replace(Regex("([A-Z])([A-Z][a-z])"), "$1_$2").uppercase()
+        val pk = ref.columns.single { it.isPrimaryKey }
+        return CamelCase.toUpperSnakeCase(prop.simpleName.asString()) + "_" + pk.name
     }
 }
 
@@ -52,9 +46,7 @@ object DefaultCodingNamingStrategy : CodingNamingStrategy {
     }
 
     override fun getEntitySequenceName(c: KSClassDeclaration): String {
-        // TODO: CDPService --> cdpServices
-        val name = English.plural(c.simpleName.asString())
-        return name.first().lowercase() + name.substring(1)
+        return CamelCase.toFirstLowerCamelCase(English.plural(c.simpleName.asString()))
     }
 
     override fun getColumnPropertyName(c: KSClassDeclaration, prop: KSPropertyDeclaration): String {
@@ -64,6 +56,25 @@ object DefaultCodingNamingStrategy : CodingNamingStrategy {
     override fun getRefColumnPropertyName(
         c: KSClassDeclaration, prop: KSPropertyDeclaration, ref: TableMetadata
     ): String {
-        return prop.simpleName.asString()
+        val pk = ref.columns.single { it.isPrimaryKey }
+        return prop.simpleName.asString() + pk.columnPropertyName.replaceFirstChar { it.uppercase() }
+    }
+}
+
+private object CamelCase {
+    // Matches boundary among words, for example (abc|Def), (ABC|Def)
+    private val boundaries = listOf(Regex("([a-z])([A-Z])"), Regex("([A-Z])([A-Z][a-z])"))
+
+    fun toLowerSnakeCase(name: String): String {
+        return boundaries.fold(name) { s, regex -> s.replace(regex, "$1_$2") }.lowercase()
+    }
+
+    fun toUpperSnakeCase(name: String): String {
+        return boundaries.fold(name) { s, regex -> s.replace(regex, "$1_$2") }.uppercase()
+    }
+
+    fun toFirstLowerCamelCase(name: String): String {
+        val i = boundaries.mapNotNull { regex -> regex.find(name) }.minOfOrNull { it.range.first } ?: 0
+        return name.substring(0, i + 1).lowercase() + name.substring(i + 1)
     }
 }

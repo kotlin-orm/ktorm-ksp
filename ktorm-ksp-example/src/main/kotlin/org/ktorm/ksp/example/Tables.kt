@@ -21,24 +21,24 @@ import org.ktorm.ksp.api.*
 import java.io.Serializable
 import java.time.LocalDate
 
-public enum class Gender {
+enum class Gender {
     MALE,
     FEMALE
 }
 
 @Table
-public interface Department : Entity<Department> {
-    public companion object : Entity.Factory<Department>()
+interface Department : Entity<Department> {
+    companion object : Entity.Factory<Department>()
 
     @PrimaryKey
-    public val id: Int
-    public var name: String
+    val id: Int
+    var name: String
 
     @Column(sqlType = LocationWrapperSqlType::class)
-    public var location: LocationWrapper
+    var location: LocationWrapper
 
     @Column(name = "mixedCase")
-    public var mixedCase: String?
+    var mixedCase: String?
 }
 
 /**
@@ -47,8 +47,8 @@ public interface Department : Entity<Department> {
  * This is the second line.
  */
 @Table
-public interface Employee : Entity<Employee> {
-    public companion object : Entity.Factory<Employee>()
+interface Employee : Entity<Employee> {
+    companion object : Entity.Factory<Employee>()
 
     /**
      * This is the kdoc for id.
@@ -56,44 +56,43 @@ public interface Employee : Entity<Employee> {
      * This is the second line.
      */
     @PrimaryKey
-    public var id: Int
-    public var name: String
-    public var job: String
-    public var managerId: Int?
-    public var hireDate: LocalDate
-    public var salary: Long
+    var id: Int
+    var name: String
+    var job: String
+    var managerId: Int?
+    var hireDate: LocalDate
+    var salary: Long
 
     @Column(sqlType = UIntSqlType::class)
-    public var age: UInt
+    var age: UInt
 
     @Column(sqlType = IntEnumSqlTypeFactory::class)
-    public var gender: Gender?
+    var gender: Gender?
 
-    @References("department_id")
-    public var department: Department
+    @References
+    var department: Department
 
     @Ignore
-    public val upperName: String
+    val upperName: String
         get() = name.uppercase()
 }
 
 @Table(schema = "company")
-public data class Customer(
+data class Customer(
     @PrimaryKey
-    public var id: Int?,
+    var id: Int?,
     @PrimaryKey
-    public var name: String,
-    public var email: String?,
-    public var phoneNumber: String,
+    var name: String,
+    var email: String?,
+    var phoneNumber: String,
 )
 
-public data class LocationWrapper(val underlying: String = "") : Serializable
-
+data class LocationWrapper(val underlying: String = "") : Serializable
 
 @Table
-public data class Student(
+data class Student(
     @PrimaryKey
-    public var id: Int?,
-    public var name: String?,
-    public var age: Int
+    var id: Int?,
+    var name: String?,
+    var age: Int
 )

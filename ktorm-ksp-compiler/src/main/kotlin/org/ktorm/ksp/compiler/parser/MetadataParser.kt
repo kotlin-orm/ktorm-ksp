@@ -193,16 +193,6 @@ class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironme
         val reference = property.getAnnotationsByType(References::class).first()
         val referenceTable = parseTableMetadata(property.type.resolve().declaration as KSClassDeclaration)
 
-        var name = reference.name
-        if (name.isEmpty()) {
-            name = databaseNamingStrategy.getRefColumnName(table.entityClass, property, referenceTable)
-        }
-
-        var propertyName = reference.propertyName
-        if (propertyName.isEmpty()) {
-            propertyName = codingNamingStrategy.getRefColumnPropertyName(table.entityClass, property, referenceTable)
-        }
-
         if (referenceTable.entityClass.classKind != ClassKind.INTERFACE) {
             val n = referenceTable.entityClass.qualifiedName?.asString()
             throw IllegalStateException("The referenced entity class ($n) must be an interface.")
@@ -220,6 +210,16 @@ class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironme
 
         if (primaryKeys.size > 1) {
             throw IllegalStateException("Reference table '${referenceTable.name}' cannot have compound primary keys.")
+        }
+
+        var name = reference.name
+        if (name.isEmpty()) {
+            name = databaseNamingStrategy.getRefColumnName(table.entityClass, property, referenceTable)
+        }
+
+        var propertyName = reference.propertyName
+        if (propertyName.isEmpty()) {
+            propertyName = codingNamingStrategy.getRefColumnPropertyName(table.entityClass, property, referenceTable)
         }
 
         return ColumnMetadata(

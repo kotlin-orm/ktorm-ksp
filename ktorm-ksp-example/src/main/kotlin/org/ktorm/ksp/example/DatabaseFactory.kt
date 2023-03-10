@@ -21,9 +21,8 @@ import org.ktorm.database.use
 import org.ktorm.logging.ConsoleLogger
 import org.ktorm.logging.LogLevel
 
-public object DatabaseFactory {
-
-    public val database: Database
+object DatabaseFactory {
+    val database: Database
 
     init {
         database = Database.connect(
@@ -53,5 +52,4 @@ public object DatabaseFactory {
             }
         }
     }
-
 }

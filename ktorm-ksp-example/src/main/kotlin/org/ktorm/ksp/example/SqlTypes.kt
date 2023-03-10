@@ -24,7 +24,7 @@ import java.sql.Types
 import kotlin.reflect.KProperty1
 import kotlin.reflect.jvm.jvmErasure
 
-public object UIntSqlType : SqlType<UInt>(Types.INTEGER, "int") {
+object UIntSqlType : SqlType<UInt>(Types.INTEGER, "int") {
 
     override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: UInt) {
         ps.setLong(index, parameter.toLong())
@@ -35,7 +35,7 @@ public object UIntSqlType : SqlType<UInt>(Types.INTEGER, "int") {
     }
 }
 
-public object LocationWrapperSqlType : SqlType<LocationWrapper>(Types.VARCHAR, "varchar") {
+object LocationWrapperSqlType : SqlType<LocationWrapper>(Types.VARCHAR, "varchar") {
 
     override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: LocationWrapper) {
         ps.setString(index, parameter.underlying)
@@ -46,7 +46,7 @@ public object LocationWrapperSqlType : SqlType<LocationWrapper>(Types.VARCHAR, "
     }
 }
 
-public object IntEnumSqlTypeFactory : SqlTypeFactory {
+object IntEnumSqlTypeFactory : SqlTypeFactory {
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : Any> createSqlType(property: KProperty1<*, T?>): SqlType<T> {
