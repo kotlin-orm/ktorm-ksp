@@ -90,19 +90,16 @@ abstract class BaseTest {
             
         """.trimIndent()
 
-        val compilation = createCompilation(SourceFile.kotlin("Source.kt", header + code))
+        val source = header + code
+        printFile(source, "Source.kt")
+
+        val compilation = createCompilation(SourceFile.kotlin("Source.kt", source))
         val result = compilation.compile()
 
         for (file in compilation.kspSourcesDir.walk()) {
-            if (!file.isFile) {
-                continue
+            if (file.isFile) {
+                printFile(file.readText(), "Generated file: ${file.absolutePath}")
             }
-
-            println("###-----------------------------------------")
-            println("### Generated file: ${file.absolutePath}")
-            println("###-----------------------------------------")
-            println(file.readText())
-            println("###-----------------------------------------")
         }
 
         return result
@@ -118,6 +115,19 @@ abstract class BaseTest {
             kspIncremental = true
             kspWithCompilation = true
             symbolProcessorProviders = listOf(KtormProcessorProvider())
+        }
+    }
+
+    private fun printFile(text: String, title: String) {
+        val lines = text.lines()
+        val gutterSize = lines.size.toString().count()
+
+        println("${"#".repeat(gutterSize + 2)}-----------------------------------------")
+        println("${"#".repeat(gutterSize + 2)} $title")
+        println("${"#".repeat(gutterSize + 2)}-----------------------------------------")
+
+        for ((i, line) in lines.withIndex()) {
+            println(String.format("#%${gutterSize}d| %s", i + 1, line))
         }
     }
 }
