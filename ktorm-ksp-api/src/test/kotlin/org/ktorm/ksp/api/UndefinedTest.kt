@@ -16,15 +16,10 @@
 
 package org.ktorm.ksp.api
 
-import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TestName
 import org.ktorm.entity.Entity
 
 class UndefinedTest {
-    @get:Rule
-    val testName: TestName = TestName()
 
     private inline fun <reified T : Any> testUndefined(value: T?) {
         val undefined1 = Undefined.of<T>()
@@ -59,13 +54,6 @@ class UndefinedTest {
         } else {
             assert((value as Any?) === (undefined as Any?))
         }
-    }
-
-    @Before
-    fun before() {
-        println("-----------------------------------")
-        println("Test Name : " + testName.methodName)
-        println("JDK Version: " + System.getProperty("java.version"))
     }
 
     @Test
