@@ -22,9 +22,9 @@ import org.junit.Test
 import org.junit.rules.TestName
 import org.ktorm.entity.Entity
 
-public class UndefinedTest {
+class UndefinedTest {
     @get:Rule
-    public val testName: TestName = TestName()
+    val testName: TestName = TestName()
 
     private inline fun <reified T : Any> testUndefined(value: T?) {
         val undefined1 = Undefined.of<T>()
@@ -62,14 +62,14 @@ public class UndefinedTest {
     }
 
     @Before
-    public fun before() {
+    fun before() {
         println("-----------------------------------")
         println("Test Name : " + testName.methodName)
         println("JDK Version: " + System.getProperty("java.version"))
     }
 
     @Test
-    public fun `undefined inlined class`() {
+    fun `undefined inlined class`() {
         testUndefinedUInt(haveValue = true, value = 1U)
         testUndefinedUInt(haveValue = true, value = 0U)
         testUndefinedUInt(haveValue = true, value = null)
@@ -82,7 +82,7 @@ public class UndefinedTest {
     }
 
     @Test
-    public fun `undefined primitive type`() {
+    fun `undefined primitive type`() {
         testUndefinedInt(haveValue = true, value = 1)
         testUndefinedInt(haveValue = true, value = 0)
         testUndefinedInt(haveValue = true, value = null)
@@ -100,15 +100,15 @@ public class UndefinedTest {
 
     private interface Employee : Entity<Employee>
 
-    public enum class Gender {
+    enum class Gender {
         MALE,
         FEMALE
     }
 
-    public abstract class Biology
+    abstract class Biology
 
     @Suppress("unused")
-    public abstract class Animal(public val name: String) : Biology()
+    abstract class Animal(val name: String) : Biology()
 
     @Suppress("unused")
     private class Dog(val age: Int) : Animal("dog")
@@ -116,31 +116,31 @@ public class UndefinedTest {
     private data class Cat(val age: Int) : Animal("cat")
 
     @Test
-    public fun `undefined interface`() {
+    fun `undefined interface`() {
         testUndefined(Entity.create<Employee>())
         testUndefined<java.io.Serializable>(null)
     }
 
     @Test
-    public fun `undefined abstract class`() {
+    fun `undefined abstract class`() {
         testUndefined<Biology>(Dog(0))
         testUndefined<Animal>(Dog(0))
         testUndefined<Number>(0)
     }
 
     @Test
-    public fun `undefined enum`() {
+    fun `undefined enum`() {
         testUndefined(Gender.MALE)
         testUndefined(Gender.FEMALE)
     }
 
     @Test
-    public fun `undefined class`() {
+    fun `undefined class`() {
         testUndefined(Dog(0))
     }
 
     @Test
-    public fun `undefined data class`() {
+    fun `undefined data class`() {
         testUndefined(Cat(0))
     }
 
@@ -152,7 +152,7 @@ public class UndefinedTest {
     }
 
     @Test
-    public fun `undefined inner class`() {
+    fun `undefined inner class`() {
         val school = School()
         val teacher = school.Teacher()
         testUndefined(teacher)
@@ -161,22 +161,22 @@ public class UndefinedTest {
     }
 
     @Test
-    public fun `undefined object`() {
+    fun `undefined object`() {
         testUndefined(Unit)
     }
 
     @Test
-    public fun `undefined companion object`() {
+    fun `undefined companion object`() {
         testUndefined(Int.Companion)
     }
 
     @Test
-    public fun `undefined function`() {
+    fun `undefined function`() {
         testUndefined<(Int) -> String> { it.toString() }
     }
 
     @Test
-    public fun `undefined array`() {
+    fun `undefined array`() {
         testUndefined(intArrayOf())
         testUndefined<Array<School>>(arrayOf())
     }
