@@ -16,68 +16,108 @@
 
 package org.ktorm.ksp.compiler.test
 
-import com.tschuchort.compiletesting.KotlinCompilation
-import com.tschuchort.compiletesting.SourceFile
-import org.junit.Rule
-import org.junit.rules.TemporaryFolder
+import com.tschuchort.compiletesting.*
+import org.assertj.core.api.Assertions.assertThat
+import org.intellij.lang.annotations.Language
+import org.junit.After
+import org.junit.Before
 import org.ktorm.database.Database
+import org.ktorm.database.use
+import org.ktorm.ksp.compiler.KtormProcessorProvider
 import org.ktorm.logging.ConsoleLogger
 import org.ktorm.logging.LogLevel
-import org.ktorm.schema.BaseTable
-import org.ktorm.schema.Table
-import kotlin.reflect.full.functions
+import java.lang.reflect.InvocationTargetException
 
-public abstract class BaseTest {
+abstract class BaseTest {
+    lateinit var database: Database
 
-    @Rule
-    @JvmField
-    public val temporaryFolder: TemporaryFolder = TemporaryFolder()
-
-    protected open fun createCompiler(vararg sourceFiles: SourceFile): KotlinCompilation {
-        return KotlinCompilation().apply {
-            workingDir = temporaryFolder.root
-            sources = sourceFiles.toList()
-            inheritClassPath = true
-            messageOutputStream = System.out
-        }
-    }
-
-    protected fun KotlinCompilation.Result.getBaseTable(className: String): BaseTable<*> {
-        val cls = classLoader.loadClass("$className\$Companion")
-        return cls.kotlin.objectInstance as BaseTable<*>
-    }
-
-    protected fun KotlinCompilation.Result.getTable(className: String): Table<*> {
-        val cls = classLoader.loadClass("$className\$Companion")
-        return cls.kotlin.objectInstance as Table<*>
-    }
-
-    protected inline fun useDatabase(action: (Database) -> Unit) {
-        Database.connect(
-            url = "jdbc:h2:mem:ktorm;",
-            driver = "org.h2.Driver",
+    @Before
+    fun init() {
+        database = Database.connect(
+            url = "jdbc:h2:mem:ktorm;DB_CLOSE_DELAY=-1",
             logger = ConsoleLogger(threshold = LogLevel.TRACE),
             alwaysQuoteIdentifiers = true
-        ).apply {
-            this.useConnection {
-                it.createStatement().use { statement ->
-                    val sql =
-                        BaseTest::class.java.classLoader.getResourceAsStream("init-data.sql")!!.bufferedReader()
-                            .readText()
-                    statement.executeUpdate(sql)
-                }
-                action(this)
+        )
+
+        execSqlScript("init-data.sql")
+    }
+
+    @After
+    fun destroy() {
+        execSqlScript("drop-data.sql")
+    }
+
+    private fun execSqlScript(filename: String) {
+        database.useConnection { conn ->
+            conn.createStatement().use { statement ->
+                javaClass.classLoader
+                    ?.getResourceAsStream(filename)
+                    ?.bufferedReader()
+                    ?.use { reader ->
+                        for (sql in reader.readText().split(';')) {
+                            if (sql.any { it.isLetterOrDigit() }) {
+                                statement.executeUpdate(sql)
+                            }
+                        }
+                    }
             }
         }
     }
 
-    private fun Any.reflectionInvoke(methodName: String, vararg args: Any?): Any? {
-        return this::class.functions.first { it.name == methodName }.call(this, *args)
+    protected fun runKotlin(@Language("kotlin") code: String) {
+        val result = compile(code)
+        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
+
+        try {
+            val cls = result.classLoader.loadClass("SourceKt")
+            cls.getMethod("setDatabase", Database::class.java).invoke(null, database)
+            cls.getMethod("run").invoke(null)
+        } catch (e: InvocationTargetException) {
+            throw e.targetException
+        }
     }
 
-    protected fun KotlinCompilation.Result.invokeBridge(methodName: String, vararg args: Any?): Any? {
-        val bridgeClass = this.classLoader.loadClass("TestBridge")
-        val bridge = bridgeClass.kotlin.objectInstance!!
-        return bridge.reflectionInvoke(methodName, *args)
+    private fun compile(@Language("kotlin") code: String): KotlinCompilation.Result {
+        @Language("kotlin")
+        val header = """
+            import org.ktorm.database.*
+            import org.ktorm.dsl.*
+            import org.ktorm.entity.*
+            import org.ktorm.ksp.api.*
+            
+            lateinit var database: Database
+            
+            
+        """.trimIndent()
+
+        val compilation = createCompilation(SourceFile.kotlin("Source.kt", header + code))
+        val result = compilation.compile()
+
+        for (file in compilation.kspSourcesDir.walk()) {
+            if (!file.isFile) {
+                continue
+            }
+
+            println("###-----------------------------------------")
+            println("### Generated file: ${file.absolutePath}")
+            println("###-----------------------------------------")
+            println(file.readText())
+            println("###-----------------------------------------")
+        }
+
+        return result
+    }
+
+    private fun createCompilation(source: SourceFile): KotlinCompilation {
+        return KotlinCompilation().apply {
+            sources = listOf(source)
+            verbose = false
+            messageOutputStream = System.out
+            inheritClassPath = true
+            allWarningsAsErrors = true
+            kspIncremental = true
+            kspWithCompilation = true
+            symbolProcessorProviders = listOf(KtormProcessorProvider())
+        }
     }
 }
