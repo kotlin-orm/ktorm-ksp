@@ -80,6 +80,9 @@ abstract class BaseTest {
     private fun compile(@Language("kotlin") code: String, options: Map<String, String>): KotlinCompilation.Result {
         @Language("kotlin")
         val header = """
+            import java.sql.*
+            import kotlin.reflect.*
+            import kotlin.reflect.jvm.*
             import org.ktorm.database.*
             import org.ktorm.dsl.*
             import org.ktorm.entity.*
