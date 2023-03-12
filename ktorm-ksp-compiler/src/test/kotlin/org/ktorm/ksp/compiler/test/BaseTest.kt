@@ -64,8 +64,8 @@ abstract class BaseTest {
         }
     }
 
-    protected fun runKotlin(@Language("kotlin") code: String) {
-        val result = compile(code)
+    protected fun runKotlin(@Language("kotlin") code: String, vararg options: Pair<String, String>) {
+        val result = compile(code, mapOf(*options))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
 
         try {
@@ -77,7 +77,7 @@ abstract class BaseTest {
         }
     }
 
-    private fun compile(@Language("kotlin") code: String): KotlinCompilation.Result {
+    private fun compile(@Language("kotlin") code: String, options: Map<String, String>): KotlinCompilation.Result {
         @Language("kotlin")
         val header = """
             import org.ktorm.database.*
@@ -93,7 +93,7 @@ abstract class BaseTest {
         val source = header + code
         printFile(source, "Source.kt")
 
-        val compilation = createCompilation(SourceFile.kotlin("Source.kt", source))
+        val compilation = createCompilation(SourceFile.kotlin("Source.kt", source), options)
         val result = compilation.compile()
 
         for (file in compilation.kspSourcesDir.walk()) {
@@ -105,16 +105,17 @@ abstract class BaseTest {
         return result
     }
 
-    private fun createCompilation(source: SourceFile): KotlinCompilation {
+    private fun createCompilation(source: SourceFile, options: Map<String, String>): KotlinCompilation {
         return KotlinCompilation().apply {
             sources = listOf(source)
             verbose = false
             messageOutputStream = System.out
             inheritClassPath = true
             allWarningsAsErrors = true
+            symbolProcessorProviders = listOf(KtormProcessorProvider())
             kspIncremental = true
             kspWithCompilation = true
-            symbolProcessorProviders = listOf(KtormProcessorProvider())
+            kspArgs += options
         }
     }
 
