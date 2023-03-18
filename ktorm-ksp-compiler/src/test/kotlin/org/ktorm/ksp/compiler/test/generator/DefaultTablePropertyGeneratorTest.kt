@@ -28,49 +28,6 @@ import org.ktorm.schema.*
 class DefaultTablePropertyGeneratorTest : BaseTest() {
 //
 //    @Test
-//    public fun `custom sqlType keyword identifier`() {
-//        val (result1, result2) = twiceCompile(
-//            SourceFile.kotlin(
-//                "source.kt",
-//                """
-//                import org.ktorm.ksp.api.*
-//                import org.ktorm.schema.SqlType
-//                import java.sql.Types
-//                import kotlin.reflect.jvm.jvmErasure
-//                import java.sql.PreparedStatement
-//                import java.sql.ResultSet
-//                import kotlin.reflect.KProperty1
-//
-//                @Table
-//                data class User(
-//                    @PrimaryKey
-//                    var id: Int?,
-//                    @Column(sqlType = LocationWrapperSqlType::class)
-//                    var `class`: LocationWrapper,
-//                    @Column(sqlType = LocationWrapperSqlType::class)
-//                    var operator: LocationWrapper,
-//                )
-//
-//                data class LocationWrapper(val underlying: String = "")
-//
-//                object LocationWrapperSqlType : SqlType<LocationWrapper>(Types.VARCHAR, "varchar") {
-//
-//                    override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: LocationWrapper) {
-//                        ps.setString(index, parameter.underlying)
-//                    }
-//
-//                    override fun doGetResult(rs: ResultSet, index: Int): LocationWrapper? {
-//                        return rs.getString(index)?.let { LocationWrapper(it) }
-//                    }
-//                }
-//                """,
-//            )
-//        )
-//        Assertions.assertThat(result1.exitCode).isEqualTo(ExitCode.OK)
-//        Assertions.assertThat(result2.exitCode).isEqualTo(ExitCode.OK)
-//    }
-//
-//    @Test
 //    public fun `generics column`() {
 //        val (result1, result2) = twiceCompile(
 //            SourceFile.kotlin(
