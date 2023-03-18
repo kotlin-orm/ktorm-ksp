@@ -22,6 +22,63 @@ import org.ktorm.ksp.compiler.test.BaseTest
 class SqlTypeTest : BaseTest() {
 
     @Test
+    fun testDefaultSqlType() = runKotlin("""
+        @Table
+        data class User(
+            val int: Int,
+            val string: String,
+            val boolean: Boolean,
+            val long: Long,
+            val short: Short,
+            val double: Double,
+            val float: Float,
+            val bigDecimal: BigDecimal,
+            val date: java.sql.Date,
+            val time: Time,
+            val timestamp: Timestamp,
+            val localDateTime: LocalDateTime,
+            val localDate: LocalDate,
+            val localTime: LocalTime,
+            val monthDay: MonthDay,
+            val yearMonth: YearMonth,
+            val year: Year,
+            val instant: Instant,
+            val uuid: UUID,
+            val byteArray: ByteArray,
+            val gender: Gender
+        )
+        
+        enum class Gender {
+            MALE,
+            FEMALE
+        }
+        
+        fun run() {
+            assert(Users.int.sqlType == org.ktorm.schema.IntSqlType)
+            assert(Users.string.sqlType == org.ktorm.schema.VarcharSqlType)
+            assert(Users.boolean.sqlType == org.ktorm.schema.BooleanSqlType)
+            assert(Users.long.sqlType == org.ktorm.schema.LongSqlType)
+            assert(Users.short.sqlType == org.ktorm.schema.ShortSqlType)
+            assert(Users.double.sqlType == org.ktorm.schema.DoubleSqlType)
+            assert(Users.float.sqlType == org.ktorm.schema.FloatSqlType)
+            assert(Users.bigDecimal.sqlType == org.ktorm.schema.DecimalSqlType)
+            assert(Users.date.sqlType == org.ktorm.schema.DateSqlType)
+            assert(Users.time.sqlType == org.ktorm.schema.TimeSqlType)
+            assert(Users.timestamp.sqlType == org.ktorm.schema.TimestampSqlType)
+            assert(Users.localDateTime.sqlType == org.ktorm.schema.LocalDateTimeSqlType)
+            assert(Users.localDate.sqlType == org.ktorm.schema.LocalDateSqlType)
+            assert(Users.localTime.sqlType == org.ktorm.schema.LocalTimeSqlType)
+            assert(Users.monthDay.sqlType == org.ktorm.schema.MonthDaySqlType)
+            assert(Users.yearMonth.sqlType == org.ktorm.schema.YearMonthSqlType)
+            assert(Users.year.sqlType == org.ktorm.schema.YearSqlType)
+            assert(Users.instant.sqlType == org.ktorm.schema.InstantSqlType)
+            assert(Users.uuid.sqlType == org.ktorm.schema.UuidSqlType)
+            assert(Users.byteArray.sqlType == org.ktorm.schema.BytesSqlType)
+            assert(Users.gender.sqlType is org.ktorm.schema.EnumSqlType<*>)
+        }
+    """.trimIndent())
+
+    @Test
     fun testCustomSqlType() = runKotlin("""
         @Table
         data class User(

@@ -51,7 +51,7 @@ fun KSPropertyDeclaration.getSqlType(resolver: Resolver): KSType? {
         "java.sql.Timestamp" -> TimestampSqlType::class
         "java.sql.Date" -> DateSqlType::class
         "java.sql.Time" -> TimeSqlType::class
-        "java.time.InstantSqlType" -> InstantSqlType::class
+        "java.time.Instant" -> InstantSqlType::class
         "java.time.LocalDateTime" -> LocalDateTimeSqlType::class
         "java.time.LocalDate" -> LocalDateSqlType::class
         "java.time.LocalTime" -> LocalTimeSqlType::class
