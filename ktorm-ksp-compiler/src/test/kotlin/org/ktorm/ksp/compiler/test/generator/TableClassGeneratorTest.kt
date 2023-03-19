@@ -184,246 +184,35 @@ class TableClassGeneratorTest : BaseTest() {
         }
     """.trimIndent())
 
-//    @Test
-//    public fun `column reference is data class`() {
-//        val (result, _) = twiceCompile(
-//            SourceFile.kotlin(
-//                "source.kt",
-//                """
-//                import org.ktorm.ksp.api.*
-//                import org.ktorm.entity.Entity
-//                import org.ktorm.schema.varchar
-//                import org.ktorm.schema.BaseTable
-//                import kotlin.reflect.KClass
-//
-//                @Table
-//                interface User: Entity<User> {
-//                    @PrimaryKey
-//                    var id: Int
-//                    var username: String
-//                    var age: Int
-//                    @References("school_id")
-//                    var school: School
-//                }
-//
-//                @Table
-//                data class School(
-//                    @PrimaryKey
-//                    var id: Int,
-//                    var schoolName: String
-//                )
-//                """,
-//            )
-//        )
-//        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-//        assertThat(result.messages).contains("References column must be interface entity type")
-//    }
-//
-//    @Test
-//    public fun `column reference not an entity type`() {
-//        val result = compile(
-//            SourceFile.kotlin(
-//                "source.kt",
-//                """
-//                import org.ktorm.ksp.api.*
-//                import org.ktorm.entity.Entity
-//                import org.ktorm.schema.varchar
-//                import org.ktorm.schema.BaseTable
-//                import kotlin.reflect.KClass
-//
-//                @Table
-//                interface User: Entity<User> {
-//                    @PrimaryKey
-//                    var id: Int
-//                    var username: String
-//                    var age: Int
-//                    @References("school_id")
-//                    var school: School
-//                }
-//
-//                data class School(
-//                    var id: Int,
-//                    var schoolName: String
-//                )
-//                """,
-//            )
-//        )
-//        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-//        assertThat(result.messages).contains("is not an entity type")
-//    }
-//
-//    @Test
-//    public fun `interface entity`() {
-//        val result = compile(
-//            SourceFile.kotlin(
-//                "source.kt",
-//                """
-//                import org.ktorm.entity.Entity
-//                import org.ktorm.ksp.api.PrimaryKey
-//                import org.ktorm.ksp.api.Table
-//                @Table
-//                interface User: Entity<User> {
-//                    @PrimaryKey
-//                    var id: Int
-//                    var username: String
-//                    var age: Int
-//                }
-//                """
-//            )
-//        )
-//        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-//    }
-//
-//    @Test
-//    public fun `interface entity keyword identifier`() {
-//        val (result1, result2) = twiceCompile(
-//            SourceFile.kotlin(
-//                "source.kt",
-//                """
-//                import org.ktorm.entity.Entity
-//                import org.ktorm.ksp.api.PrimaryKey
-//                import org.ktorm.ksp.api.Table
-//                @Table
-//                interface User: Entity<User> {
-//                    @PrimaryKey
-//                    var id: Int
-//                    var `class`: String
-//                    var operator: String
-//                }
-//                """
-//            )
-//        )
-//        assertThat(result1.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-//        assertThat(result2.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-//    }
-//
-//    @Test
-//    public fun `column reference in data class`() {
-//        val result = compile(
-//            SourceFile.kotlin(
-//                "source.kt",
-//                """
-//                import org.ktorm.ksp.api.*
-//                import org.ktorm.schema.varchar
-//                import org.ktorm.schema.BaseTable
-//                import kotlin.reflect.KClass
-//
-//                @Table
-//                data class User(
-//                    @PrimaryKey
-//                    var id: Int,
-//                    var username: String,
-//                    var age: Int,
-//                    @References("school_id")
-//                    var school: School
-//                )
-//
-//                @Table
-//                interface School: Entity<School> {
-//                    @PrimaryKey
-//                    var id: Int
-//                    var schoolName: String
-//                }
-//                """,
-//            )
-//        )
-//        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-//        assertThat(result.messages).contains("References Column are only allowed for interface entity type")
-//    }
-//
-//    @Test
-//    public fun `disable allowReflectionCreateClassEntity`() {
-//        val (result1, result2) = twiceCompile(
-//            SourceFile.kotlin(
-//                "source.kt",
-//                """
-//                import org.ktorm.ksp.api.*
-//
-//                @Table
-//                data class User(
-//                    @PrimaryKey
-//                    var id: Int,
-//                    var username: String = "",
-//                )
-//
-//                @KtormKspConfig(
-//                    allowReflectionCreateClassEntity = false
-//                )
-//                class KtormConfig
-//                """,
-//            )
-//        )
-////        {
-////            assertThat(it).doesNotContain("constructor.callBy(parameterMap)")
-////        }
-//        assertThat(result1.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-//        assertThat(result2.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-//    }
-//
-//    @Test
-//    public fun `sqlType not a subclass of SqlType and SqlTypeFactory`() {
-//        val result = compile(
-//            SourceFile.kotlin(
-//                "source.kt",
-//                """
-//                import org.ktorm.ksp.api.*
-//
-//                @Table
-//                data class User(
-//                     @PrimaryKey
-//                    var id: Int?,
-//                    @Column(sqlType = LocationWrapperSqlType::class)
-//                    var location: LocationWrapper,
-//                    var age: Int,
-//                )
-//
-//                data class LocationWrapper(val underlying: String = "") : Serializable
-//
-//                object LocationWrapperSqlType
-//                """,
-//            )
-//        )
-//        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-//        assertThat(result.messages).contains(
-//            "sqlType must be typed of [${SqlType::class.qualifiedName}] or " +
-//                    "[${SqlTypeFactory::class.qualifiedName}]."
-//        )
-//    }
-//
-//    @Test
-//    public fun `sqlType not a singleton object`() {
-//        val result = compile(
-//            SourceFile.kotlin(
-//                "source.kt",
-//                """
-//                import org.ktorm.ksp.api.*
-//
-//                @Table
-//                data class User(
-//                    @PrimaryKey
-//                    var id: Int?,
-//                    @Column(sqlType = LocationWrapperSqlType::class)
-//                    var location: LocationWrapper,
-//                    var age: Int,
-//                )
-//
-//                data class LocationWrapper(val underlying: String = "") : Serializable
-//
-//                class LocationWrapperSqlType : SqlType<LocationWrapper>(Types.VARCHAR, "varchar") {
-//
-//                    override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: LocationWrapper) {
-//                        ps.setString(index, parameter.underlying)
-//                    }
-//
-//                    override fun doGetResult(rs: ResultSet, index: Int): LocationWrapper? {
-//                        return rs.getString(index)?.let { LocationWrapper(it) }
-//                    }
-//                }
-//                """,
-//            )
-//        )
-//        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-//        assertThat(result.messages).contains("sqlType must be a Kotlin singleton object")
-//    }
+    @Test
+    fun `interface entity`() = runKotlin("""
+        @Table
+        interface User: Entity<User> {
+            @PrimaryKey
+            var id: Int
+            var username: String
+            var age: Int
+        }
+        
+        fun run() {
+            assert(Users.tableName == "user")
+            assert(Users.columns.map { it.name }.toSet() == setOf("id", "username", "age"))
+        }
+    """.trimIndent())
 
+    @Test
+    fun `interface entity keyword identifier`() = runKotlin("""
+        @Table
+        interface User: Entity<User> {
+            @PrimaryKey
+            var id: Int
+            var `class`: String
+            var operator: String
+        }
+        
+        fun run() {
+            assert(Users.tableName == "user")
+            assert(Users.columns.map { it.name }.toSet() == setOf("id", "class", "operator"))
+        }
+    """.trimIndent())
 }
