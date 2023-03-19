@@ -84,116 +84,41 @@ class TableClassGeneratorTest : BaseTest() {
             println(database.userTable)
         }
     """.trimIndent())
-//
-//    @Test
-//    public fun `test non constructor properties with data class`() {
-//        val (result1, result2) = twiceCompile(
-//            SourceFile.kotlin(
-//                "source.kt",
-//                """
-//                import org.ktorm.ksp.api.PrimaryKey
-//                import org.ktorm.ksp.api.Table
-//
-//                @Table("t_user","t_user_alias","catalog","schema","UserTable")
-//                data class User(
-//                    @PrimaryKey
-//                    var id: Int,
-//                    var username: String,
-//                ) {
-//                    var age: Int = 10
-//                }
-//                """,
-//            )
-//        )
-//        assertThat(result1.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-//        assertThat(result2.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-//        val baseTable = result2.getBaseTable("UserTable")
-//        assertThat(baseTable.tableName).isEqualTo("t_user")
-//        assertThat(baseTable.alias).isEqualTo("t_user_alias")
-//        assertThat(baseTable.catalog).isEqualTo("catalog")
-//        assertThat(baseTable.columns.map { it.name }.toSet()).isEqualTo(setOf("id", "username", "age"))
-//    }
-//
-//    @Test
-//    public fun `data class constructor with default parameters column`() {
-//        val (result1, result2) = twiceCompile(
-//            SourceFile.kotlin(
-//                "source.kt",
-//                """
-//                import org.ktorm.ksp.api.PrimaryKey
-//                import org.ktorm.ksp.api.Table
-//
-//                @Table
-//                data class User(
-//                    @PrimaryKey
-//                    var id: Int,
-//                    var username: String = "lucy",
-//                )
-//                """,
-//            )
-//        )
-////        {
-////            // use reflection create instance
-////            assertThat(it).contains("public open class Users", "constructor.callBy(parameterMap)")
-////        }
-//        assertThat(result1.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-//        assertThat(result2.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-//        result2.getBaseTable("Users")
-//    }
-//
-//    @Test
-//    public fun `data class keyword identifier with default parameters column`() {
-//        val (result1, result2) = twiceCompile(
-//            SourceFile.kotlin(
-//                "source.kt",
-//                """
-//                import org.ktorm.database.Database
-//                import org.ktorm.entity.Entity
-//                import org.ktorm.entity.EntitySequence
-//                import org.ktorm.ksp.api.*
-//                import java.time.LocalDate
-//
-//                @Table
-//                data class User(
-//                    @PrimaryKey
-//                    var id: Int,
-//                    var `class`: String = "",
-//                    var operator: String = "",
-//                ) {
-//                    var `interface`: String = ""
-//                    var constructor: String = ""
-//                }
-//                """,
-//            )
-//        )
-//        assertThat(result1.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-//        assertThat(result2.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-//    }
-//
-//    @Test
-//    public fun `data class constructor with parameters not column`() {
-//        val result = compile(
-//            SourceFile.kotlin(
-//                "source.kt",
-//                """
-//                import org.ktorm.ksp.api.Ignore
-//                import org.ktorm.ksp.api.PrimaryKey
-//                import org.ktorm.ksp.api.Table
-//
-//                @Table
-//                data class User(
-//                    @PrimaryKey
-//                    var id: Int,
-//                    @Ignore
-//                    var username: String,
-//                    var age: Int
-//                )
-//                """,
-//            )
-//        )
-//        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-//        assertThat(result.messages).contains("Construct parameter not exists in tableDefinition")
-//    }
+
+    @Test
+    fun `data class constructor with default parameters column`() = runKotlin("""
+        @Table
+        data class User(
+            @PrimaryKey
+            var id: Int,
+            var username: String,
+            var phone: String? = "12345"
+        )
+        
+        fun run() {
+            val user = database.users.first { it.id eq 1 }
+            assert(user.username == "jack")
+            assert(user.phone == null)
+        }
+    """.trimIndent())
+
+    @Test
+    fun `data class constructor with default parameters column allowing reflection`() = runKotlin("""
+        @Table
+        data class User(
+            @PrimaryKey
+            var id: Int,
+            var username: String,
+            var phone: String? = "12345"
+        )
+        
+        fun run() {
+            val user = database.users.first { it.id eq 1 }
+            assert(user.username == "jack")
+            assert(user.phone == "12345")
+        }
+    """.trimIndent(), "ktorm.allowReflection" to "true")
+
 //
 //    @Test
 //    public fun `ignore properties`() {
