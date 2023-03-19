@@ -1,52 +1,42 @@
-///*
-// * Copyright 2022-2023 the original author or authors.
-// *
-// * Licensed under the Apache License, Version 2.0 (the "License");
-// * you may not use this file except in compliance with the License.
-// * You may obtain a copy of the License at
-// *
-// *      http://www.apache.org/licenses/LICENSE-2.0
-// *
-// * Unless required by applicable law or agreed to in writing, software
-// * distributed under the License is distributed on an "AS IS" BASIS,
-// * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// * See the License for the specific language governing permissions and
-// * limitations under the License.
-// */
-//
-//package org.ktorm.ksp.compiler.test.generator
-//
-//import com.tschuchort.compiletesting.KotlinCompilation
-//import com.tschuchort.compiletesting.SourceFile
-//import org.assertj.core.api.Assertions.assertThat
-//import org.junit.Test
-//import org.ktorm.ksp.api.SqlTypeFactory
-//import org.ktorm.schema.SqlType
-//
-//public class DefaultTableTypeGeneratorTest : BaseKspTest() {
-//
-//    @Test
-//    public fun `dataClass entity`() {
-//        val result = compile(
-//            SourceFile.kotlin(
-//                "source.kt",
-//                """
-//                import org.ktorm.ksp.api.PrimaryKey
-//                import org.ktorm.ksp.api.Table
-//
-//                @Table
-//                data class User(
-//                    @PrimaryKey
-//                    var id: Int? = null,
-//                    var username: String,
-//                    var age: Int = 0
-//                )
-//                """
-//            )
-//        )
-//        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-//    }
-//
+/*
+ * Copyright 2022-2023 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.ktorm.ksp.compiler.test.generator
+
+import org.junit.Test
+import org.ktorm.ksp.compiler.test.BaseTest
+
+class TableClassGeneratorTest : BaseTest() {
+
+    @Test
+    fun `dataClass entity`() = runKotlin("""
+        @Table
+        data class User(
+            @PrimaryKey
+            var id: Int? = null,
+            var username: String,
+            var age: Int = 0
+        )
+        
+        fun run() {
+            assert(Users.tableName == "user")
+            assert(Users.columns.map { it.name }.toSet() == setOf("id", "username", "age"))
+        }
+    """.trimIndent())
+
 //    @Test
 //    public fun `data class keyword identifier`() {
 //        val (result1, result2) = twiceCompile(
@@ -605,5 +595,5 @@
 //        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
 //        assertThat(result.messages).contains("sqlType must be a Kotlin singleton object")
 //    }
-//
-//}
+
+}
