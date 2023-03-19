@@ -56,34 +56,34 @@ class TableClassGeneratorTest : BaseTest() {
         }
     """.trimIndent())
 
-//    @Test
-//    public fun `table annotation`() {
-//        val (result1, result2) = twiceCompile(
-//            SourceFile.kotlin(
-//                "source.kt",
-//                """
-//                import org.ktorm.ksp.api.PrimaryKey
-//                import org.ktorm.ksp.api.Table
-//
-//                @Table("t_user","t_user_alias","catalog","schema","UserTable","userTable",["age"])
-//                data class User(
-//                    @PrimaryKey
-//                    var id: Int,
-//                    var username: String,
-//                ) {
-//                    var age: Int = 10
-//                }
-//                """,
-//            )
-//        )
-//        assertThat(result1.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-//        assertThat(result2.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-//        val baseTable = result2.getBaseTable("UserTable")
-//        assertThat(baseTable.tableName).isEqualTo("t_user")
-//        assertThat(baseTable.alias).isEqualTo("t_user_alias")
-//        assertThat(baseTable.catalog).isEqualTo("catalog")
-//        assertThat(baseTable.columns.map { it.name }.toSet()).isEqualTo(setOf("id", "username"))
-//    }
+    @Test
+    fun `table annotation`() = runKotlin("""
+        @Table(
+            name = "t_user", 
+            alias = "t_user_alias", 
+            catalog = "catalog", 
+            schema = "schema", 
+            className = "UserTable", 
+            entitySequenceName = "userTable", 
+            ignoreProperties = ["age"]
+        )
+        data class User(
+            @PrimaryKey
+            var id: Int,
+            var username: String,
+        ) {
+            var age: Int = 10
+        }
+        
+        fun run() {
+            assert(UserTable.tableName == "t_user")
+            assert(UserTable.alias == "t_user_alias")
+            assert(UserTable.catalog == "catalog")
+            assert(UserTable.schema == "schema")
+            assert(UserTable.columns.map { it.name }.toSet() == setOf("id", "username"))
+            println(database.userTable)
+        }
+    """.trimIndent())
 //
 //    @Test
 //    public fun `test non constructor properties with data class`() {
