@@ -137,36 +137,24 @@ class TableClassGeneratorTest : BaseTest() {
             assert(Users.columns.map { it.name }.toSet() == setOf("id", "age"))
         }
     """.trimIndent())
-//
-//    @Test
-//    public fun `column has no backingField`() {
-//        val (result1, result2) = twiceCompile(
-//            SourceFile.kotlin(
-//                "source.kt",
-//                """
-//                import org.ktorm.ksp.api.*
-//                import org.ktorm.schema.SqlType
-//                import java.sql.*
-//                import kotlin.reflect.KClass
-//
-//                @Table
-//                data class User(
-//                    @PrimaryKey
-//                    var id: Int,
-//                    var age: Int
-//                ) {
-//                    val username: String
-//                        get() = "username"
-//                }
-//                """,
-//            )
-//        )
-//        assertThat(result1.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-//        assertThat(result2.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-//        val baseTable = result2.getBaseTable("Users")
-//        assertThat(baseTable.columns.none { it.name == "username" })
-//    }
-//
+
+    @Test
+    fun `column has no backingField`() = runKotlin("""
+        @Table
+        data class User(
+            @PrimaryKey
+            var id: Int,
+            var age: Int
+        ) {
+            val username: String get() = "username"
+        }
+        
+        fun run() {
+            assert(Users.tableName == "user")
+            assert(Users.columns.map { it.name }.toSet() == setOf("id", "age"))
+        }
+    """.trimIndent())
+
 //    @Test
 //    public fun `column definition does not contain @References`() {
 //        val (result1, result2) = twiceCompile(
