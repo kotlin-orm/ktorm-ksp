@@ -98,6 +98,7 @@ class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironme
             columns = ArrayList()
         )
 
+        // TODO: fix sorting, primary constructor properties should be placed first.
         for (property in cls.getAllProperties()) {
             if (shouldSkip(property, tableDef)) {
                 continue

@@ -37,35 +37,25 @@ class TableClassGeneratorTest : BaseTest() {
         }
     """.trimIndent())
 
-//    @Test
-//    public fun `data class keyword identifier`() {
-//        val (result1, result2) = twiceCompile(
-//            SourceFile.kotlin(
-//                "source.kt",
-//                """
-//                import org.ktorm.database.Database
-//                import org.ktorm.entity.Entity
-//                import org.ktorm.entity.EntitySequence
-//                import org.ktorm.ksp.api.*
-//                import java.time.LocalDate
-//
-//                @Table
-//                data class User(
-//                    @PrimaryKey
-//                    var id: Int,
-//                    var `class`: String,
-//                    var operator: String,
-//                ) {
-//                    var `interface`: String = ""
-//                    var constructor: String = ""
-//                }
-//                """,
-//            )
-//        )
-//        assertThat(result1.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-//        assertThat(result2.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-//    }
-//
+    @Test
+    fun `data class keyword identifier`() = runKotlin("""
+        @Table
+        data class User(
+            @PrimaryKey
+            var id: Int,
+            var `class`: String,
+            var operator: String,
+        ) {
+            var `interface`: String = ""
+            var constructor: String = ""
+        }
+        
+        fun run() {
+            assert(Users.tableName == "user")
+            assert(Users.columns.map { it.name }.toSet() == setOf("id", "class", "operator", "interface", "constructor"))
+        }
+    """.trimIndent())
+
 //    @Test
 //    public fun `table annotation`() {
 //        val (result1, result2) = twiceCompile(
