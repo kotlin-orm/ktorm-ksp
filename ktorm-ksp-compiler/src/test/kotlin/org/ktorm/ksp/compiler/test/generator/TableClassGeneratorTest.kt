@@ -155,95 +155,35 @@ class TableClassGeneratorTest : BaseTest() {
         }
     """.trimIndent())
 
-//    @Test
-//    public fun `column definition does not contain @References`() {
-//        val (result1, result2) = twiceCompile(
-//            SourceFile.kotlin(
-//                "source.kt",
-//                """
-//                import org.ktorm.ksp.api.*
-//                import org.ktorm.schema.SqlType
-//                import java.sql.*
-//                import kotlin.reflect.KClass
-//
-//                @Table
-//                data class User(
-//                    @PrimaryKey
-//                    var id: Int,
-//                    @Column(name = "c_username", propertyName = "p_username", sqlType = MyStringSqlType::class)
-//                    var username: String,
-//                    var age: Int
-//                )
-//
-//                object MyStringSqlType : SqlType<String>(Types.VARCHAR, "varchar") {
-//
-//                    override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: String) {
-//                        ps.setString(index, parameter.lowercase())
-//                    }
-//
-//                    override fun doGetResult(rs: ResultSet, index: Int): String? {
-//                        return rs.getString(index)?.uppercase()
-//                    }
-//                }
-//                """,
-//            )
-//        )
-//        assertThat(result1.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-//        assertThat(result2.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-//        val baseTable = result2.getBaseTable("Users")
-//        assertThat(baseTable.columns.any { it.name == "c_username" })
-//    }
-//
-//    @Test
-//    public fun `column reference`() {
-//        val (result1, result2) = twiceCompile(
-//            SourceFile.kotlin(
-//                "source.kt",
-//                """
-//                import org.ktorm.ksp.api.*
-//                import org.ktorm.entity.Entity
-//                import org.ktorm.schema.varchar
-//                import org.ktorm.schema.BaseTable
-//                import kotlin.reflect.KClass
-//
-//                @Table
-//                interface User: Entity<User> {
-//                    @PrimaryKey
-//                    var id: Int
-//                    var username: String
-//                    var age: Int
-//                    @References
-//                    var firstSchool: School
-//                    @References("second_school_id")
-//                    var secondSchool: School
-//                }
-//
-//                @Table
-//                interface School: Entity<School> {
-//                    @PrimaryKey
-//                    var id: Int
-//                    var schoolName: String
-//                }
-//                """,
-//            )
-//        )
-//        assertThat(result1.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-//        assertThat(result2.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-//        val baseTable = result2.getBaseTable("Users")
-//
-//        val firstSchool = baseTable.columns.firstOrNull { it.name == "firstSchoolId" }
-//        assertThat(firstSchool).isNotNull
-//        assertThat(firstSchool!!.referenceTable).isNotNull
-//        val firstSchoolReferenceTable = firstSchool.referenceTable
-//        assertThat(firstSchoolReferenceTable!!.tableName).isEqualTo("School")
-//
-//        val secondSchool = baseTable.columns.firstOrNull { it.name == "second_school_id" }
-//        assertThat(secondSchool).isNotNull
-//        assertThat(secondSchool!!.referenceTable).isNotNull
-//        val secondSchoolReferenceTable = firstSchool.referenceTable
-//        assertThat(secondSchoolReferenceTable!!.tableName).isEqualTo("School")
-//    }
-//
+    @Test
+    fun `column reference`() = runKotlin("""
+        @Table
+        interface User: Entity<User> {
+            @PrimaryKey
+            var id: Int
+            var username: String
+            var age: Int
+            @References
+            var firstSchool: School
+            @References("second_school_identity")
+            var secondSchool: School
+        }
+        
+        @Table
+        interface School: Entity<School> {
+            @PrimaryKey
+            var id: Int
+            var schoolName: String
+        }
+        
+        fun run() {
+            assert(Users.firstSchoolId.referenceTable is Schools)
+            assert(Users.firstSchoolId.name == "first_school_id")
+            assert(Users.secondSchoolId.referenceTable is Schools)
+            assert(Users.secondSchoolId.name == "second_school_identity")
+        }
+    """.trimIndent())
+
 //    @Test
 //    public fun `column reference is data class`() {
 //        val (result, _) = twiceCompile(
