@@ -50,7 +50,7 @@ public annotation class Column(
     /**
      * The name of the corresponding column property in the generated table object.
      *
-     * If not specified, the name will be the annotated property's name. The behavior can be configured by KSP option
+     * If not specified, the name will be the annotated property's name. This behavior can be configured by KSP option
      * `ktorm.codingNamingStrategy`, which accepts an implementation class name of
      * `org.ktorm.ksp.spi.CodingNamingStrategy`
      */
