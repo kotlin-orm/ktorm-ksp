@@ -45,7 +45,7 @@ public annotation class References(
     val name: String = "",
 
     /**
-     * The name of the corresponding column property in the generated table object.
+     * The name of the corresponding column property in the generated table class.
      *
      * If not specified, the name will be the concatenation of the current property's name and the referenced table's
      * primary key name. This behavior can be configured by KSP option `ktorm.codingNamingStrategy`, which accepts
