@@ -60,7 +60,7 @@ public data class ColumnMetadata(
     val referenceTable: TableMetadata?,
 
     /**
-     * The name of the corresponding column property in the generated table object.
+     * The name of the corresponding column property in the generated table class.
      */
     val columnPropertyName: String
 )
