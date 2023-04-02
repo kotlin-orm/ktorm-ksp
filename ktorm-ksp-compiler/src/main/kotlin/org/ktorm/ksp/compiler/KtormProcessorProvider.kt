@@ -46,18 +46,19 @@ class KtormProcessorProvider : SymbolProcessorProvider {
         val parser = MetadataParser(resolver, environment)
         for (symbol in symbols) {
             if (symbol is KSClassDeclaration) {
-                generate(parser.parseTableMetadata(symbol), environment)
+                val table = parser.parseTableMetadata(symbol)
+                generateFile(table, environment)
             }
         }
 
         return deferral
     }
 
-    private fun generate(table: TableMetadata, environment: SymbolProcessorEnvironment) {
-        // Generate file spec via kotlinpoet.
+    private fun generateFile(table: TableMetadata, environment: SymbolProcessorEnvironment) {
+        // Generate file spec by kotlinpoet.
         val fileSpec = FileGenerator.generate(table, environment)
 
-        // Beautify the generated code via facebook ktfmt.
+        // Beautify the generated code by facebook ktfmt.
         val formattedCode = formatCode(fileSpec, environment.logger)
 
         // Output the formatted code.
