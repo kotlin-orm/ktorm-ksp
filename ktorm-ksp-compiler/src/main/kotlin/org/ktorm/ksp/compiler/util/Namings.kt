@@ -77,7 +77,7 @@ object DefaultCodingNamingStrategy : CodingNamingStrategy {
     }
 }
 
-private object CamelCase {
+object CamelCase {
     // Matches boundaries between words, for example (abc|Def), (ABC|Def)
     private val boundaries = listOf(Regex("([a-z])([A-Z])"), Regex("([A-Z])([A-Z][a-z])"))
 
