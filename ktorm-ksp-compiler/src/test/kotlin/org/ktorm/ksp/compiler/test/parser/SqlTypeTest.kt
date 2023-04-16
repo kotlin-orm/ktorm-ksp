@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.ktorm.ksp.compiler.test.config
+package org.ktorm.ksp.compiler.test.parser
 
 import org.junit.Test
 import org.ktorm.ksp.compiler.test.BaseTest
