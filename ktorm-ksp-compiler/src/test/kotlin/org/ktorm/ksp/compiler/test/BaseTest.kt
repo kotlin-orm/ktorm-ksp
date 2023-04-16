@@ -64,6 +64,13 @@ abstract class BaseTest {
         }
     }
 
+    protected fun kspFailing(message: String, @Language("kotlin") code: String, vararg options: Pair<String, String>) {
+        val result = compile(code, mapOf(*options))
+        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
+        assertThat(result.messages).contains("e: Error occurred in KSP, check log for detail")
+        assertThat(result.messages).contains(message)
+    }
+
     protected fun runKotlin(@Language("kotlin") code: String, vararg options: Pair<String, String>) {
         val result = compile(code, mapOf(*options))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
