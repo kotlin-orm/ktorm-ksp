@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package org.ktorm.ksp.compiler.test
+package org.ktorm.ksp.compiler.test.parser
 
 import org.junit.Test
+import org.ktorm.ksp.compiler.test.BaseTest
 
-class KtormKspTest : BaseTest() {
+class CompoundPrimaryKeysTest : BaseTest() {
 
     @Test
     fun `multi primary key`() = runKotlin("""
