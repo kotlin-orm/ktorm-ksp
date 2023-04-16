@@ -22,4 +22,58 @@ class ParserChecksTest : BaseTest() {
             val name: String
         }
     """.trimIndent())
+
+    @Test
+    fun testClassIgnoreProperties() = runKotlin("""
+        @Table(ignoreProperties = ["name"])
+        class User(
+            val id: Int, 
+            val name: String? = null
+        )
+        
+        fun run() {
+            assert(Users.columns.map { it.name }.toSet() == setOf("id"))
+        }
+    """.trimIndent())
+
+    @Test
+    fun testInterfaceIgnoreProperties() = runKotlin("""
+        @Table(ignoreProperties = ["name"])
+        interface User : Entity<User> {
+            val id: Int
+            val name: String
+        }
+        
+        fun run() {
+            assert(Users.columns.map { it.name }.toSet() == setOf("id"))
+        }
+    """.trimIndent())
+
+    @Test
+    fun testClassIgnoreAnnotation() = runKotlin("""
+        @Table
+        class User(
+            val id: Int, 
+            @Ignore
+            val name: String? = null
+        )
+        
+        fun run() {
+            assert(Users.columns.map { it.name }.toSet() == setOf("id"))
+        }
+    """.trimIndent())
+
+    @Test
+    fun testInterfaceIgnoreAnnotation() = runKotlin("""
+        @Table
+        interface User : Entity<User> {
+            val id: Int
+            @Ignore
+            val name: String
+        }
+        
+        fun run() {
+            assert(Users.columns.map { it.name }.toSet() == setOf("id"))
+        }
+    """.trimIndent())
 }

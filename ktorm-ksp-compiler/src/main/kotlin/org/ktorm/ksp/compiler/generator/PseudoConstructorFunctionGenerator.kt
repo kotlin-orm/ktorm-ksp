@@ -42,6 +42,7 @@ object PseudoConstructorFunctionGenerator {
     }
 
     internal fun buildParameters(table: TableMetadata): List<ParameterSpec> {
+        // TODO: use table.columns will skip ignored properties, which should be skipped in the pseudo constructor
         return table.columns.map { column ->
             val propName = column.entityProperty.simpleName.asString()
             val propType = column.entityProperty.type.resolve().makeNullable().toTypeName()
