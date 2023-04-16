@@ -88,4 +88,17 @@ class ParserChecksTest : BaseTest() {
             assert(Users.columns.map { it.name }.toSet() == setOf("id"))
         }
     """.trimIndent())
+
+    @Test
+    fun testClassPropertiesOrder() = runKotlin("""
+        @Table
+        class User(var id: Int) {
+            var name: String? = null
+        }
+        
+        fun run() {
+            assert(Users.columns.map { it.name }[0] == "id")
+            assert(Users.columns.map { it.name }[1] == "name")
+        }
+    """.trimIndent())
 }

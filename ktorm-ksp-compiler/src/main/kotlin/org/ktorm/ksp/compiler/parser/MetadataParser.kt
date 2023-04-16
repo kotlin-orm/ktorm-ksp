@@ -22,6 +22,7 @@ import com.google.devtools.ksp.isAnnotationPresent
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.ClassKind.*
 import org.ktorm.entity.Entity
 import org.ktorm.ksp.api.*
 import org.ktorm.ksp.compiler.util.*
@@ -75,12 +76,12 @@ class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironme
             return r
         }
 
-        if (cls.classKind != ClassKind.CLASS && cls.classKind != ClassKind.INTERFACE) {
+        if (cls.classKind != CLASS && cls.classKind != INTERFACE) {
             val name = cls.qualifiedName!!.asString()
             throw IllegalStateException("$name is expected to be a class or interface but actually ${cls.classKind}")
         }
 
-        if (cls.classKind == ClassKind.INTERFACE && !cls.isSubclassOf<Entity<*>>()) {
+        if (cls.classKind == INTERFACE && !cls.isSubclassOf<Entity<*>>()) {
             val name = cls.qualifiedName!!.asString()
             throw IllegalStateException("$name must extends from org.ktorm.entity.Entity")
         }
@@ -98,12 +99,7 @@ class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironme
             columns = ArrayList()
         )
 
-        // TODO: fix sorting, primary constructor properties should be placed first.
-        for (property in cls.getAllProperties()) {
-            if (shouldSkip(property, tableDef)) {
-                continue
-            }
-
+        for (property in tableDef.getProperties()) {
             if (property.isAnnotationPresent(References::class)) {
                 (tableDef.columns as MutableList) += parseRefColumnMetadata(property, tableDef)
             } else {
@@ -115,26 +111,21 @@ class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironme
         return tableDef
     }
 
-    private fun shouldSkip(property: KSPropertyDeclaration, table: TableMetadata): Boolean {
-        val propertyName = property.simpleName.asString()
-        if (propertyName in table.ignoreProperties) {
-            return true
-        }
+    private fun TableMetadata.getProperties(): Sequence<KSPropertyDeclaration> {
+        val classKind = entityClass.classKind
 
-        if (property.isAnnotationPresent(Ignore::class)) {
-            return true
-        }
-
-        if (table.entityClass.classKind == ClassKind.CLASS && !property.hasBackingField) {
-            return true
-        }
-
-        if (table.entityClass.classKind == ClassKind.INTERFACE && propertyName in setOf("entityClass", "properties")) {
-            return true
+        val constructorParams = HashSet<String>()
+        if (classKind == CLASS) {
+            entityClass.primaryConstructor!!.parameters.mapTo(constructorParams) { it.name!!.asString() }
         }
 
         // TODO: skip non-abstract properties for interface-based entities.
-        return false
+        return entityClass.getAllProperties()
+            .filterNot { it.simpleName.asString() in ignoreProperties }
+            .filterNot { it.isAnnotationPresent(Ignore::class) }
+            .filterNot { classKind == CLASS && !it.hasBackingField }
+            .filterNot { classKind == INTERFACE && it.simpleName.asString() in setOf("entityClass", "properties") }
+            .sortedByDescending { it.simpleName.asString() in constructorParams }
     }
 
     private fun parseColumnMetadata(property: KSPropertyDeclaration, table: TableMetadata): ColumnMetadata {
@@ -184,7 +175,7 @@ class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironme
         }
 
         val declaration = sqlType.declaration as KSClassDeclaration
-        if (declaration.classKind != ClassKind.OBJECT) {
+        if (declaration.classKind != OBJECT) {
             val name = declaration.qualifiedName?.asString()
             throw IllegalArgumentException("The sqlType class $name must be a Kotlin singleton object.")
         }
@@ -202,7 +193,7 @@ class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironme
             throw IllegalStateException("@Column and @References cannot use together on the same property: $property")
         }
 
-        if (table.entityClass.classKind != ClassKind.INTERFACE) {
+        if (table.entityClass.classKind != INTERFACE) {
             throw IllegalStateException("@References can only be used on interface-based entities.")
         }
 
@@ -210,7 +201,7 @@ class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironme
         val reference = property.getAnnotationsByType(References::class).first()
         val referenceTable = parseTableMetadata(property.type.resolve().declaration as KSClassDeclaration)
 
-        if (referenceTable.entityClass.classKind != ClassKind.INTERFACE) {
+        if (referenceTable.entityClass.classKind != INTERFACE) {
             val n = referenceTable.entityClass.qualifiedName?.asString()
             throw IllegalStateException("The referenced entity class ($n) must be an interface.")
         }
