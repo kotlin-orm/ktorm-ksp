@@ -124,8 +124,8 @@ class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironme
             .filterNot { it.simpleName.asString() in ignoreProperties }
             .filterNot { it.isAnnotationPresent(Ignore::class) }
             .filterNot { classKind == CLASS && !it.hasBackingField }
-            .filterNot { classKind == INTERFACE && it.simpleName.asString() in setOf("entityClass", "properties") }
             .filterNot { classKind == INTERFACE && !it.isAbstract() }
+            .filterNot { classKind == INTERFACE && it.simpleName.asString() in setOf("entityClass", "properties") }
             .sortedByDescending { it.simpleName.asString() in constructorParams }
     }
 
