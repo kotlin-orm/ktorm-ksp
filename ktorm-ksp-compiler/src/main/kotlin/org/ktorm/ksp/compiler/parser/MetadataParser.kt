@@ -172,7 +172,8 @@ class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironme
         }
 
         if (sqlType == null) {
-            throw IllegalStateException("Cannot infer sqlType for property: $property, please specify manually.")
+            val name = property.qualifiedName?.asString()
+            throw IllegalStateException("Cannot infer sqlType for property: $name, please specify manually.")
         }
 
         val declaration = sqlType.declaration as KSClassDeclaration

@@ -6,7 +6,7 @@ import org.ktorm.ksp.compiler.test.BaseTest
 /**
  * Created by vince at Apr 16, 2023.
  */
-class ParserChecksTest : BaseTest() {
+class MetadataParserTest : BaseTest() {
 
     @Test
     fun testEnumClass() = kspFailing("Gender is expected to be a class or interface but actually ENUM_CLASS", """
@@ -112,6 +112,14 @@ class ParserChecksTest : BaseTest() {
         
         fun run() {
             assert(Users.columns.map { it.name }.toSet() == setOf("id"))
+        }
+    """.trimIndent())
+
+    @Test
+    fun testSqlTypeInferError() = kspFailing("Cannot infer sqlType for property", """
+        @Table
+        interface User : Entity<User> {
+            val name: java.lang.StringBuilder
         }
     """.trimIndent())
 }
