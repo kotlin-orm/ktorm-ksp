@@ -18,6 +18,7 @@ package org.ktorm.ksp.compiler.parser
 
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
+import com.google.devtools.ksp.isAbstract
 import com.google.devtools.ksp.isAnnotationPresent
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
@@ -116,15 +117,15 @@ class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironme
 
         val constructorParams = HashSet<String>()
         if (classKind == CLASS) {
-            entityClass.primaryConstructor!!.parameters.mapTo(constructorParams) { it.name!!.asString() }
+            entityClass.primaryConstructor?.parameters?.mapTo(constructorParams) { it.name!!.asString() }
         }
 
-        // TODO: skip non-abstract properties for interface-based entities.
         return entityClass.getAllProperties()
             .filterNot { it.simpleName.asString() in ignoreProperties }
             .filterNot { it.isAnnotationPresent(Ignore::class) }
             .filterNot { classKind == CLASS && !it.hasBackingField }
             .filterNot { classKind == INTERFACE && it.simpleName.asString() in setOf("entityClass", "properties") }
+            .filterNot { classKind == INTERFACE && !it.isAbstract() }
             .sortedByDescending { it.simpleName.asString() in constructorParams }
     }
 

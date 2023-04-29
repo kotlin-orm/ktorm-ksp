@@ -101,4 +101,17 @@ class ParserChecksTest : BaseTest() {
             assert(Users.columns.map { it.name }[1] == "name")
         }
     """.trimIndent())
+
+    @Test
+    fun testInterfaceNonAbstractProperties() = runKotlin("""
+        @Table
+        interface User : Entity<User> {
+            val id: Int
+            val name: String get() = "vince"
+        }
+        
+        fun run() {
+            assert(Users.columns.map { it.name }.toSet() == setOf("id"))
+        }
+    """.trimIndent())
 }
