@@ -9,13 +9,13 @@ import org.ktorm.ksp.compiler.test.BaseTest
 class MetadataParserTest : BaseTest() {
 
     @Test
-    fun testEnumClass() = kspFailing("Gender is expected to be a class or interface but actually ENUM_CLASS", """
+    fun testEnumClass() = kspFailing("Gender is expected to be a class or interface but actually ENUM_CLASS.", """
         @Table
         enum class Gender { MALE, FEMALE }
     """.trimIndent())
 
     @Test
-    fun testInterfaceNotExtendingEntity() = kspFailing("User must extends from org.ktorm.entity.Entity", """
+    fun testInterfaceNotExtendingEntity() = kspFailing("User must extends from org.ktorm.entity.Entity.", """
         @Table
         interface User { 
             val id: Int
@@ -143,5 +143,69 @@ class MetadataParserTest : BaseTest() {
         }
         
         object Test
+    """.trimIndent())
+
+    @Test
+    fun testReferencesWithColumn() = kspFailing("Parse ref column error for property User.profile: @Column and @References cannot use together.", """
+        @Table
+        interface User : Entity<User> {
+            val id: Int
+            @References
+            @Column
+            val profile: Profile
+        }
+        
+        @Table
+        interface Profile : Entity<Profile> {
+            val id: Int
+            val name: String
+        }
+    """.trimIndent())
+
+    @Test
+    fun testReferencesFromClassEntity() = kspFailing("Parse ref column error for property User.profile: @References can only be used in interface-based entities", """
+        @Table
+        class User(
+            val id: Int,
+            @References
+            val profile: Profile
+        )
+        
+        @Table
+        interface Profile : Entity<Profile> {
+            val id: Int
+            val name: String
+        }
+    """.trimIndent())
+
+    @Test
+    fun testReferencesToClassEntity() = kspFailing("Parse ref column error for property User.profile: the referenced entity class must be an interface", """
+        @Table
+        interface User : Entity<User> {
+            val id: Int
+            @References
+            val profile: Profile
+        }
+        
+        @Table
+        class Profile(
+            val id: Int,
+            val name: String
+        )
+    """.trimIndent())
+
+    @Test
+    fun testReferencesToNonTableClass() = kspFailing("Parse ref column error for property User.profile: the referenced entity class must be annotated with @Table", """
+        @Table
+        interface User : Entity<User> {
+            val id: Int
+            @References
+            val profile: Profile
+        }
+        
+        interface Profile : Entity<Profile> {
+            val id: Int
+            val name: String
+        }
     """.trimIndent())
 }

@@ -79,12 +79,12 @@ class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironme
 
         if (cls.classKind != CLASS && cls.classKind != INTERFACE) {
             val name = cls.qualifiedName!!.asString()
-            throw IllegalStateException("$name is expected to be a class or interface but actually ${cls.classKind}")
+            throw IllegalStateException("$name is expected to be a class or interface but actually ${cls.classKind}.")
         }
 
         if (cls.classKind == INTERFACE && !cls.isSubclassOf<Entity<*>>()) {
             val name = cls.qualifiedName!!.asString()
-            throw IllegalStateException("$name must extends from org.ktorm.entity.Entity")
+            throw IllegalStateException("$name must extends from org.ktorm.entity.Entity.")
         }
 
         val table = cls.getAnnotationsByType(Table::class).first()
@@ -199,27 +199,36 @@ class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironme
     private fun parseRefColumnMetadata(property: KSPropertyDeclaration, table: TableMetadata): ColumnMetadata {
         if (property.isAnnotationPresent(Column::class)) {
             val n = property.qualifiedName?.asString()
-            throw IllegalStateException("@Column and @References cannot use together on the same property: $n")
+            throw IllegalStateException(
+                "Parse ref column error for property $n: @Column and @References cannot use together."
+            )
         }
 
         if (table.entityClass.classKind != INTERFACE) {
             val n = property.qualifiedName?.asString()
-            throw IllegalStateException("@References can only be used on interface-based entities: $n")
+            throw IllegalStateException(
+                "Parse ref column error for property $n: @References can only be used in interface-based entities."
+            )
         }
 
         // TODO: check circular reference.
+        val refEntityClass = property.type.resolve().declaration as KSClassDeclaration
+        if (refEntityClass.classKind != INTERFACE) {
+            val n = property.qualifiedName?.asString()
+            throw IllegalStateException(
+                "Parse ref column error for property $n: the referenced entity class must be an interface."
+            )
+        }
+
+        if (!refEntityClass.isAnnotationPresent(Table::class)) {
+            val n = property.qualifiedName?.asString()
+            throw IllegalStateException(
+                "Parse ref column error for property $n: the referenced entity class must be annotated with @Table."
+            )
+        }
+
         val reference = property.getAnnotationsByType(References::class).first()
-        val referenceTable = parseTableMetadata(property.type.resolve().declaration as KSClassDeclaration)
-
-        if (referenceTable.entityClass.classKind != INTERFACE) {
-            val n = referenceTable.entityClass.qualifiedName?.asString()
-            throw IllegalStateException("The referenced entity class ($n) must be an interface.")
-        }
-
-        if (!referenceTable.entityClass.isAnnotationPresent(Table::class)) {
-            val n = referenceTable.entityClass.qualifiedName?.asString()
-            throw IllegalStateException("The referenced entity class ($n) must be annotated with @Table.")
-        }
+        val referenceTable = parseTableMetadata(refEntityClass)
 
         val primaryKeys = referenceTable.columns.filter { it.isPrimaryKey }
         if (primaryKeys.isEmpty()) {
