@@ -22,11 +22,11 @@ import com.google.devtools.ksp.processing.*
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
-import com.google.devtools.ksp.validate
 import com.squareup.kotlinpoet.FileSpec
 import org.ktorm.ksp.api.Table
 import org.ktorm.ksp.compiler.generator.FileGenerator
 import org.ktorm.ksp.compiler.parser.MetadataParser
+import org.ktorm.ksp.compiler.util.isValid
 import org.ktorm.ksp.spi.TableMetadata
 import kotlin.reflect.jvm.jvmName
 
@@ -41,7 +41,7 @@ class KtormProcessorProvider : SymbolProcessorProvider {
     }
 
     private fun doProcess(resolver: Resolver, environment: SymbolProcessorEnvironment): List<KSAnnotated> {
-        val (symbols, deferral) = resolver.getSymbolsWithAnnotation(Table::class.jvmName).partition { it.validate() }
+        val (symbols, deferral) = resolver.getSymbolsWithAnnotation(Table::class.jvmName).partition { it.isValid() }
 
         val parser = MetadataParser(resolver, environment)
         for (symbol in symbols) {

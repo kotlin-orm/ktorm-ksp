@@ -18,11 +18,49 @@ package org.ktorm.ksp.compiler.util
 
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.isAnnotationPresent
-import com.google.devtools.ksp.symbol.KSClassDeclaration
-import com.google.devtools.ksp.symbol.KSType
-import com.google.devtools.ksp.symbol.KSTypeReference
-import com.google.devtools.ksp.symbol.Modifier
+import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.visitor.KSValidateVisitor
 import kotlin.reflect.jvm.jvmName
+
+/**
+ * Check if the given symbol is valid.
+ */
+fun KSNode.isValid(): Boolean {
+    // Custom visitor to avoid stack overflow, see https://github.com/google/ksp/issues/1114
+    val visitor = object : KSValidateVisitor({ _, _ -> true }) {
+        private val stack = LinkedHashSet<KSType>()
+
+        private fun validateType(type: KSType): Boolean {
+            if (!stack.add(type)) {
+                // Skip if the type already in the stack, avoid infinite recursion.
+                return true
+            }
+
+            try {
+                return !type.isError && !type.arguments.any { it.type?.accept(this, null) == false }
+            } finally {
+                stack.remove(type)
+            }
+        }
+
+        override fun visitTypeReference(typeReference: KSTypeReference, data: KSNode?): Boolean {
+            return validateType(typeReference.resolve())
+        }
+
+        override fun visitValueArgument(valueArgument: KSValueArgument, data: KSNode?): Boolean {
+            fun visitValue(value: Any?): Boolean = when (value) {
+                is KSType -> this.validateType(value)
+                is KSAnnotation -> this.visitAnnotation(value, data)
+                is List<*> -> value.all { visitValue(it) }
+                else -> true
+            }
+
+            return visitValue(valueArgument.value)
+        }
+    }
+
+    return this.accept(visitor, null)
+}
 
 /**
  * Check if this class is a subclass of [T].

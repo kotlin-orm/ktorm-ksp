@@ -173,18 +173,24 @@ class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironme
 
         if (sqlType == null) {
             val name = property.qualifiedName?.asString()
-            throw IllegalStateException("Cannot infer sqlType for property: $name, please specify manually.")
+            throw IllegalArgumentException(
+                "Parse sqlType error for property $name: cannot infer sqlType, please specify manually."
+            )
         }
 
         val declaration = sqlType.declaration as KSClassDeclaration
         if (declaration.classKind != OBJECT) {
-            val name = declaration.qualifiedName?.asString()
-            throw IllegalArgumentException("The sqlType class $name must be a Kotlin singleton object.")
+            val name = property.qualifiedName?.asString()
+            throw IllegalArgumentException(
+                "Parse sqlType error for property $name: the sqlType class must be a Kotlin singleton object."
+            )
         }
 
         if (!declaration.isSubclassOf<SqlType<*>>() && !declaration.isSubclassOf<SqlTypeFactory>()) {
-            val name = declaration.qualifiedName?.asString()
-            throw IllegalArgumentException("The sqlType class $name must be subtype of SqlType or SqlTypeFactory.")
+            val name = property.qualifiedName?.asString()
+            throw IllegalArgumentException(
+                "Parse sqlType error for property $name: the sqlType class must be subtype of SqlType/SqlTypeFactory."
+            )
         }
 
         return sqlType
@@ -192,11 +198,13 @@ class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironme
 
     private fun parseRefColumnMetadata(property: KSPropertyDeclaration, table: TableMetadata): ColumnMetadata {
         if (property.isAnnotationPresent(Column::class)) {
-            throw IllegalStateException("@Column and @References cannot use together on the same property: $property")
+            val n = property.qualifiedName?.asString()
+            throw IllegalStateException("@Column and @References cannot use together on the same property: $n")
         }
 
         if (table.entityClass.classKind != INTERFACE) {
-            throw IllegalStateException("@References can only be used on interface-based entities.")
+            val n = property.qualifiedName?.asString()
+            throw IllegalStateException("@References can only be used on interface-based entities: $n")
         }
 
         // TODO: check circular reference.

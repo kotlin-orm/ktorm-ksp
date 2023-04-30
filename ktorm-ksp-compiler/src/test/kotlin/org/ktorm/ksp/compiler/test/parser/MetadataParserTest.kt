@@ -116,10 +116,32 @@ class MetadataParserTest : BaseTest() {
     """.trimIndent())
 
     @Test
-    fun testSqlTypeInferError() = kspFailing("Cannot infer sqlType for property", """
+    fun testSqlTypeInferError() = kspFailing("Parse sqlType error for property User.name: cannot infer sqlType, please specify manually.", """
         @Table
         interface User : Entity<User> {
             val name: java.lang.StringBuilder
         }
+    """.trimIndent())
+
+    @Test
+    fun testSqlTypeShouldBeObject() = kspFailing("Parse sqlType error for property User.name: the sqlType class must be a Kotlin singleton object.", """
+        @Table
+        interface User : Entity<User> {
+            val id: Int
+            @Column(sqlType = org.ktorm.schema.EnumSqlType::class)
+            val name: String
+        }
+    """.trimIndent())
+
+    @Test
+    fun testSqlTypeShouldBeSqlType() = kspFailing("Parse sqlType error for property User.name: the sqlType class must be subtype of SqlType/SqlTypeFactory.", """
+        @Table
+        interface User : Entity<User> {
+            val id: Int
+            @Column(sqlType = Test::class)
+            val name: String
+        }
+        
+        object Test
     """.trimIndent())
 }
