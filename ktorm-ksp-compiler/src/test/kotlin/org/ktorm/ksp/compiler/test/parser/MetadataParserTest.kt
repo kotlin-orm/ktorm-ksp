@@ -146,7 +146,7 @@ class MetadataParserTest : BaseTest() {
     """.trimIndent())
 
     @Test
-    fun testReferencesWithColumn() = kspFailing("Parse ref column error for property User.profile: @Column and @References cannot use together.", """
+    fun testReferencesWithColumn() = kspFailing("Parse ref column error for property User.profile: @Column and @References cannot be used together.", """
         @Table
         interface User : Entity<User> {
             val id: Int

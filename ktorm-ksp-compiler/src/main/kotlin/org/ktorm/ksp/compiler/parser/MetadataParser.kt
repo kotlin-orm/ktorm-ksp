@@ -200,7 +200,7 @@ class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironme
         if (property.isAnnotationPresent(Column::class)) {
             val n = property.qualifiedName?.asString()
             throw IllegalStateException(
-                "Parse ref column error for property $n: @Column and @References cannot use together."
+                "Parse ref column error for property $n: @Column and @References cannot be used together."
             )
         }
 
