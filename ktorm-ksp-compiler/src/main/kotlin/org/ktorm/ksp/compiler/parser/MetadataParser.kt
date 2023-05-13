@@ -33,6 +33,7 @@ import org.ktorm.ksp.spi.DatabaseNamingStrategy
 import org.ktorm.ksp.spi.TableMetadata
 import org.ktorm.schema.SqlType
 import java.lang.reflect.InvocationTargetException
+import java.util.LinkedList
 import kotlin.reflect.jvm.jvmName
 
 @OptIn(KspExperimental::class)
@@ -100,7 +101,7 @@ class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironme
             columns = ArrayList()
         )
 
-        for (property in tableDef.getProperties()) {
+        for (property in cls.getProperties(tableDef.ignoreProperties)) {
             if (property.isAnnotationPresent(References::class)) {
                 (tableDef.columns as MutableList) += parseRefColumnMetadata(property, tableDef)
             } else {
@@ -112,15 +113,13 @@ class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironme
         return tableDef
     }
 
-    private fun TableMetadata.getProperties(): Sequence<KSPropertyDeclaration> {
-        val classKind = entityClass.classKind
-
+    private fun KSClassDeclaration.getProperties(ignoreProperties: Set<String>): Sequence<KSPropertyDeclaration> {
         val constructorParams = HashSet<String>()
         if (classKind == CLASS) {
-            entityClass.primaryConstructor?.parameters?.mapTo(constructorParams) { it.name!!.asString() }
+            primaryConstructor?.parameters?.mapTo(constructorParams) { it.name!!.asString() }
         }
 
-        return entityClass.getAllProperties()
+        return this.getAllProperties()
             .filterNot { it.simpleName.asString() in ignoreProperties }
             .filterNot { it.isAnnotationPresent(Ignore::class) }
             .filterNot { classKind == CLASS && !it.hasBackingField }
@@ -211,8 +210,9 @@ class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironme
             )
         }
 
-        // TODO: check circular reference.
         val refEntityClass = property.type.resolve().declaration as KSClassDeclaration
+        table.checkCircularRef(refEntityClass)
+
         if (refEntityClass.classKind != INTERFACE) {
             val n = property.qualifiedName?.asString()
             throw IllegalStateException(
@@ -264,5 +264,29 @@ class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironme
             referenceTable = referenceTable,
             columnPropertyName = propertyName
         )
+    }
+
+    private fun TableMetadata.checkCircularRef(ref: KSClassDeclaration, stack: LinkedList<String> = LinkedList()) {
+        val className = this.entityClass.qualifiedName?.asString()
+        val refClassName = ref.qualifiedName?.asString()
+
+        stack.push(refClassName)
+
+        if (className == refClassName) {
+            val route = stack.asReversed().joinToString(separator = " --> ")
+            throw IllegalStateException(
+                "Circular reference is not allowed, current table: $className, reference route: $route."
+            )
+        }
+
+        val refTable = ref.getAnnotationsByType(Table::class).firstOrNull()
+        for (property in ref.getProperties(refTable?.ignoreProperties?.toSet() ?: emptySet())) {
+            if (property.isAnnotationPresent(References::class)) {
+                val propType = property.type.resolve().declaration as KSClassDeclaration
+                checkCircularRef(propType, stack)
+            }
+        }
+
+        stack.pop()
     }
 }

@@ -242,4 +242,42 @@ class MetadataParserTest : BaseTest() {
             val name: String
         }
     """.trimIndent())
+
+    @Test
+    fun testCircularReference() = kspFailing("Circular reference is not allowed, current table: User, reference route: Profile --> Operator --> User", """
+        @Table
+        interface User : Entity<User> {
+            @PrimaryKey
+            val id: Int
+            @References
+            val profile: Profile
+        }
+        
+        @Table
+        interface Profile : Entity<Profile> {
+            @PrimaryKey
+            val id: Int
+            @References
+            val operator: Operator
+        }
+        
+        @Table
+        interface Operator : Entity<Operator> {
+            @PrimaryKey
+            val id: Int
+            @References
+            val user: User
+        }
+    """.trimIndent())
+
+    @Test
+    fun testSelfReference() = kspFailing("Circular reference is not allowed, current table: User, reference route: User", """
+        @Table
+        interface User : Entity<User> {
+            @PrimaryKey
+            val id: Int
+            @References
+            val manager: User
+        }
+    """.trimIndent())
 }
