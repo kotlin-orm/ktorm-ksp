@@ -208,4 +208,38 @@ class MetadataParserTest : BaseTest() {
             val name: String
         }
     """.trimIndent())
+
+    @Test
+    fun testReferencesNoPrimaryKeys() = kspFailing("Parse ref column error for property User.profile: the referenced table doesn't have a primary key", """
+        @Table
+        interface User : Entity<User> {
+            val id: Int
+            @References
+            val profile: Profile
+        }
+        
+        @Table
+        interface Profile : Entity<Profile> {
+            val id: Int
+            val name: String
+        }
+    """.trimIndent())
+
+    @Test
+    fun testReferencesWithCompoundPrimaryKeys() = kspFailing("Parse ref column error for property User.profile: the referenced table cannot have compound primary keys", """
+        @Table
+        interface User : Entity<User> {
+            val id: Int
+            @References
+            val profile: Profile
+        }
+        
+        @Table
+        interface Profile : Entity<Profile> {
+            @PrimaryKey
+            val id: Int
+            @PrimaryKey
+            val name: String
+        }
+    """.trimIndent())
 }

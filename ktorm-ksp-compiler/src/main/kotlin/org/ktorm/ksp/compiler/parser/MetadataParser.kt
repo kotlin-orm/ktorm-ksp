@@ -227,18 +227,23 @@ class MetadataParser(_resolver: Resolver, _environment: SymbolProcessorEnvironme
             )
         }
 
-        val reference = property.getAnnotationsByType(References::class).first()
         val referenceTable = parseTableMetadata(refEntityClass)
-
         val primaryKeys = referenceTable.columns.filter { it.isPrimaryKey }
         if (primaryKeys.isEmpty()) {
-            throw IllegalStateException("Table `${referenceTable.name}` doesn't have a primary key.")
+            val n = property.qualifiedName?.asString()
+            throw IllegalStateException(
+                "Parse ref column error for property $n: the referenced table doesn't have a primary key."
+            )
         }
 
         if (primaryKeys.size > 1) {
-            throw IllegalStateException("Reference table '${referenceTable.name}' cannot have compound primary keys.")
+            val n = property.qualifiedName?.asString()
+            throw IllegalStateException(
+                "Parse ref column error for property $n: the referenced table cannot have compound primary keys."
+            )
         }
 
+        val reference = property.getAnnotationsByType(References::class).first()
         var name = reference.name
         if (name.isEmpty()) {
             name = databaseNamingStrategy.getRefColumnName(table.entityClass, property, referenceTable)
