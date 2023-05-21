@@ -41,7 +41,7 @@ object AddFunctionGenerator {
         val tableClass = ClassName(table.entityClass.packageName.asString(), table.tableClassName)
 
         return FunSpec.builder("add")
-            .addKdoc(kdoc(useGeneratedKey))
+            .addKdoc(kdoc(table, useGeneratedKey))
             .receiver(EntitySequence::class.asClassName().parameterizedBy(entityClass, tableClass))
             .addParameter("entity", entityClass)
             .addParameter(ParameterSpec.builder("isDynamic", typeNameOf<Boolean>()).defaultValue("false").build())
@@ -54,15 +54,18 @@ object AddFunctionGenerator {
             .build()
     }
 
-    private fun kdoc(useGeneratedKey: Boolean): String {
+    private fun kdoc(table: TableMetadata, useGeneratedKey: Boolean): String {
         var kdoc = "" +
             "Insert the given entity into this sequence and return the affected record number. " +
             "If [isDynamic] is set to true, the generated SQL will include only the non-null columns. "
 
         if (useGeneratedKey) {
+            val pk = table.columns.single { it.isPrimaryKey }
+            val pkName = table.entityClass.simpleName.asString() + "." + pk.entityProperty.simpleName.asString()
+
             kdoc += "\n\n" +
-                "Note that this function will obtain the generated key from the database and fill it into " +
-                "the corresponding property after the insertion completes. But this requires us not to set " +
+                "Note that this function will obtain the generated primary key from the database and fill it into " +
+                "the property [${pkName}] after the insertion completes. But this requires us not to set " +
                 "the primary key’s value beforehand, otherwise, if you do that, the given value will be " +
                 "inserted into the database, and no keys generated."
         }
