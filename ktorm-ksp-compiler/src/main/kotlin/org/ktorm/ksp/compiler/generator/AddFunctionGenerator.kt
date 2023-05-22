@@ -20,8 +20,8 @@ import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toClassName
+import org.ktorm.dsl.AliasRemover
 import org.ktorm.entity.EntitySequence
-import org.ktorm.expression.ArgumentExpression
 import org.ktorm.expression.ColumnAssignmentExpression
 import org.ktorm.expression.InsertExpression
 import org.ktorm.ksp.spi.ColumnMetadata
@@ -47,7 +47,7 @@ object AddFunctionGenerator {
             .addParameter(ParameterSpec.builder("isDynamic", typeNameOf<Boolean>()).defaultValue("false").build())
             .returns(Int::class.asClassName())
             .addCode(checkForDml())
-            .addCode(addAssignmentFun())
+            .addCode(addValFun())
             .addCode(addAssignments(table, useGeneratedKey))
             .addCode(createExpression())
             .addCode(executeUpdate(useGeneratedKey, primaryKeys))
@@ -97,49 +97,33 @@ object AddFunctionGenerator {
         return CodeBlock.of(code)
     }
 
-    internal fun addAssignmentFun(): CodeBlock {
+    internal fun addValFun(): CodeBlock {
         val code = """
-            fun <T : Any> addAssignment(
-                column: %1T<T>,
-                value: T?,
-                isDynamic: Boolean,
-                assignments: MutableList<%2T<*>>
-            ) {
-                if (isDynamic && value == null) {
-                    return
+            fun <T : Any> MutableList<%1T<*>>.addVal(column: %2T<T>, value: T?, isDynamic: Boolean) {
+                if (!isDynamic || value != null) {
+                    this += %1T(column.asExpression(), column.wrapArgument(value))
                 }
-                val expression = %2T(
-                    column = column.asExpression(),
-                    expression = %3T(value, column.sqlType)
-                )
-                assignments.add(expression)
             }
             
             
         """.trimIndent()
 
-        return CodeBlock.of(code,
-            Column::class.asClassName(),
-            ColumnAssignmentExpression::class.asClassName(),
-            ArgumentExpression::class.asClassName(),
-        )
+        return CodeBlock.of(code, ColumnAssignmentExpression::class.asClassName(), Column::class.asClassName())
     }
 
     private fun addAssignments(table: TableMetadata, useGeneratedKey: Boolean): CodeBlock {
         return buildCodeBlock {
-            addStatement(
-                "val assignments = %T<%T<*>>()",
-                ArrayList::class.asClassName(),
-                ColumnAssignmentExpression::class.asClassName()
-            )
+            addStatement("val assignments = ArrayList<%T<*>>()", ColumnAssignmentExpression::class.asClassName())
 
             for (column in table.columns) {
-                val forceDynamic = useGeneratedKey && column.isPrimaryKey && column.entityProperty.type.resolve().isMarkedNullable
+                val forceDynamic = useGeneratedKey
+                    && column.isPrimaryKey && column.entityProperty.type.resolve().isMarkedNullable
+
                 addStatement(
-                    "addAssignment(sourceTable.%N, entity.%N, %L, assignments)",
+                    "assignments.addVal(sourceTable.%N, entity.%N, %L)",
                     column.columnPropertyName,
                     column.entityProperty.simpleName.asString(),
-                    if (forceDynamic) "true" else "isDynamic"
+                    if (forceDynamic) "isDynamic·=·true" else "isDynamic"
                 )
             }
 
@@ -155,14 +139,14 @@ object AddFunctionGenerator {
 
     private fun createExpression(): CodeBlock {
         val code = """
-            val expression = // AliasRemover.visit(
-                %T(table = sourceTable.asExpression(), assignments = assignments)
-            // )
+            val expression = database.dialect.createExpressionVisitor(%T).visit(
+                %T(sourceTable.asExpression(), assignments)
+            )
             
               
         """.trimIndent()
 
-        return CodeBlock.of(code, InsertExpression::class.asClassName())
+        return CodeBlock.of(code, AliasRemover::class.asClassName(), InsertExpression::class.asClassName())
     }
 
     private fun executeUpdate(useGeneratedKey: Boolean, primaryKeys: List<ColumnMetadata>): CodeBlock {
@@ -180,6 +164,7 @@ object AddFunctionGenerator {
                     format = """
                         val (effects, rowSet) = database.executeUpdateAndRetrieveKeys(expression)
                         if (rowSet.next()) {
+                            // TODO: use CachedRowSet.getGeneratedKey
                             val generatedKey = sourceTable.%columnName:N.sqlType.getResult(rowSet, 1)
                             if (generatedKey != null) {
                                 if (database.logger.isDebugEnabled()) {

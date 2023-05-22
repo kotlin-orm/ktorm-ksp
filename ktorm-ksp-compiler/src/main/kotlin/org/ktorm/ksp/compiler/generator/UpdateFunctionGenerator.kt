@@ -44,7 +44,7 @@ object UpdateFunctionGenerator {
             .addParameter(ParameterSpec.builder("isDynamic", typeNameOf<Boolean>()).defaultValue("false").build())
             .returns(Int::class.asClassName())
             .addCode(AddFunctionGenerator.checkForDml())
-            .addCode(AddFunctionGenerator.addAssignmentFun())
+            .addCode(AddFunctionGenerator.addValFun())
             .addCode(addAssignments(table))
             .addCode(buildConditions(table))
             .addCode(createExpression())
@@ -54,11 +54,7 @@ object UpdateFunctionGenerator {
 
     private fun addAssignments(table: TableMetadata): CodeBlock {
         return buildCodeBlock {
-            addStatement(
-                "val assignments = %T<%T<*>>()",
-                ArrayList::class.asClassName(),
-                ColumnAssignmentExpression::class.asClassName()
-            )
+            addStatement("val assignments = ArrayList<%T<*>>()", ColumnAssignmentExpression::class.asClassName())
 
             for (column in table.columns) {
                 if (column.isPrimaryKey) {
@@ -66,7 +62,7 @@ object UpdateFunctionGenerator {
                 }
 
                 addStatement(
-                    "addAssignment(sourceTable.%N, entity.%N, isDynamic, assignments)",
+                    "assignments.addVal(sourceTable.%N, entity.%N, isDynamic)",
                     column.columnPropertyName,
                     column.entityProperty.simpleName.asString(),
                 )
