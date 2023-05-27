@@ -29,6 +29,7 @@ class ComponentFunctionGeneratorTest : BaseTest() {
             var id: Int?
             var name: String
             var job: String
+            @Ignore
             var hireDate: LocalDate
         }
         

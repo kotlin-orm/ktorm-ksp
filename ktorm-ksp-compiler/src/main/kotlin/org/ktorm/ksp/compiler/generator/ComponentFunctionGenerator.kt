@@ -16,6 +16,7 @@
 
 package org.ktorm.ksp.compiler.generator
 
+import com.google.devtools.ksp.isAbstract
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
@@ -26,19 +27,19 @@ import org.ktorm.ksp.spi.TableMetadata
 @OptIn(KotlinPoetKspPreview::class)
 object ComponentFunctionGenerator {
 
-    fun generate(table: TableMetadata): List<FunSpec> {
-        return table.columns.mapIndexed { i, column ->
-            FunSpec.builder("component${i + 1}")
-                .addKdoc(
-                    "Return the value of [%L.%L]. ",
-                    table.entityClass.simpleName.asString(),
-                    column.entityProperty.simpleName.asString()
-                )
-                .addModifiers(KModifier.OPERATOR)
-                .receiver(table.entityClass.toClassName())
-                .returns(column.entityProperty.type.resolve().toTypeName())
-                .addCode("return·this.%N", column.entityProperty.simpleName.asString())
-                .build()
-        }
+    fun generate(table: TableMetadata): Sequence<FunSpec> {
+        return table.entityClass.getAllProperties()
+            .filter { it.isAbstract() }
+            .filterNot { it.simpleName.asString() in setOf("entityClass", "properties") }
+            .mapIndexed { i, prop ->
+                FunSpec.builder("component${i + 1}")
+                    .addKdoc("Return the value of [%L.%L]. ",
+                        table.entityClass.simpleName.asString(), prop.simpleName.asString())
+                    .addModifiers(KModifier.OPERATOR)
+                    .receiver(table.entityClass.toClassName())
+                    .returns(prop.type.resolve().toTypeName())
+                    .addCode("return·this.%N", prop.simpleName.asString())
+                    .build()
+            }
     }
 }
