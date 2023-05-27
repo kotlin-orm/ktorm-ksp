@@ -25,6 +25,7 @@ import org.ktorm.ksp.spi.TableMetadata
 import java.util.*
 
 object FileGenerator {
+    val extCodeGenerators = ServiceLoader.load(ExtCodeGenerator::class.java).toList()
 
     fun generate(table: TableMetadata, environment: SymbolProcessorEnvironment): FileSpec {
         val fileSpec = FileSpec.builder(table.entityClass.packageName.asString(), table.tableClassName)
@@ -49,22 +50,25 @@ object FileGenerator {
             }
         }
 
-        for (generator in ServiceLoader.load(ExtCodeGenerator::class.java)) {
-            // TODO: log generator info.
+        for (generator in extCodeGenerators) {
+            val desc = "Code from an ext generator: $generator"
 
             for (type in generator.generateTypes(table, environment)) {
-                // TODO: modify kdoc
-                fileSpec.addType(type)
+                fileSpec.addType(
+                    type.toBuilder().addKdoc(if (type.kdoc.isEmpty()) desc else "\n\n$desc").build()
+                )
             }
 
             for (property in generator.generateProperties(table, environment)) {
-                // TODO: modify kdoc
-                fileSpec.addProperty(property)
+                fileSpec.addProperty(
+                    property.toBuilder().addKdoc(if (property.kdoc.isEmpty()) desc else "\n\n$desc").build()
+                )
             }
 
             for (function in generator.generateFunctions(table, environment)) {
-                // TODO: modify kdoc
-                fileSpec.addFunction(function)
+                fileSpec.addFunction(
+                    function.toBuilder().addKdoc(if (function.kdoc.isEmpty()) desc else "\n\n$desc").build()
+                )
             }
         }
 

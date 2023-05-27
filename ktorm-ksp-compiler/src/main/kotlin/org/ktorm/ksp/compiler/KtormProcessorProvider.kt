@@ -33,6 +33,10 @@ import kotlin.reflect.jvm.jvmName
 class KtormProcessorProvider : SymbolProcessorProvider {
 
     override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {
+        for (generator in FileGenerator.extCodeGenerators) {
+            environment.logger.info("[ktorm-ksp-compiler] load ext generator: $generator")
+        }
+
         return object : SymbolProcessor {
             override fun process(resolver: Resolver): List<KSAnnotated> {
                 return doProcess(resolver, environment)
