@@ -20,11 +20,15 @@ import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toClassName
+import org.ktorm.dsl.AliasRemover
 import org.ktorm.entity.EntitySequence
+import org.ktorm.expression.BinaryExpression
+import org.ktorm.expression.BinaryExpressionType
 import org.ktorm.expression.ColumnAssignmentExpression
 import org.ktorm.expression.UpdateExpression
 import org.ktorm.ksp.compiler.util.*
 import org.ktorm.ksp.spi.TableMetadata
+import org.ktorm.schema.BooleanSqlType
 
 @OptIn(KotlinPoetKspPreview::class)
 object UpdateFunctionGenerator {
@@ -80,64 +84,50 @@ object UpdateFunctionGenerator {
 
     private fun buildConditions(table: TableMetadata): CodeBlock {
         return buildCodeBlock {
-            val primaryKeys = table.columns.filter { it.isPrimaryKey }
+            add("«val conditions = listOf(")
 
-            if (primaryKeys.size == 1) {
-                val pk = primaryKeys[0]
-                if (pk.entityProperty.type.resolve().isMarkedNullable) {
-                    addStatement(
-                        "val conditions = sourceTable.%N·%M·entity.%N!!",
-                        pk.columnPropertyName,
-                        MemberName("org.ktorm.dsl", "eq", true),
-                        pk.entityProperty.simpleName.asString()
-                    )
-                } else {
-                    addStatement(
-                        "val conditions = sourceTable.%N·%M·entity.%N",
-                        pk.columnPropertyName,
-                        MemberName("org.ktorm.dsl", "eq", true),
-                        pk.entityProperty.simpleName.asString()
-                    )
-                }
-            } else {
-                add("«val conditions = ")
-
-                for ((i, pk) in primaryKeys.withIndex()) {
-                    if (pk.entityProperty.type.resolve().isMarkedNullable) {
-                        add(
-                            "(sourceTable.%N·%M·entity.%N!!)",
-                            pk.columnPropertyName,
-                            MemberName("org.ktorm.dsl", "eq", true),
-                            pk.entityProperty.simpleName.asString()
-                        )
-                    } else {
-                        add(
-                            "(sourceTable.%N·%M·entity.%N)",
-                            pk.columnPropertyName,
-                            MemberName("org.ktorm.dsl", "eq", true),
-                            pk.entityProperty.simpleName.asString()
-                        )
-                    }
-
-                    if (i != primaryKeys.lastIndex) {
-                        add("·%M·", MemberName("org.ktorm.dsl", "and", true))
-                    }
+            for (column in table.columns) {
+                if (!column.isPrimaryKey) {
+                    continue
                 }
 
-                add("\n»")
+                val code = """
+                    %1T(
+                        type = %2T.EQUAL, 
+                        left = sourceTable.%3N.asExpression(), 
+                        right = sourceTable.%3N.wrapArgument(entity.%4N), 
+                        sqlType = %5T
+                    ),
+                """.trimIndent()
+
+                add(
+                    code,
+                    BinaryExpression::class.asClassName(),
+                    BinaryExpressionType::class.asClassName(),
+                    column.columnPropertyName,
+                    column.entityProperty.simpleName.asString(),
+                    BooleanSqlType::class.asClassName()
+                )
             }
+
+            add(")\n»\n")
         }
     }
 
     private fun createExpression(): CodeBlock {
         val code = """
-            val expression = // AliasRemover.visit(
-                %T(table = sourceTable.asExpression(), assignments = assignments, where = conditions)
-            // )
+            val expression = database.dialect.createExpressionVisitor(%T).visit(
+                %T(sourceTable.asExpression(), assignments, conditions.%M().asExpression())
+            )
             
               
         """.trimIndent()
 
-        return CodeBlock.of(code, UpdateExpression::class.asClassName())
+        return CodeBlock.of(
+            code,
+            AliasRemover::class.asClassName(),
+            UpdateExpression::class.asClassName(),
+            MemberName("org.ktorm.dsl", "combineConditions", true)
+        )
     }
 }
