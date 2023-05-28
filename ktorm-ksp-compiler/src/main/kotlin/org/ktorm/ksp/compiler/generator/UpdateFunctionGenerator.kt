@@ -22,13 +22,10 @@ import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toClassName
 import org.ktorm.dsl.AliasRemover
 import org.ktorm.entity.EntitySequence
-import org.ktorm.expression.BinaryExpression
-import org.ktorm.expression.BinaryExpressionType
 import org.ktorm.expression.ColumnAssignmentExpression
 import org.ktorm.expression.UpdateExpression
 import org.ktorm.ksp.compiler.util.*
 import org.ktorm.ksp.spi.TableMetadata
-import org.ktorm.schema.BooleanSqlType
 
 @OptIn(KotlinPoetKspPreview::class)
 object UpdateFunctionGenerator {
@@ -91,26 +88,22 @@ object UpdateFunctionGenerator {
                     continue
                 }
 
-                val code = """
-                    %1T(
-                        type = %2T.EQUAL, 
-                        left = sourceTable.%3N.asExpression(), 
-                        right = sourceTable.%3N.wrapArgument(entity.%4N), 
-                        sqlType = %5T
-                    ),
-                """.trimIndent()
+                val condition: String
+                if (column.entityProperty.type.resolve().isMarkedNullable) {
+                    condition = "sourceTable.%N·%M·entity.%N!!,"
+                } else {
+                    condition = "sourceTable.%N·%M·entity.%N,"
+                }
 
                 add(
-                    code,
-                    BinaryExpression::class.asClassName(),
-                    BinaryExpressionType::class.asClassName(),
+                    condition,
                     column.columnPropertyName,
-                    column.entityProperty.simpleName.asString(),
-                    BooleanSqlType::class.asClassName()
+                    MemberName("org.ktorm.dsl", "eq", true),
+                    column.entityProperty.simpleName.asString()
                 )
             }
 
-            add(")\n»\n")
+            add(")\n»")
         }
     }
 
