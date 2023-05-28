@@ -16,6 +16,7 @@
 
 package org.ktorm.ksp.compiler.generator
 
+import com.google.devtools.ksp.isAbstract
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toClassName
@@ -35,22 +36,24 @@ object PseudoConstructorFunctionGenerator {
                 "properties that doesn't have an initial value will leave unassigned. ",
                 table.entityClass.simpleName.asString()
             )
-            .addParameters(buildParameters(table))
+            .addParameters(buildParameters(table).asIterable())
             .returns(table.entityClass.toClassName())
             .addCode(buildFunctionBody(table))
             .build()
     }
 
-    internal fun buildParameters(table: TableMetadata): List<ParameterSpec> {
-        // TODO: use table.columns will skip ignored properties, which should be skipped in the pseudo constructor
-        return table.columns.map { column ->
-            val propName = column.entityProperty.simpleName.asString()
-            val propType = column.entityProperty.type.resolve().makeNullable().toTypeName()
+    internal fun buildParameters(table: TableMetadata): Sequence<ParameterSpec> {
+        return table.entityClass.getAllProperties()
+            .filter { it.isAbstract() }
+            .filterNot { it.simpleName.asString() in setOf("entityClass", "properties") }
+            .map { prop ->
+                val propName = prop.simpleName.asString()
+                val propType = prop.type.resolve().makeNullable().toTypeName()
 
-            ParameterSpec.builder(propName, propType)
-                .defaultValue("%T.of()", Undefined::class.asClassName())
-                .build()
-        }
+                ParameterSpec.builder(propName, propType)
+                    .defaultValue("%T.of()", Undefined::class.asClassName())
+                    .build()
+            }
     }
 
     internal fun buildFunctionBody(table: TableMetadata, isCopy: Boolean = false): CodeBlock = buildCodeBlock {
@@ -60,10 +63,13 @@ object PseudoConstructorFunctionGenerator {
             addStatement("val·entity·=·%T.create<%T>()", Entity::class.asClassName(), table.entityClass.toClassName())
         }
 
-        for (column in table.columns) {
-            val propName = column.entityProperty.simpleName.asString()
-            val propType = column.entityProperty.type.resolve()
+        for (prop in table.entityClass.getAllProperties()) {
+            if (!prop.isAbstract() || prop.simpleName.asString() in setOf("entityClass", "properties")) {
+                continue
+            }
 
+            val propName = prop.simpleName.asString()
+            val propType = prop.type.resolve()
             if (propType.isInline()) {
                 beginControlFlow(
                     "if·((%N·as·Any?)·!==·(%T.of<%T>()·as·Any?))",
@@ -77,7 +83,7 @@ object PseudoConstructorFunctionGenerator {
             }
 
             var statement: String
-            if (column.entityProperty.isMutable) {
+            if (prop.isMutable) {
                 statement = "entity.%1N·=·%1N"
             } else {
                 statement = "entity[%1S]·=·%1N"

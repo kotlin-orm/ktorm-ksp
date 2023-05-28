@@ -31,7 +31,7 @@ object CopyFunctionGenerator {
                 "and alter the specified property values. "
             )
             .receiver(table.entityClass.toClassName())
-            .addParameters(PseudoConstructorFunctionGenerator.buildParameters(table))
+            .addParameters(PseudoConstructorFunctionGenerator.buildParameters(table).asIterable())
             .returns(table.entityClass.toClassName())
             .addCode(PseudoConstructorFunctionGenerator.buildFunctionBody(table, isCopy = true))
             .build()
