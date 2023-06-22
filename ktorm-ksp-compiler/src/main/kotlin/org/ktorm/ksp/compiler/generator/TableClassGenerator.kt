@@ -22,10 +22,9 @@ import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toClassName
-import com.squareup.kotlinpoet.ksp.toTypeName
 import org.ktorm.dsl.QueryRowSet
-import org.ktorm.ksp.compiler.util.toRegisterCodeBlock
-import org.ktorm.ksp.spi.ColumnMetadata
+import org.ktorm.ksp.compiler.util.getKotlinType
+import org.ktorm.ksp.compiler.util.getRegisteringCodeBlock
 import org.ktorm.ksp.spi.TableMetadata
 import org.ktorm.schema.BaseTable
 import org.ktorm.schema.Column
@@ -71,10 +70,11 @@ object TableClassGenerator {
 
     private fun TypeSpec.Builder.configureColumnProperties(table: TableMetadata): TypeSpec.Builder {
         for (column in table.columns) {
-            val propertySpec = PropertySpec.builder(column.columnPropertyName, column.getColumnType())
+            val columnType = Column::class.asClassName().parameterizedBy(column.getKotlinType())
+            val propertySpec = PropertySpec.builder(column.columnPropertyName, columnType)
                 .addKdoc("Column %L. %L", column.name, column.entityProperty.docString?.trimIndent().orEmpty())
                 .initializer(buildCodeBlock {
-                    add(column.toRegisterCodeBlock())
+                    add(column.getRegisteringCodeBlock())
 
                     if (column.isPrimaryKey) {
                         add(".primaryKey()")
@@ -97,15 +97,6 @@ object TableClassGenerator {
         }
 
         return this
-    }
-
-    private fun ColumnMetadata.getColumnType(): TypeName {
-        if (isReference) {
-            return referenceTable!!.columns.single { it.isPrimaryKey }.getColumnType()
-        } else {
-            val propType = entityProperty.type.resolve().makeNotNullable().toTypeName()
-            return Column::class.asClassName().parameterizedBy(propType)
-        }
     }
 
     private fun TypeSpec.Builder.configureDoCreateEntityFunction(

@@ -24,6 +24,7 @@ import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.MemberName
+import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
@@ -66,7 +67,7 @@ fun KSPropertyDeclaration.getSqlType(resolver: Resolver): KSType? {
 }
 
 @OptIn(KotlinPoetKspPreview::class)
-fun ColumnMetadata.toRegisterCodeBlock(): CodeBlock {
+fun ColumnMetadata.getRegisteringCodeBlock(): CodeBlock {
     val sqlTypeName = sqlType.declaration.qualifiedName?.asString()
     val registerFun = when (sqlTypeName) {
         "org.ktorm.schema.BooleanSqlType" -> MemberName("org.ktorm.schema", "boolean", true)
@@ -99,13 +100,11 @@ fun ColumnMetadata.toRegisterCodeBlock(): CodeBlock {
     }
 
     if (sqlTypeName == "org.ktorm.ksp.api.EnumSqlTypeFactory") {
-        val propType = entityProperty.type.resolve().makeNotNullable().toTypeName()
-        return CodeBlock.of("%M<%T>(%S)", MemberName("org.ktorm.schema", "enum", true), propType, name)
+        return CodeBlock.of("%M<%T>(%S)", MemberName("org.ktorm.schema", "enum", true), getKotlinType(), name)
     }
 
     if (sqlTypeName == "org.ktorm.ksp.api.JsonSqlTypeFactory") {
-        val propType = entityProperty.type.resolve().makeNotNullable().toTypeName()
-        return CodeBlock.of("%M<%T>(%S)", MemberName("org.ktorm.jackson", "json", true), propType, name)
+        return CodeBlock.of("%M<%T>(%S)", MemberName("org.ktorm.jackson", "json", true), getKotlinType(), name)
     }
 
     val declaration = sqlType.declaration as KSClassDeclaration
@@ -124,4 +123,13 @@ fun ColumnMetadata.toRegisterCodeBlock(): CodeBlock {
     }
 
     throw IllegalArgumentException("The sqlType class $sqlTypeName must be subtype of SqlType or SqlTypeFactory.")
+}
+
+@OptIn(KotlinPoetKspPreview::class)
+fun ColumnMetadata.getKotlinType(): TypeName {
+    if (isReference) {
+        return referenceTable!!.columns.single { it.isPrimaryKey }.getKotlinType()
+    } else {
+        return entityProperty.type.resolve().makeNotNullable().toTypeName()
+    }
 }
