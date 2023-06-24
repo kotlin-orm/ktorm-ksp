@@ -29,7 +29,6 @@ import org.ktorm.ksp.spi.TableMetadata
 import org.ktorm.schema.BaseTable
 import org.ktorm.schema.Column
 import org.ktorm.schema.Table
-import kotlin.reflect.KParameter
 
 @OptIn(KotlinPoetKspPreview::class)
 object TableClassGenerator {
@@ -133,42 +132,33 @@ object TableClassGenerator {
                 MemberName("kotlin.reflect.full", "primaryConstructor", true)
             )
 
-            addStatement(
-                "val params = %T<%T, %T?>()",
-                HashMap::class.asClassName(),
-                KParameter::class.asClassName(),
-                Any::class.asClassName()
-            )
+            add("«val args = mapOf(")
 
-            // TODO: remove the for loop...
-            withControlFlow("for (parameter in constructor.parameters)") {
-                withControlFlow("when (parameter.name)") {
-                    for (column in table.columns) {
-                        val parameter = constructorParams[column.entityProperty.simpleName.asString()] ?: continue
-                        withControlFlow("%S -> ", arrayOf(parameter.name!!.asString())) {
-                            addStatement("val value = row[this.%N]", column.columnPropertyName)
-                            if (parameter.hasDefault) {
-                                withControlFlow("if (value != null)") {
-                                    addStatement("params[parameter] = value")
-                                }
-                            } else {
-                                addStatement("params[parameter] = value")
-                            }
-                        }
-                    }
+            for (column in table.columns) {
+                val propName = column.entityProperty.simpleName.asString()
+                if (propName in constructorParams) {
+                    add(
+                        "constructor.%M(%S)!! to row[this.%N],",
+                        MemberName("kotlin.reflect.full", "findParameterByName", true),
+                        propName,
+                        column.columnPropertyName
+                    )
                 }
             }
 
+            add(")\n»")
+            addStatement("// Filter optional arguments out to make default values work.")
+
             if (table.columns.all { it.entityProperty.simpleName.asString() in constructorParams }) {
-                addStatement("return constructor.callBy(params)")
+                addStatement("return constructor.callBy(args.filterNot { (k, v) -> k.isOptional && v == null })")
             } else {
-                addStatement("val entity = constructor.callBy(params)")
+                addStatement("val entity = constructor.callBy(args.filterNot { (k, v) -> k.isOptional && v == null })")
             }
         } else {
             if (table.columns.all { it.entityProperty.simpleName.asString() in constructorParams }) {
-                add("return·%T(", table.entityClass.toClassName())
+                add("«return·%T(", table.entityClass.toClassName())
             } else {
-                add("val·entity·=·%T(", table.entityClass.toClassName())
+                add("«val·entity·=·%T(", table.entityClass.toClassName())
             }
 
             for (column in table.columns) {
@@ -180,7 +170,7 @@ object TableClassGenerator {
                 }
             }
 
-            add(")\n")
+            add(")\n»")
         }
 
         for (column in table.columns) {
@@ -199,16 +189,6 @@ object TableClassGenerator {
         if (table.columns.any { it.entityProperty.simpleName.asString() !in constructorParams }) {
             addStatement("return·entity")
         }
-    }
-
-    private inline fun CodeBlock.Builder.withControlFlow(
-        controlFlow: String,
-        args: Array<Any?> = emptyArray(),
-        block: CodeBlock.Builder.() -> Unit
-    ): CodeBlock.Builder = apply {
-        beginControlFlow(controlFlow, *args)
-        block(this)
-        endControlFlow()
     }
 
     private fun TypeSpec.Builder.configureAliasedFunction(table: TableMetadata): TypeSpec.Builder {
