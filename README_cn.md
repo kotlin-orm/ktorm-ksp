@@ -15,6 +15,4 @@
 
 :us: [English](README.md) | :cn: 简体中文
 
-# ktorm-ksp 是什么？
-
 这是一个孵化器项目，目前已经合并到主仓库：[kotlin-orm/ktorm](https://github.com/kotlin-orm/ktorm)
