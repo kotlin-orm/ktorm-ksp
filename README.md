@@ -17,6 +17,8 @@
 
 # What's ktorm-ksp?
 
+This is an incubator project and it's already merged into the main repo: [kotlin-orm/ktorm](https://github.com/kotlin-orm/ktorm)
+
 [Ktorm](https://github.com/kotlin-orm/ktorm) KSP extension to help generate boilerplate code. It can automatically
 generate Table objects through entity classes, while making entities defined by data classes easier to use, and supports
 custom extension code generation logic.
